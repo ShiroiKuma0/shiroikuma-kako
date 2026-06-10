@@ -5,6 +5,7 @@
 package mozilla.components.compose.browser.toolbar.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
@@ -30,6 +31,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowSizeClass
 import mozilla.components.compose.base.progressbar.AnimatedProgressBar
+import mozilla.components.compose.base.theme.AcornForkOverrides
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.base.theme.acornPrivateColorScheme
 import mozilla.components.compose.base.theme.privateColorPalette
@@ -112,6 +114,12 @@ internal fun FullDisplayToolbar(
                         .background(
                             color = MaterialTheme.colorScheme.surfaceContainerHighest,
                             shape = CircleShape,
+                        )
+                        // Fork: traced outline of the address bar (白い熊 火狐 UI).
+                        .then(
+                            AcornForkOverrides.addressBarBorder?.let {
+                                Modifier.border(it, CircleShape)
+                            } ?: Modifier,
                         )
                         .padding(
                             start = when (pageActionsStart.isEmpty()) {

@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.theme.AcornForkOverrides
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.base.theme.acornPrivateColorScheme
 import mozilla.components.compose.base.theme.privateColorPalette
@@ -102,17 +103,26 @@ fun FilledButton(
     iconTint: Color = contentColor,
     onClick: () -> Unit,
 ) {
+    // Fork: the 白い熊 火狐 UI restyles filled buttons app-wide (black fill,
+    // accent text, traced border) via AcornForkOverrides.
+    val fork = AcornForkOverrides.buttonStyle
     M3Button(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
         contentPadding = AcornTheme.buttonContentPadding(),
+        border = fork?.border,
         colors = ButtonDefaults.buttonColors(
-            containerColor = containerColor,
-            contentColor = contentColor,
+            containerColor = fork?.containerColor ?: containerColor,
+            contentColor = fork?.contentColor ?: contentColor,
         ),
     ) {
-        ButtonContent(text = text, icon = icon, modifier = iconModifier, iconTint = iconTint)
+        ButtonContent(
+            text = text,
+            icon = icon,
+            modifier = iconModifier,
+            iconTint = fork?.contentColor ?: iconTint,
+        )
     }
 }
 
@@ -136,14 +146,17 @@ fun FilledButton(
     containerColor: Color = ButtonDefaults.buttonColors().containerColor,
     content: @Composable () -> Unit,
 ) {
+    // Fork: see the text overload above.
+    val fork = AcornForkOverrides.buttonStyle
     M3Button(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
         contentPadding = AcornTheme.buttonContentPadding(),
+        border = fork?.border,
         colors = ButtonDefaults.buttonColors(
-            containerColor = containerColor,
-            contentColor = contentColor,
+            containerColor = fork?.containerColor ?: containerColor,
+            contentColor = fork?.contentColor ?: contentColor,
         ),
     ) {
         content()
