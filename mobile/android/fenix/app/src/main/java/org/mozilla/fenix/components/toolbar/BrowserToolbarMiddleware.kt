@@ -5,6 +5,7 @@
 package org.mozilla.fenix.components.toolbar
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import androidx.annotation.VisibleForTesting
@@ -140,6 +141,7 @@ import org.mozilla.fenix.ext.canGoBackInHistoryOrToStories
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.navigateSafe
 import org.mozilla.fenix.nimbus.FxNimbus
+import org.mozilla.fenix.kako.KakoTheme
 import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.summarization.SummarizationNavigator
 import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryConfiguration
@@ -846,7 +848,8 @@ class BrowserToolbarMiddleware(
 
         val state = browserStore.state
         val selectedTab = state.selectedTab
-        val iconSize = (EXTENSION_ICON_SIZE_DP * uiContext.resources.displayMetrics.density).toInt()
+        val displayMetrics = uiContext.resources.displayMetrics
+        val iconSize = (KakoTheme.extensionIconSizeDp(uiContext) * displayMetrics.density).toInt()
 
         return pinnedIds.mapNotNull { extensionId ->
             val extension = state.extensions[extensionId] ?: return@mapNotNull null
@@ -866,17 +869,18 @@ class BrowserToolbarMiddleware(
                 ?: extensionId
 
             ActionButton(
-                drawable = icon?.let { BitmapDrawable(uiContext.resources, it) }
-                    ?: AppCompatResources.getDrawable(uiContext, iconsR.drawable.mozac_ic_extension_24),
+                drawable = icon?.let { bitmap ->
+                    // Scale to exactly the configured display size; pinning the bitmap
+                    // density to the device's makes the drawable's intrinsic size honest.
+                    val scaled = Bitmap.createScaledBitmap(bitmap, iconSize, iconSize, true)
+                    scaled.density = displayMetrics.densityDpi
+                    BitmapDrawable(uiContext.resources, scaled)
+                } ?: AppCompatResources.getDrawable(uiContext, iconsR.drawable.mozac_ic_extension_24),
                 shouldTint = icon == null,
                 contentDescription = contentDescription,
                 onClick = DisplayActions.ExtensionActionClicked(extensionId),
             )
         }
-    }
-
-    private companion object {
-        const val EXTENSION_ICON_SIZE_DP = 24
     }
 
     /**
