@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
+<!--
+  白い熊 火狐 UI — static black/yellow overlay for the classic (XML/View) screens,
+  chiefly the preference fragments. The Compose surfaces are themed dynamically in
+  FirefoxTheme from the KakoTheme slots; XML theme attributes cannot change at
+  runtime, so this overlay carries the fixed seeded palette instead. Applied on
+  top of Normal/PrivateTheme by ThemeManager.setActivityTheme when the kako theme
+  is enabled.
+-->
+<resources>
+    <color name="kako_black">#FF000000</color>
+    <color name="kako_yellow">#FFFFEB3B</color>
+    <color name="kako_yellow_secondary">#99FFEB3B</color>
+    <color name="kako_yellow_disabled">#61FFEB3B</color>
+    <color name="kako_yellow_faint">#1FFFEB3B</color>
+
+    <style name="KakoThemeOverlay">
+        <!-- Android framework -->
+        <item name="android:windowBackground">@color/kako_black</item>
+        <item name="android:colorBackground">@color/kako_black</item>
+        <item name="android:textColorPrimary">@color/kako_yellow</item>
+        <item name="android:textColorSecondary">@color/kako_yellow_secondary</item>
+        <item name="android:textColorTertiary">@color/kako_yellow_secondary</item>
+        <item name="android:textColorLink">@color/kako_yellow</item>
+        <item name="android:colorAccent">@color/kako_yellow</item>
+        <item name="android:colorEdgeEffect">@color/kako_yellow</item>
+        <item name="android:navigationBarColor">@color/kako_black</item>
+
+        <!-- Material 3 -->
+        <item name="colorPrimary">@color/kako_yellow</item>
+        <item name="colorOnPrimary">@color/kako_black</item>
+        <item name="colorPrimaryContainer">@color/kako_yellow_faint</item>
+        <item name="colorOnPrimaryContainer">@color/kako_yellow</item>
+        <item name="colorSecondary">@color/kako_yellow_secondary</item>
+        <item name="colorOnSecondary">@color/kako_black</item>
+        <item name="colorSecondaryContainer">@color/kako_yellow_faint</item>
+        <item name="colorOnSecondaryContainer">@color/kako_yellow</item>
+        <item name="colorTertiary">@color/kako_yellow</item>
+        <item name="colorOnTertiary">@color/kako_black</item>
+        <item name="colorTertiaryContainer">@color/kako_yellow_faint</item>
+        <item name="colorOnTertiaryContainer">@color/kako_yellow</item>
+        <item name="colorOnBackground">@color/kako_yellow</item>
+        <item name="colorSurface">@color/kako_black</item>
+        <item name="colorOnSurface">@color/kako_yellow</item>
+        <item name="colorSurfaceVariant">@color/kako_black</item>
+        <item name="colorOnSurfaceVariant">@color/kako_yellow_secondary</item>
+        <item name="colorOutline">@color/kako_yellow</item>
+        <item name="colorOutlineVariant">@color/kako_yellow_secondary</item>
+        <item name="colorSurfaceBright">@color/kako_black</item>
+        <item name="colorSurfaceDim">@color/kako_black</item>
+        <item name="colorSurfaceContainer">@color/kako_black</item>
+        <item name="colorSurfaceContainerHigh">@color/kako_black</item>
+        <item name="colorSurfaceContainerHighest">@color/kako_black</item>
+        <item name="colorSurfaceContainerLow">@color/kako_black</item>
+        <item name="colorSurfaceContainerLowest">@color/kako_black</item>
+
+        <!-- Fenix design system attributes -->
+        <item name="layer2">@color/kako_black</item>
+        <item name="layer3">@color/kako_black</item>
+        <item name="actionPrimary">@color/kako_yellow</item>
+        <item name="textPrimary">@color/kako_yellow</item>
+        <item name="textSecondary">@color/kako_yellow_secondary</item>
+        <item name="textDisabled">@color/kako_yellow_disabled</item>
+        <item name="textAccent">@color/kako_yellow</item>
+        <item name="textOnColorPrimary">@color/kako_black</item>
+        <item name="textActionPrimary">@color/kako_black</item>
+        <item name="iconOnColor">@color/kako_black</item>
+    </style>
+</resources>
