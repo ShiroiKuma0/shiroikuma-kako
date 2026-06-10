@@ -8,6 +8,8 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import mozilla.components.compose.base.theme.AcornColors
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.base.theme.AcornTypography
@@ -19,6 +21,7 @@ import mozilla.components.compose.base.theme.layout.AcornLayout
 import mozilla.components.compose.base.theme.layout.AcornWindowSize
 import mozilla.components.compose.base.theme.lightColorPalette
 import mozilla.components.compose.base.theme.privateColorPalette
+import org.mozilla.fenix.kako.KakoTheme
 
 /**
  * The theme for Mozilla Firefox for Android (Fenix).
@@ -31,16 +34,30 @@ fun FirefoxTheme(
     theme: Theme = getThemeProvider().provideTheme(),
     content: @Composable () -> Unit,
 ) {
-    val colors: AcornColors = when (theme) {
-        Theme.Light -> lightColorPalette
-        Theme.Dark -> darkColorPalette
-        Theme.Private -> privateColorPalette
+    // Fork: when the 白い熊 火狐 UI theme is on, both palettes come dynamically from
+    // the KakoTheme slots; reading `revision` makes every change restyle live.
+    val kakoRevision = KakoTheme.revision.intValue
+    val context = LocalContext.current
+    val kakoActive = remember(kakoRevision) { KakoTheme.isEnabled(context) }
+
+    val colors: AcornColors = if (kakoActive) {
+        remember(kakoRevision) { KakoTheme.acornColors(context) }
+    } else {
+        when (theme) {
+            Theme.Light -> lightColorPalette
+            Theme.Dark -> darkColorPalette
+            Theme.Private -> privateColorPalette
+        }
     }
 
-    val colorScheme: ColorScheme = when (theme) {
-        Theme.Light -> acornLightColorScheme()
-        Theme.Dark -> acornDarkColorScheme()
-        Theme.Private -> acornPrivateColorScheme()
+    val colorScheme: ColorScheme = if (kakoActive) {
+        remember(kakoRevision) { KakoTheme.materialColorScheme(context) }
+    } else {
+        when (theme) {
+            Theme.Light -> acornLightColorScheme()
+            Theme.Dark -> acornDarkColorScheme()
+            Theme.Private -> acornPrivateColorScheme()
+        }
     }
 
     val tabGroupColors: TabGroupColorPalette = when (theme) {
