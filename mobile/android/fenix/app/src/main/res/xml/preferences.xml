@@ -13,6 +13,12 @@
         android:title="@string/preferences_sign_in"
         app:allowDividerBelow="false" />
 
+    <!-- Fork: the 白い熊 火狐 UI theming page, pinned to the top like the sister repos. -->
+    <androidx.preference.Preference
+        app:iconSpaceReserved="false"
+        android:key="@string/pref_key_kako_ui"
+        android:title="@string/preferences_kako_ui" />
+
     <androidx.preference.PreferenceCategory
         android:key="@string/pref_key_account_category"
         android:title="@string/preferences_category_account"
