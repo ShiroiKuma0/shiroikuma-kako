@@ -68,6 +68,12 @@ FULLVER=$(tools/kako/bump-build.sh)       # bumps customBuildNumber, prints e.g.
 
 ./mach gradle fenix:assembleRelease       # Fenix release APK (task name confirmed)
 
+# Iterating on Kotlin/Java/resources at the SAME upstream revision: skip
+# `./mach build` and run only the gradle task above — android-components and
+# Fenix compile from source inside it (confirmed on build 151.0.4+2, ~6 min
+# warm). `./mach build` is needed again after an upstream rebase (new GeckoView
+# artifacts) or mozconfig change.
+
 # Fixed output path (confirmed — there is no '*unsigned*' variant: Gradle
 # debug-signs local release builds, and apksigner below replaces that signature).
 APK=objdir-kako/gradle/build/mobile/android/fenix/app/outputs/apk/release/fenix-arm64-v8a-release.apk
