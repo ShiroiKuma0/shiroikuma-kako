@@ -45,6 +45,7 @@ import mozilla.components.compose.base.badge.BadgedIcon
 import mozilla.components.compose.base.theme.information
 import mozilla.components.compose.base.theme.surfaceDimVariant
 import org.mozilla.fenix.R
+import org.mozilla.fenix.kako.kakoMenuCardBorder
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
 
@@ -92,6 +93,7 @@ fun LibraryMenuItem(
             },
         color = MaterialTheme.colorScheme.surfaceDimVariant,
         shape = shape,
+        border = kakoMenuCardBorder(),
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,

@@ -36,6 +36,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.MenuDialogTestTag.RECOMMENDED_ADDON_ITEM
 import org.mozilla.fenix.components.menu.MenuDialogTestTag.RECOMMENDED_ADDON_ITEM_TITLE
 import org.mozilla.fenix.compose.list.FaviconListItem
+import org.mozilla.fenix.kako.kakoMenuCard
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
 
@@ -76,10 +77,7 @@ internal fun AddonMenuItem(
             url = addon.iconUrl,
             modifier = Modifier
                 .testTag(RECOMMENDED_ADDON_ITEM)
-                .clip(shape = RoundedCornerShape(4.dp))
-                .background(
-                    color = MaterialTheme.colorScheme.surfaceDimVariant,
-                )
+                .kakoMenuCard(shape = RoundedCornerShape(4.dp))
                 .semantics {
                     role = Role.Button
                     collectionItemInfo =
