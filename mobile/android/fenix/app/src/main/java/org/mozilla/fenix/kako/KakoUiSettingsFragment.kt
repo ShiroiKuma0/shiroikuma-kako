@@ -348,6 +348,7 @@ class KakoUiSettingsFragment : Fragment() {
             setTextColor(KakoTheme.color(context, KakoSlot.TEXT_SECONDARY))
             textSize = ITEM_TEXT_SIZE_SP
         }
+        // The slider works in half-dp steps (0.5dp minimum visible thickness).
         holder.addView(
             LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
@@ -369,18 +370,22 @@ class KakoUiSettingsFragment : Fragment() {
                 )
                 addView(
                     SeekBar(context).apply {
-                        max = DIMEN_MAX_DP
-                        progress = KakoTheme.dimenDp(context, dimen)
+                        max = DIMEN_MAX_DP * 2
+                        progress = KakoTheme.dimenHalfUnits(context, dimen)
                         setOnSeekBarChangeListener(
                             object : SeekBar.OnSeekBarChangeListener {
                                 override fun onProgressChanged(bar: SeekBar?, value: Int, fromUser: Boolean) {
-                                    valueView.text = getString(R.string.kako_dimen_value, value)
+                                    valueView.text = getString(R.string.kako_dimen_value, value / 2f)
                                 }
 
                                 override fun onStartTrackingTouch(bar: SeekBar?) = Unit
 
                                 override fun onStopTrackingTouch(bar: SeekBar?) {
-                                    KakoTheme.setDimenDp(context, dimen, bar?.progress ?: dimen.defaultDp)
+                                    KakoTheme.setDimenHalfUnits(
+                                        context,
+                                        dimen,
+                                        bar?.progress ?: (dimen.defaultDp * 2),
+                                    )
                                 }
                             },
                         )
