@@ -55,6 +55,7 @@ internal fun ActionButton(
     contentDescription: String,
     state: State = State.DEFAULT,
     highlighted: Boolean = false,
+    shouldTint: Boolean = true,
     onClick: BrowserToolbarInteraction? = null,
     onLongClick: BrowserToolbarInteraction? = null,
     onInteraction: (BrowserToolbarEvent) -> Unit,
@@ -65,11 +66,16 @@ internal fun ActionButton(
     }
     var currentMenuState by remember { mutableStateOf(None) }
     val colors = MaterialTheme.colorScheme
-    val tint = remember(state, colors) {
-        when (state) {
-            State.ACTIVE -> colors.tertiary
-            State.DISABLED -> colors.onSurface.copy(alpha = 0.38f)
-            State.DEFAULT -> colors.onSurface
+    val tint = remember(state, colors, shouldTint) {
+        when {
+            // Fork: multicolor icons (e.g. extension browser actions) must not be
+            // flooded by the theme tint — Compose's Icon skips Color.Unspecified.
+            !shouldTint -> Color.Unspecified
+            else -> when (state) {
+                State.ACTIVE -> colors.tertiary
+                State.DISABLED -> colors.onSurface.copy(alpha = 0.38f)
+                State.DEFAULT -> colors.onSurface
+            }
         }
     }
 
