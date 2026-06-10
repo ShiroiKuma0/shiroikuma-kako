@@ -207,6 +207,15 @@ class Settings(
     )
 
     /**
+     * Fork: comma-separated ids of extensions whose browser action is pinned to the
+     * toolbar, in pin order. Managed from the installed-extension details screen.
+     */
+    var toolbarPinnedExtensions: String by stringPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_kako_toolbar_extensions),
+        default = "",
+    )
+
+    /**
      * Indicates what simple toolbar shortcut key is currently selected.
      */
     var toolbarSimpleShortcutKey: String by stringPreference(

@@ -46,6 +46,9 @@
     <string name="kako_font_weight_700" translatable="false">Bold (700)</string>
     <string name="kako_font_weight_900" translatable="false">Black (900)</string>
 
+    <string name="kako_addon_add_to_toolbar" translatable="false">ツールバーに追加</string>
+    <string name="kako_addon_remove_from_toolbar" translatable="false">ツールバーから削除</string>
+
     <string name="kako_color_inherit" translatable="false">解除（継承に戻す）</string>
     <string name="kako_reset" translatable="false">既定値に戻す</string>
     <string name="kako_reset_message" translatable="false">全ての設定を既定の黒黄に戻しますか？</string>

@@ -5,8 +5,10 @@
 package org.mozilla.fenix.components.toolbar
 
 import android.content.Context
+import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import androidx.annotation.VisibleForTesting
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.navigation.NavController
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -158,6 +160,9 @@ internal sealed class DisplayActions(override val source: Source) : BrowserToolb
     data class ShareClicked(override val source: Source) : DisplayActions(source)
     data class TranslateClicked(override val source: Source) : DisplayActions(source)
     data class HomepageClicked(override val source: Source) : DisplayActions(source)
+
+    // Fork: a pinned extension's toolbar button was tapped.
+    data class ExtensionActionClicked(val extensionId: String) : DisplayActions(Source.AddressBar.BrowserEnd)
 }
 
 @VisibleForTesting
@@ -626,6 +631,20 @@ class BrowserToolbarMiddleware(
                 next(action)
             }
 
+            // Fork: invoke the extension's browser action exactly like the menu entry
+            // does — the engine then fires the extension's click event or opens its
+            // popup (surfaced by WebExtensionPopupObserver as on desktop).
+            is DisplayActions.ExtensionActionClicked -> {
+                val state = browserStore.state
+                val global = state.extensions[action.extensionId]?.browserAction
+                val tabOverride = state.selectedTab?.extensionState?.get(action.extensionId)?.browserAction
+                val effective = tabOverride?.let { override ->
+                    global?.copyWithOverride(override) ?: override
+                } ?: global
+                effective?.onClick?.invoke()
+                next(action)
+            }
+
             else -> next(action)
         }
     }
@@ -802,9 +821,61 @@ class BrowserToolbarMiddleware(
             },
         )
 
-        return configs.mapNotNull { config ->
+        val actions = configs.mapNotNull { config ->
             config.takeIf { it.isVisible() }?.let { buildAction(it.action, Source.AddressBar.BrowserEnd) }
+        }.toMutableList()
+
+        // Fork: pinned extension buttons sit immediately right of the toolbar shortcut.
+        if (!shouldUseExpandedToolbar || !isTallWindow || isWideWindow) {
+            val insertAt = if (primarySlotAction != null) minOf(1, actions.size) else 0
+            actions.addAll(insertAt, buildPinnedExtensionActions())
         }
+
+        return actions
+    }
+
+    /**
+     * Fork: one toolbar button per pinned extension (Settings of the extension →
+     * ツールバーに追加), carrying the extension's own browser-action icon and invoking
+     * the action like desktop Firefox.
+     */
+    private suspend fun buildPinnedExtensionActions(): List<Action> {
+        val pinnedIds = settings.toolbarPinnedExtensions.split(",").filter { it.isNotEmpty() }
+        if (pinnedIds.isEmpty()) return emptyList()
+
+        val state = browserStore.state
+        val selectedTab = state.selectedTab
+        val iconSize = (EXTENSION_ICON_SIZE_DP * uiContext.resources.displayMetrics.density).toInt()
+
+        return pinnedIds.mapNotNull { extensionId ->
+            val extension = state.extensions[extensionId] ?: return@mapNotNull null
+            if (!extension.enabled) return@mapNotNull null
+            if (selectedTab?.content?.private == true && !extension.allowedInPrivateBrowsing) {
+                return@mapNotNull null
+            }
+            val global = extension.browserAction
+            val tabOverride = selectedTab?.extensionState?.get(extensionId)?.browserAction
+            val extensionAction = tabOverride?.let { override ->
+                global?.copyWithOverride(override) ?: override
+            } ?: global ?: return@mapNotNull null
+
+            val icon = runCatching { extensionAction.loadIcon?.invoke(iconSize) }.getOrNull()
+            val contentDescription = extensionAction.title?.takeUnless { it.isBlank() }
+                ?: extension.name
+                ?: extensionId
+
+            ActionButton(
+                drawable = icon?.let { BitmapDrawable(uiContext.resources, it) }
+                    ?: AppCompatResources.getDrawable(uiContext, iconsR.drawable.mozac_ic_extension_24),
+                shouldTint = icon == null,
+                contentDescription = contentDescription,
+                onClick = DisplayActions.ExtensionActionClicked(extensionId),
+            )
+        }
+    }
+
+    private companion object {
+        const val EXTENSION_ICON_SIZE_DP = 24
     }
 
     /**
