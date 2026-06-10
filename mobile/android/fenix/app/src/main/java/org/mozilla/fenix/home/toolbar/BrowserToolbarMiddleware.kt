@@ -67,6 +67,7 @@ import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.home.HomeFragmentDirections
 import org.mozilla.fenix.home.toolbar.DisplayActions.FakeClicked
 import org.mozilla.fenix.home.toolbar.DisplayActions.MenuClicked
+import org.mozilla.fenix.home.toolbar.DisplayActions.MenuLongClicked
 import org.mozilla.fenix.home.toolbar.PageOriginInteractions.OriginClicked
 import org.mozilla.fenix.home.toolbar.TabCounterInteractions.AddNewPrivateTab
 import org.mozilla.fenix.home.toolbar.TabCounterInteractions.AddNewTab
@@ -84,6 +85,7 @@ import mozilla.components.ui.tabcounter.R as tabcounterR
 @VisibleForTesting
 internal sealed class DisplayActions : BrowserToolbarEvent {
     data class MenuClicked(override val source: Source) : DisplayActions()
+    data class MenuLongClicked(override val source: Source) : DisplayActions()
     data object FakeClicked : DisplayActions()
 }
 
@@ -172,6 +174,15 @@ class BrowserToolbarMiddleware(
                     ),
                 )
                 removeMenuButtonHighlight()
+                next(action)
+            }
+
+            // Fork: long-pressing the menu button jumps straight to the 白い熊 火狐 UI page.
+            is MenuLongClicked -> {
+                navController.nav(
+                    R.id.homeFragment,
+                    NavGraphDirections.actionGlobalKakoUiSettingsFragment(),
+                )
                 next(action)
             }
 
@@ -499,6 +510,7 @@ class BrowserToolbarMiddleware(
                 contentDescription = R.string.content_description_menu,
                 highlighted = highlighted,
                 onClick = MenuClicked(source),
+                onLongClick = MenuLongClicked(source),
             )
         }
 
