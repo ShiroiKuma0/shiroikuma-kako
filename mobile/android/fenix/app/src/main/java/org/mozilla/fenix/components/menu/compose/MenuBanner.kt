@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.IconButton
 import org.mozilla.fenix.R
+import org.mozilla.fenix.kako.kakoMenuCardBorder
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
@@ -65,6 +66,7 @@ fun MenuBanner(
             .clickable(onClick = onClick),
         shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.surfaceBright,
+        border = kakoMenuCardBorder(),
     ) {
         Box {
             Row {

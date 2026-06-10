@@ -179,8 +179,10 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         super.onCreate()
         initializeFenixProcess()
         if (isMainProcess()) {
-            // Fork: install the 白い熊 火狐 UI font/typography override before any UI exists.
+            // Fork: install the 白い熊 火狐 UI font/typography and chrome overrides
+            // before any UI exists.
             org.mozilla.fenix.kako.KakoFonts.refresh(this)
+            org.mozilla.fenix.kako.KakoTheme.refreshChromeOverrides(this)
         }
     }
 
