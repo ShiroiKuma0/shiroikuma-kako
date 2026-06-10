@@ -3,14 +3,20 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Fork: MaterialCardView so the install-progress overlay follows the kako
+     palette — themed background instead of CardView's floating grey, traced
+     accent outline. -->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/overlay_card_view"
     android:accessibilityLiveRegion="polite"
     android:importantForAccessibility="yes"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:elevation="1dp">
+    android:elevation="1dp"
+    app:cardBackgroundColor="?attr/layer2"
+    app:strokeColor="?attr/colorTertiary"
+    app:strokeWidth="1dp">
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -45,4 +51,4 @@
 
     </RelativeLayout>
 
-</androidx.cardview.widget.CardView>
+</com.google.android.material.card.MaterialCardView>

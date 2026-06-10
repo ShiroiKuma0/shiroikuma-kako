@@ -19,6 +19,7 @@ import mozilla.components.compose.menu.data.MenuItemSummary
 import mozilla.components.compose.menu.ui.MenuBanner
 import mozilla.components.compose.menu.ui.MenuItemIconRes
 import org.mozilla.fenix.R
+import org.mozilla.fenix.kako.kakoMenuCardBorder
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
@@ -47,6 +48,7 @@ fun MenuBanner(
         onDismiss = onDismiss,
         onClick = onClick,
         modifier = modifier,
+        border = kakoMenuCardBorder(),
     )
 }
 

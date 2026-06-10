@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.components.menu.compose
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,7 +20,6 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -39,6 +37,7 @@ import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.store.IPProtectionMenuState
 import org.mozilla.fenix.compose.list.IconListItem
+import org.mozilla.fenix.kako.kakoMenuCard
 import org.mozilla.fenix.theme.FirefoxTheme
 
 private val MENU_ITEM_MIN_HEIGHT = 52.dp
@@ -71,8 +70,7 @@ internal fun IPProtectionMenuItem(
         label = stringResource(R.string.ip_protection_toggle_label),
         modifier =
             Modifier.wrapContentSize()
-                .clip(MaterialTheme.shapes.extraSmall)
-                .background(MaterialTheme.colorScheme.surfaceBright)
+                .kakoMenuCard(shape = MaterialTheme.shapes.extraSmall)
                 .debouncedClickable(role = role) { onToggle() }
                 .semantics {
                     stateDescription = statusDescription

@@ -33,6 +33,8 @@
         <!-- Material 3 -->
         <item name="colorPrimary">@color/kako_yellow</item>
         <item name="colorOnPrimary">@color/kako_black</item>
+        <!-- Filled buttons: black fill, yellow text, traced yellow outline. -->
+        <item name="materialButtonStyle">@style/KakoButton</item>
         <item name="colorPrimaryContainer">@color/kako_yellow_faint</item>
         <item name="colorOnPrimaryContainer">@color/kako_yellow</item>
         <item name="colorSecondary">@color/kako_yellow_secondary</item>
@@ -67,7 +69,17 @@
         <item name="textDisabled">@color/kako_yellow_disabled</item>
         <item name="textAccent">@color/kako_yellow</item>
         <item name="textOnColorPrimary">@color/kako_black</item>
-        <item name="textActionPrimary">@color/kako_black</item>
+        <item name="textActionPrimary">@color/kako_yellow</item>
         <item name="iconOnColor">@color/kako_black</item>
+    </style>
+
+    <!-- Filled XML buttons under the kako theme: black fill, yellow text/border. -->
+    <style name="KakoButton" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/kako_black</item>
+        <item name="strokeColor">@color/kako_yellow</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="android:textColor">@color/kako_yellow</item>
+        <item name="iconTint">@color/kako_yellow</item>
+        <item name="rippleColor">@color/kako_yellow_faint</item>
     </style>
 </resources>

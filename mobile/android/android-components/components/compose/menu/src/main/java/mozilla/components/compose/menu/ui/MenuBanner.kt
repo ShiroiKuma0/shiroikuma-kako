@@ -4,6 +4,7 @@
 
 package mozilla.components.compose.menu.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -47,6 +48,7 @@ import mozilla.components.ui.icons.R as iconsR
  * @param onClick Invoked when the user taps anywhere else on the banner.
  * @param onDismiss Invoked when the user taps the dismiss icon (“X”).
  * @param modifier [Modifier] to be applied to the layout.
+ * @param border Optional outline drawn around the banner.
  */
 @Composable
 fun MenuBanner(
@@ -56,6 +58,7 @@ fun MenuBanner(
     onClick: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    border: BorderStroke? = null,
 ) {
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
 
@@ -63,6 +66,7 @@ fun MenuBanner(
         modifier = modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.surfaceBright,
+        border = border,
     ) {
         Box {
             Row {
