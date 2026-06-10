@@ -104,11 +104,25 @@
                 app:drawableStartCompat="@drawable/mozac_ic_permissions_24"
                 app:drawableTint="?attr/colorOnSurface" />
 
+            <!-- Fork: pin/unpin this extension's browser action to the toolbar. -->
+            <TextView
+                android:id="@+id/add_to_toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/permissions"
+                android:background="?android:attr/selectableItemBackground"
+                android:drawablePadding="32dp"
+                android:padding="16dp"
+                android:text="@string/kako_addon_add_to_toolbar"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="16sp"
+                app:drawableStartCompat="@drawable/mozac_ic_extension_24" />
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/remove_add_on"
                 style="@style/DestructiveButton"
                 android:layout_marginHorizontal="16dp"
-                android:layout_below="@id/permissions"
+                android:layout_below="@id/add_to_toolbar"
                 android:text="@string/mozac_feature_addons_remove" />
 
             <com.google.android.material.button.MaterialButton
