@@ -52,6 +52,7 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchEnded
 import org.mozilla.fenix.components.toolbar.ToolbarPosition.BOTTOM
 import org.mozilla.fenix.components.toolbar.ToolbarPosition.TOP
+import org.mozilla.fenix.kako.KakoToolbarEdge
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.Settings
 
@@ -154,6 +155,7 @@ class BrowserToolbarComposable(
                             .wrapContentHeight(),
                     ) {
                         tabStripContent()
+                        KakoToolbarEdge()
                         BrowserToolbar(
                             store = toolbarStore,
                             cfr = toolbarCFR,
@@ -174,6 +176,7 @@ class BrowserToolbarComposable(
                             if (customTabSession == null) {
                                 searchSuggestionsContent(Modifier.weight(1f))
                             }
+                            KakoToolbarEdge()
                             BrowserToolbar(
                                 store = toolbarStore,
                                 cfr = toolbarCFR,
@@ -182,6 +185,7 @@ class BrowserToolbarComposable(
                             )
                             navigationBarContent?.invoke()
                         } else {
+                            KakoToolbarEdge()
                             BrowserToolbar(
                                 store = toolbarStore,
                                 cfr = toolbarCFR,
