@@ -90,6 +90,9 @@ class KakoUiSettingsFragment : Fragment() {
                 addFontRows(indent = 2)
             } else {
                 slots.forEach { addColorRow(it, indent = 1) }
+                if (section == KakoSection.TOOLBAR) {
+                    addExtensionIconSizeRow(indent = 1)
+                }
             }
         }
 
@@ -337,6 +340,61 @@ class KakoUiSettingsFragment : Fragment() {
         )
     }
 
+    private fun addExtensionIconSizeRow(indent: Int) {
+        val context = requireContext()
+        val valueView = TextView(context).apply {
+            text = getString(R.string.kako_extension_icon_size_value, KakoTheme.extensionIconSizeDp(context))
+            setTextColor(KakoTheme.color(context, KakoSlot.TEXT_SECONDARY))
+            textSize = ITEM_TEXT_SIZE_SP
+        }
+        holder.addView(
+            LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                setPaddingRelative(indentPx(indent), dp(4), dp(BASE_MARGIN_DP), dp(4))
+                addView(
+                    LinearLayout(context).apply {
+                        orientation = LinearLayout.HORIZONTAL
+                        gravity = Gravity.CENTER_VERTICAL
+                        addView(
+                            TextView(context).apply {
+                                text = getString(R.string.kako_extension_icon_size_row)
+                                setTextColor(KakoTheme.color(context, KakoSlot.TEXT))
+                                textSize = ITEM_TEXT_SIZE_SP
+                            },
+                            LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f),
+                        )
+                        addView(valueView)
+                    },
+                )
+                addView(
+                    SeekBar(context).apply {
+                        max = EXTENSION_ICON_MAX_DP - EXTENSION_ICON_MIN_DP
+                        progress = KakoTheme.extensionIconSizeDp(context) - EXTENSION_ICON_MIN_DP
+                        setOnSeekBarChangeListener(
+                            object : SeekBar.OnSeekBarChangeListener {
+                                override fun onProgressChanged(bar: SeekBar?, value: Int, fromUser: Boolean) {
+                                    valueView.text = getString(
+                                        R.string.kako_extension_icon_size_value,
+                                        value + EXTENSION_ICON_MIN_DP,
+                                    )
+                                }
+
+                                override fun onStartTrackingTouch(bar: SeekBar?) = Unit
+
+                                override fun onStopTrackingTouch(bar: SeekBar?) {
+                                    KakoTheme.setExtensionIconSizeDp(
+                                        context,
+                                        (bar?.progress ?: 0) + EXTENSION_ICON_MIN_DP,
+                                    )
+                                }
+                            },
+                        )
+                    },
+                )
+            },
+        )
+    }
+
     private fun addFontSample(indent: Int) {
         val context = requireContext()
         holder.addView(
@@ -405,5 +463,7 @@ class KakoUiSettingsFragment : Fragment() {
         const val SAMPLE_TEXT_SIZE_SP = 18f
         const val FONT_SCALE_MIN = 70
         const val FONT_SCALE_MAX = 160
+        const val EXTENSION_ICON_MIN_DP = 16
+        const val EXTENSION_ICON_MAX_DP = 48
     }
 }

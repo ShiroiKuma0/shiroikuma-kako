@@ -99,6 +99,7 @@ private fun ActionButtonItem(
             icon = it,
             contentDescription = action.contentDescription,
             state = action.state,
+            shouldTint = action.shouldTint,
             onClick = action.onClick,
             highlighted = action.highlighted,
             onLongClick = action.onLongClick,
