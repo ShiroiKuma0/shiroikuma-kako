@@ -14,6 +14,7 @@
     <string name="kako_section_toolbar" translatable="false">検索バー・ツールバー</string>
     <string name="kako_section_menu" translatable="false">メニュー・カード</string>
     <string name="kako_section_tabs" translatable="false">タブ</string>
+    <string name="kako_section_buttons" translatable="false">ボタン</string>
 
     <string name="kako_subgroup_colors" translatable="false">色</string>
     <string name="kako_subgroup_font" translatable="false">文字とフォント</string>
@@ -24,10 +25,26 @@
     <string name="kako_slot_accent" translatable="false">アクセント</string>
     <string name="kako_slot_border" translatable="false">枠線・区切り線</string>
     <string name="kako_slot_text_on_accent" translatable="false">アクセント上の文字</string>
-    <string name="kako_slot_toolbar_fill" translatable="false">検索バーの背景</string>
+    <string name="kako_slot_toolbar_fill" translatable="false">アドレスバーの背景</string>
+    <string name="kako_slot_addressbar_border" translatable="false">アドレスバーの枠線</string>
+    <string name="kako_slot_toolbar_top_border" translatable="false">ツールバー上端の境界線</string>
     <string name="kako_slot_menu_background" translatable="false">メニュー・カードの背景</string>
-    <string name="kako_slot_tab_selected" translatable="false">選択中のタブ</string>
-    <string name="kako_slot_tab_unselected" translatable="false">非選択のタブ</string>
+    <string name="kako_slot_menu_border" translatable="false">メニュー・カードの枠線</string>
+    <string name="kako_slot_tab_selected" translatable="false">選択中のタブの背景</string>
+    <string name="kako_slot_tab_unselected" translatable="false">非選択のタブの背景</string>
+    <string name="kako_slot_tab_border" translatable="false">タブの枠線</string>
+    <string name="kako_slot_tab_active_border" translatable="false">選択中のタブの枠線</string>
+    <string name="kako_slot_button_background" translatable="false">ボタンの背景</string>
+    <string name="kako_slot_button_text" translatable="false">ボタンの文字</string>
+    <string name="kako_slot_button_border" translatable="false">ボタンの枠線</string>
+
+    <string name="kako_dimen_addressbar_border" translatable="false">アドレスバー枠線の太さ</string>
+    <string name="kako_dimen_toolbar_top_border" translatable="false">上端境界線の太さ</string>
+    <string name="kako_dimen_menu_border" translatable="false">メニュー・カード枠線の太さ</string>
+    <string name="kako_dimen_tab_border" translatable="false">タブ枠線の太さ</string>
+    <string name="kako_dimen_tab_active_border" translatable="false">選択中のタブ枠線の太さ</string>
+    <string name="kako_dimen_button_border" translatable="false">ボタン枠線の太さ</string>
+    <string name="kako_dimen_value" translatable="false">%1$ddp</string>
 
     <string name="kako_font_row" translatable="false">フォント</string>
     <string name="kako_font_weight_row" translatable="false">太さ</string>

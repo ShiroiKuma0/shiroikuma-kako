@@ -59,6 +59,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.MenuDialogTestTag.WEB_EXTENSION_ITEM
 import org.mozilla.fenix.compose.list.IconListItem
 import org.mozilla.fenix.compose.list.TextListItem
+import org.mozilla.fenix.kako.kakoMenuCard
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.DURATION_MS_MAIN_MENU_ITEM
 
@@ -148,8 +149,7 @@ internal fun MenuItem(
                     }
                 }
                 .wrapContentSize()
-                .clip(shape = MaterialTheme.shapes.extraSmall)
-                .background(color = MaterialTheme.colorScheme.surfaceBright),
+                .kakoMenuCard(shape = MaterialTheme.shapes.extraSmall),
         labelModifier = labelModifier,
         colors =
             ListItemDefaults.colors(
@@ -212,8 +212,7 @@ internal fun MenuTextItem(
             },
         modifier =
             modifier
-                .clip(shape = MaterialTheme.shapes.extraSmall)
-                .background(color = MaterialTheme.colorScheme.surfaceBright),
+                .kakoMenuCard(shape = MaterialTheme.shapes.extraSmall),
         iconPainter = iconPainter,
         onClick = onClick,
     )
@@ -263,8 +262,7 @@ internal fun WebExtensionMenuItem(
                     testTagsAsResourceId = true
                 }
                 .wrapContentSize()
-                .clip(shape = MaterialTheme.shapes.extraSmall)
-                .background(color = MaterialTheme.colorScheme.surfaceBright),
+                .kakoMenuCard(shape = MaterialTheme.shapes.extraSmall),
         afterListAction = {
             Row(
                 modifier = Modifier.padding(start = 16.dp),
@@ -327,8 +325,7 @@ internal fun MenuBadgeItem(
                 }
                 .thenConditional(Modifier.semantics { disabled() }) { !enabled }
                 .semantics { disabled() }
-                .clip(shape = MaterialTheme.shapes.extraSmall)
-                .background(color = MaterialTheme.colorScheme.surfaceBright)
+                .kakoMenuCard(shape = MaterialTheme.shapes.extraSmall)
                 .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically,
