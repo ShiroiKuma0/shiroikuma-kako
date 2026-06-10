@@ -73,6 +73,7 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.compose.Favicon
 import org.mozilla.fenix.compose.HorizontalFadingEdgeBox
+import org.mozilla.fenix.kako.kakoInactiveTabLines
 import org.mozilla.fenix.kako.kakoTabStripBorder
 import org.mozilla.fenix.compose.ext.isItemPartiallyVisible
 import org.mozilla.fenix.tabstray.browser.compose.ReorderableDragItemContainer
@@ -289,6 +290,13 @@ private fun TabsList(
                         onSelectedTabClick = onSelectedTabClick,
                         backgroundColors = tabItemBackgroundColors,
                         modifier = Modifier
+                            .kakoInactiveTabLines(
+                                isSelected = itemState.isSelected,
+                                closeStart = index == 0 || state.tabs[index - 1].isSelected,
+                                joinNext = index < state.tabs.lastIndex &&
+                                    !state.tabs[index + 1].isSelected,
+                                gap = spaceBetweenTabs,
+                            )
                             .padding(end = spaceBetweenTabs)
                             .animateItem()
                             .width(tabWidth)
@@ -357,15 +365,17 @@ private fun TabItem(
     TabStripCard(
         modifier = modifier.height(tabItemHeight),
         backgroundColor = backgroundColor,
-        border = if (state.isSelected) {
-            BorderStroke(
-                width = 1.dp,
-                brush = FirefoxTheme.gradients.tabOutline.brush,
-            )
-        } else {
-            null
-        },
-        border = kakoTabStripBorder(isSelected = state.isSelected),
+        // Fork: the kako traced outline replaces the stock gradient; fall back to
+        // upstream's selected-tab outline when the 白い熊 火狐 UI is disabled.
+        border = kakoTabStripBorder(isSelected = state.isSelected)
+            ?: if (state.isSelected) {
+                BorderStroke(
+                    width = 1.dp,
+                    brush = FirefoxTheme.gradients.tabOutline.brush,
+                )
+            } else {
+                null
+            },
     ) {
         Row(
             modifier = Modifier
