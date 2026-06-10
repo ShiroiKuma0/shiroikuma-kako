@@ -93,6 +93,7 @@ import mozilla.components.ui.tabcounter.R as tabcounterR
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.GleanMetrics.ReaderMode
+import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.GleanMetrics.Translations
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
@@ -195,6 +196,9 @@ internal sealed class DisplayActions(override val source: Source) : BrowserToolb
 
     // Fork: a pinned extension's toolbar button was tapped.
     data class ExtensionActionClicked(val extensionId: String) : DisplayActions(Source.AddressBar.BrowserEnd)
+
+    // Fork: long-pressing the menu button opens the 白い熊 火狐 UI page.
+    data class MenuLongClicked(override val source: Source) : DisplayActions(source)
 }
 
 @VisibleForTesting
@@ -693,6 +697,12 @@ class BrowserToolbarMiddleware(
                     ),
                 )
 
+                next(action)
+            }
+
+            // Fork: long-press on the menu button jumps to the 白い熊 火狐 UI page.
+            is DisplayActions.MenuLongClicked -> {
+                navController.navigate(NavGraphDirections.actionGlobalKakoUiSettingsFragment())
                 next(action)
             }
 
@@ -1335,6 +1345,7 @@ class BrowserToolbarMiddleware(
                     highlighted =
                         appStore.state.supportedMenuNotifications.filterNot { it == NotDefaultBrowser }.isNotEmpty(),
                     onClick = MenuClicked(source),
+                    onLongClick = DisplayActions.MenuLongClicked(source),
                 )
 
             ToolbarAction.ReaderMode ->
