@@ -47,6 +47,7 @@ import mozilla.components.service.fxa.manager.AccountState.Unknown
 import mozilla.components.service.fxa.store.Account
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.Image
+import org.mozilla.fenix.kako.kakoMenuCard
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
@@ -101,8 +102,7 @@ internal fun MozillaAccountMenuItem(
                 this.contentDescription = contentDescription
             }
             .wrapContentSize()
-            .clip(MaterialTheme.shapes.extraSmall)
-            .background(color = MaterialTheme.colorScheme.surfaceBright)
+            .kakoMenuCard(shape = MaterialTheme.shapes.extraSmall)
             .height(IntrinsicSize.Min)
             .defaultMinSize(minHeight = BUTTON_HEIGHT)
             .clickable { onClick() }
