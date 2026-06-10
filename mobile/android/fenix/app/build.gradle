@@ -285,6 +285,11 @@ androidComponents {
             def versionName = buildType == 'nightly' ?
                     "${Config.nightlyVersionName(project)}" :
                     "${Config.releaseVersionName(project)}"
+            // Fork: report the kako version (e.g. 151.0.4+7) to the package manager instead
+            // of upstream's channel-suffixed string; both keys live in root gradle.properties.
+            if (project.hasProperty("customBaseVersionName") && project.hasProperty("customBuildNumber")) {
+                versionName = "${project.property('customBaseVersionName')}+${project.property('customBuildNumber')}"
+            }
             project.logger.debug("versionName override: $versionName")
 
             variant.outputs.each { output ->
