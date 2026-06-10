@@ -51,12 +51,14 @@ APK name embeds both. When `upstream-new-version` adopts a new tag, update
 
 ## Build pipeline (artifact mode — Kotlin/Java only compiles locally)
 
-> First-build note: task names/output paths below were planned before the
-> first build; if a step disagrees with reality, fix the step HERE after
-> confirming, so the skill converges on the truth.
+> Verified on the first build (151.0.4+1, 2026-06-10). Timings from that run:
+> `./mach build` ≈ 5 min, `fenix:assembleRelease` ≈ 13 min.
 
 ```bash
-# from repo root
+# from repo root.
+# ./mach build and ./mach gradle write to ~/.mozbuild and ~/.gradle, which the
+# Bash sandbox keeps read-only — run BOTH OUTSIDE the sandbox, or mach dies
+# with "OSError: [Errno 30] Read-only file system: ~/.mozbuild/...".
 export MOZBUILD_STATE_PATH=$HOME/.mozbuild
 export MOZCONFIG=$PWD/tools/kako/mozconfig
 
@@ -64,21 +66,30 @@ FULLVER=$(tools/kako/bump-build.sh)       # bumps customBuildNumber, prints e.g.
 
 ./mach build                              # fetches prebuilt GeckoView, builds local maven
 
-# Fenix release APK (confirm exact task on first build: `./mach gradle` lists them)
-./mach gradle fenix:assembleRelease
+./mach gradle fenix:assembleRelease       # Fenix release APK (task name confirmed)
 
-APK=$(find objdir-*/gradle/build/mobile/android/fenix -name '*release*unsigned*.apk' 2>/dev/null | head -1)
-# fall back: find mobile/android/fenix/app/build/outputs/apk -name '*.apk'
+# Fixed output path (confirmed — there is no '*unsigned*' variant: Gradle
+# debug-signs local release builds, and apksigner below replaces that signature).
+APK=objdir-kako/gradle/build/mobile/android/fenix/app/outputs/apk/release/fenix-arm64-v8a-release.apk
 
 OUT=~/tmp/shiroikuma-kako_${FULLVER}_arm64-v8a.apk
 
-zipalign -p -f 4 "$APK" /tmp/kako-aligned.apk
+zipalign -p -f 4 "$APK" "$TMPDIR/kako-aligned.apk"
 apksigner sign --ks ~/.android-keystores/kako-custom.jks \
     --ks-key-alias kako --ks-pass pass:kako123 --key-pass pass:kako123 \
-    --out /tmp/kako-signed.apk /tmp/kako-aligned.apk
-apksigner verify /tmp/kako-signed.apk
-cp /tmp/kako-signed.apk "$OUT"
+    --out "$TMPDIR/kako-signed.apk" "$TMPDIR/kako-aligned.apk"
+apksigner verify "$TMPDIR/kako-signed.apk"
+cp "$TMPDIR/kako-signed.apk" "$OUT"
 ls -la "$OUT"
+
+# Sanity check — expect shiroikuma.kako / 白い熊 火狐 / arm64-v8a:
+~/.mozbuild/android-sdk-linux/build-tools/36.1.0/aapt2 dump badging "$OUT" \
+    | grep -E "^package|application-label:|native-code"
+
+# Deploy (ONLY after 白い熊's explicit OK). adb must ALSO run outside the
+# Bash sandbox — a sandboxed adb daemon cannot see USB devices and reports
+# "no devices/emulators found" even with the phone connected and authorized.
+adb push "$OUT" /sdcard/Download/
 ```
 
 ## Standing rules
