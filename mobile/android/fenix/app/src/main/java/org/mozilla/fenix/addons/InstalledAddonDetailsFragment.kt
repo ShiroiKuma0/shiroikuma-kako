@@ -29,6 +29,7 @@ import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.android.content.appName
 import mozilla.components.support.ktx.android.content.appVersionName
 import org.mozilla.fenix.BuildConfig
+import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.FragmentInstalledAddOnDetailsBinding
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
@@ -157,6 +158,7 @@ class InstalledAddonDetailsFragment : Fragment(), SystemInsetsPaddedFragment {
         bindDetails()
         bindPermissions()
         bindAllowInPrivateBrowsingSwitch()
+        bindAddToToolbar()
         bindRemoveButton()
         bindReportButton()
         context?.let {
@@ -330,6 +332,41 @@ class InstalledAddonDetailsFragment : Fragment(), SystemInsetsPaddedFragment {
                     }
                 },
             )
+        }
+    }
+
+    // Fork: pin/unpin this extension's browser action to the toolbar (right of the
+    // toolbar shortcut). Only offered for extensions that expose a browser action.
+    private fun bindAddToToolbar() {
+        val components = context?.components ?: return
+        val hasBrowserAction =
+            components.core.store.state.extensions[addon.id]?.browserAction != null
+        binding.addToToolbar.isVisible = hasBrowserAction
+        if (!hasBrowserAction) return
+
+        fun pinnedIds() = components.settings.toolbarPinnedExtensions
+            .split(",")
+            .filter { it.isNotEmpty() }
+
+        fun refreshLabel() {
+            binding.addToToolbar.setText(
+                if (addon.id in pinnedIds()) {
+                    R.string.kako_addon_remove_from_toolbar
+                } else {
+                    R.string.kako_addon_add_to_toolbar
+                },
+            )
+        }
+
+        refreshLabel()
+        binding.addToToolbar.setOnClickListener {
+            val pinned = pinnedIds()
+            components.settings.toolbarPinnedExtensions = if (addon.id in pinned) {
+                (pinned - addon.id).joinToString(",")
+            } else {
+                (pinned + addon.id).joinToString(",")
+            }
+            refreshLabel()
         }
     }
 
