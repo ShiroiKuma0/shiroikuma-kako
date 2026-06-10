@@ -216,6 +216,16 @@ class Settings(
         )
 
     /**
+     * Fork: comma-separated ids of extensions whose browser action is pinned to the
+     * toolbar, in pin order. Managed from the installed-extension details screen.
+     */
+    var toolbarPinnedExtensions: String by
+        stringPreference(
+            key = appContext.getPreferenceKey(R.string.pref_key_kako_toolbar_extensions),
+            default = "",
+        )
+
+    /**
      * Indicates what shortcut key is currently selected for the simple toolbar while the tab strip is enabled. The tab
      * strip provides its own "new tab" button, so this uses a separate option set that excludes it.
      */
