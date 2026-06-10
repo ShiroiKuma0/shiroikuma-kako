@@ -203,12 +203,19 @@ object KakoTheme {
         KakoSlot.BUTTON_BORDER -> color(context, KakoSlot.BORDER)
     }
 
-    /** Border thickness in dp of [dimen]; 0 hides the border. */
-    fun dimenDp(context: Context, dimen: KakoDimen): Int =
-        prefs(context).getInt(dimen.key, dimen.defaultDp)
+    /**
+     * Border thicknesses are stored in half-dp units (0.5dp steps — Compose renders
+     * fractional dp fine). 0 hides the border.
+     */
+    fun dimenHalfUnits(context: Context, dimen: KakoDimen): Int =
+        prefs(context).getInt(dimen.key, dimen.defaultDp * 2)
 
-    fun setDimenDp(context: Context, dimen: KakoDimen, dp: Int) {
-        prefs(context).edit { putInt(dimen.key, dp) }
+    /** Border thickness of [dimen] in dp. */
+    fun dimenDp(context: Context, dimen: KakoDimen): Float =
+        dimenHalfUnits(context, dimen) / 2f
+
+    fun setDimenHalfUnits(context: Context, dimen: KakoDimen, halfUnits: Int) {
+        prefs(context).edit { putInt(dimen.key, halfUnits) }
         refreshChromeOverrides(context)
         bump()
     }
@@ -220,7 +227,7 @@ object KakoTheme {
     fun borderStroke(context: Context, slot: KakoSlot, dimen: KakoDimen): BorderStroke? {
         if (!isEnabled(context)) return null
         val width = dimenDp(context, dimen)
-        if (width <= 0) return null
+        if (width <= 0f) return null
         return BorderStroke(width.dp, Color(color(context, slot)))
     }
 
