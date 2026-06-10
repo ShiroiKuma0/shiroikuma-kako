@@ -28,6 +28,10 @@
         app:popUpToInclusive="false" />
 
     <action
+        android:id="@+id/action_global_kakoUiSettingsFragment"
+        app:destination="@id/kakoUiSettingsFragment" />
+
+    <action
         android:id="@+id/action_global_external_app_browser"
         app:destination="@id/externalAppBrowserFragment"
         app:popUpTo="@id/homeFragment"
@@ -1038,6 +1042,10 @@
             app:popEnterAnim="@anim/slide_in_left"
             app:popExitAnim="@anim/slide_out_right" />
     </fragment>
+    <fragment
+        android:id="@+id/kakoUiSettingsFragment"
+        android:name="org.mozilla.fenix.kako.KakoUiSettingsFragment"
+        android:label="@string/kako_ui_title" />
     <fragment
         android:id="@+id/secretSettingsPreference"
         android:name="org.mozilla.fenix.settings.SecretSettingsFragment"

@@ -178,6 +178,10 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
     override fun onCreate() {
         super.onCreate()
         initializeFenixProcess()
+        if (isMainProcess()) {
+            // Fork: install the 白い熊 火狐 UI font/typography override before any UI exists.
+            org.mozilla.fenix.kako.KakoFonts.refresh(this)
+        }
     }
 
     override fun attachBaseContext(base: Context) {

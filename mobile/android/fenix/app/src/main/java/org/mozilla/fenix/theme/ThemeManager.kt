@@ -25,6 +25,7 @@ import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.customtabs.ExternalAppBrowserActivity
+import org.mozilla.fenix.kako.KakoTheme
 import com.google.android.material.R as materialR
 
 abstract class ThemeManager {
@@ -79,6 +80,12 @@ abstract class ThemeManager {
 
     fun setActivityTheme(activity: Activity) {
         activity.setTheme(currentThemeResource)
+        // Fork: classic (XML) screens cannot read the dynamic KakoTheme slots, so they
+        // get the static seeded black/yellow overlay; Compose surfaces are themed
+        // dynamically in FirefoxTheme.
+        if (KakoTheme.isEnabled(activity)) {
+            activity.theme.applyStyle(R.style.KakoThemeOverlay, true)
+        }
     }
 
     companion object {
