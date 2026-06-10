@@ -111,7 +111,8 @@ object GeckoProvider {
             )
             .consoleOutput(context.components.settings.enableGeckoLogs)
             .debugLogging(Config.channel.isDebug || context.components.settings.enableGeckoLogs)
-            .aboutConfigEnabled(Config.channel.isBeta || Config.channel.isNightlyOrDebug)
+            // Fork: about:config available on every channel, including release.
+            .aboutConfigEnabled(true)
             .extensionsProcessEnabled(true)
             .extensionsWebAPIEnabled(true)
             .translationsOfferPopup(context.components.settings.offerTranslation)
