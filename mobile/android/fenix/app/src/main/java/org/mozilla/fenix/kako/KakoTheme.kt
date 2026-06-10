@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
 import mozilla.components.compose.base.theme.AcornColors
 import mozilla.components.compose.base.theme.AcornForkOverrides
-import mozilla.components.compose.base.theme.ForkButtonStyle
+import mozilla.components.compose.base.theme.ForkChromeStyle
 import mozilla.components.compose.base.theme.acornDarkColorScheme
 import mozilla.components.compose.base.theme.darkColorPalette
 import org.mozilla.fenix.R
@@ -240,14 +240,21 @@ object KakoTheme {
         if (!isEnabled(context)) {
             AcornForkOverrides.addressBarBorder = null
             AcornForkOverrides.buttonStyle = null
+            AcornForkOverrides.snackbarStyle = null
             return
         }
         AcornForkOverrides.addressBarBorder =
             borderStroke(context, KakoSlot.ADDRESSBAR_BORDER, KakoDimen.ADDRESSBAR_BORDER_WIDTH)
-        AcornForkOverrides.buttonStyle = ForkButtonStyle(
+        AcornForkOverrides.buttonStyle = ForkChromeStyle(
             containerColor = Color(color(context, KakoSlot.BUTTON_BACKGROUND)),
             contentColor = Color(color(context, KakoSlot.BUTTON_TEXT)),
             border = borderStroke(context, KakoSlot.BUTTON_BORDER, KakoDimen.BUTTON_BORDER_WIDTH),
+        )
+        // Snackbars and similar transient flashes follow the menu-card look.
+        AcornForkOverrides.snackbarStyle = ForkChromeStyle(
+            containerColor = Color(color(context, KakoSlot.MENU_BACKGROUND)),
+            contentColor = Color(color(context, KakoSlot.TEXT)),
+            border = borderStroke(context, KakoSlot.MENU_BORDER, KakoDimen.MENU_BORDER_WIDTH),
         )
     }
 
