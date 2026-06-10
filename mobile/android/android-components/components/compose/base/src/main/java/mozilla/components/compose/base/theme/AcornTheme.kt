@@ -89,13 +89,20 @@ private fun getAcornGradients(): AcornGradientScheme =
         lightAcornGradientScheme
     }
 
+/**
+ * Fork hook: when non-null, replaces [defaultTypography] everywhere [AcornTheme.typography]
+ * is read. Set by Fenix's 白い熊 火狐 UI page to apply an external font app-wide.
+ */
+@Volatile
+var acornTypographyOverride: AcornTypography? = null
+
 /** Provides access to the Acorn design system tokens. */
 object AcornTheme {
     val colors: AcornColors
         @Composable @ReadOnlyComposable get() = localAcornColors.current
 
     val typography: AcornTypography
-        get() = defaultTypography
+        get() = acornTypographyOverride ?: defaultTypography
 
     val layout: AcornLayout
         @Composable @ReadOnlyComposable get() = localLayout.current
