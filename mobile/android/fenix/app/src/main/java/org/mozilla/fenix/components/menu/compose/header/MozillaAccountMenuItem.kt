@@ -104,7 +104,7 @@ internal fun MozillaAccountMenuItem(
                 this.contentDescription = contentDescription
             }
             .wrapContentSize()
-            .kakoMenuCard(shape = BUTTON_SHAPE)
+            .kakoMenuCard(shape = BUTTON_SHAPE, traced = true)
             .height(IntrinsicSize.Min)
             .defaultMinSize(minHeight = BUTTON_HEIGHT)
             .clickable { onClick() }

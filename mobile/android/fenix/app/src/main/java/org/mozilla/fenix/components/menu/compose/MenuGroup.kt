@@ -18,6 +18,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.R
+import org.mozilla.fenix.kako.kakoMenuGroup
+import org.mozilla.fenix.kako.kakoMenuGroupSpacing
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
 
@@ -30,10 +32,12 @@ private val ROUNDED_CORNER_SHAPE = RoundedCornerShape(28.dp)
  */
 @Composable
 internal fun MenuGroup(content: @Composable () -> Unit) {
+    // Fork: the group carries one traced outline; the inter-item gaps reveal a
+    // border-colored backdrop so adjoining items share a single separator line.
     Column(
         modifier = Modifier
-            .clip(shape = ROUNDED_CORNER_SHAPE),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+            .kakoMenuGroup(shape = ROUNDED_CORNER_SHAPE),
+        verticalArrangement = Arrangement.spacedBy(kakoMenuGroupSpacing()),
     ) {
         content()
     }

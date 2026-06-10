@@ -44,7 +44,7 @@
     <string name="kako_dimen_tab_border" translatable="false">タブ枠線の太さ</string>
     <string name="kako_dimen_tab_active_border" translatable="false">選択中のタブ枠線の太さ</string>
     <string name="kako_dimen_button_border" translatable="false">ボタン枠線の太さ</string>
-    <string name="kako_dimen_value" translatable="false">%1$ddp</string>
+    <string name="kako_dimen_value" translatable="false">%1$.1fdp</string>
 
     <string name="kako_font_row" translatable="false">フォント</string>
     <string name="kako_font_weight_row" translatable="false">太さ</string>
