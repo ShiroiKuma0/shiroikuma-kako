@@ -18,6 +18,8 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
+import org.mozilla.fenix.kako.kakoMenuGroup
+import org.mozilla.fenix.kako.kakoMenuGroupSpacing
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
@@ -27,9 +29,12 @@ import org.mozilla.fenix.theme.FirefoxTheme
  */
 @Composable
 internal fun MenuGroup(content: @Composable () -> Unit) {
+    // Fork: the group carries one traced outline; the inter-item gaps reveal a
+    // border-colored backdrop so adjoining items share a single separator line.
     Column(
-        modifier = Modifier.clip(shape = MaterialTheme.shapes.extraLarge),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+        modifier = Modifier
+            .kakoMenuGroup(shape = MaterialTheme.shapes.extraLarge),
+        verticalArrangement = Arrangement.spacedBy(kakoMenuGroupSpacing()),
     ) {
         content()
     }
