@@ -20,13 +20,18 @@ object AcornForkOverrides {
 
     /** Replacement style for filled buttons app-wide. */
     @Volatile
-    var buttonStyle: ForkButtonStyle? = null
+    var buttonStyle: ForkChromeStyle? = null
+
+    /** Replacement style for snackbars and similar transient flashes. */
+    @Volatile
+    var snackbarStyle: ForkChromeStyle? = null
 }
 
 /**
- * Colors and outline applied to filled buttons when the fork theme is active.
+ * A fill color, content color and optional traced outline applied to a piece of
+ * chrome when the fork theme is active.
  */
-data class ForkButtonStyle(
+data class ForkChromeStyle(
     val containerColor: Color,
     val contentColor: Color,
     val border: BorderStroke?,
