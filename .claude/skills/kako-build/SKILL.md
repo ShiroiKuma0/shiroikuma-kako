@@ -89,7 +89,8 @@ ls -la "$OUT"
 # Deploy (ONLY after 白い熊's explicit OK). adb must ALSO run outside the
 # Bash sandbox — a sandboxed adb daemon cannot see USB devices and reports
 # "no devices/emulators found" even with the phone connected and authorized.
-adb push "$OUT" /sdcard/Download/
+# Always push to /sdcard/tmp (白い熊's chosen drop directory on the device).
+adb push "$OUT" /sdcard/tmp/
 ```
 
 ## Standing rules
