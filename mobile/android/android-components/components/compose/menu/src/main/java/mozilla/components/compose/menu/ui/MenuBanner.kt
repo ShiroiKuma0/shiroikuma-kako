@@ -4,6 +4,7 @@
 
 package mozilla.components.compose.menu.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -48,6 +49,7 @@ import mozilla.components.ui.icons.R as iconsR
  * @param onClick Invoked when the user taps anywhere else on the banner.
  * @param modifier [Modifier] to be applied to the layout.
  * @param dismissContentDescription The content description for the dismiss icon.
+ * @param border Optional outline drawn around the banner.
  */
 @Composable
 fun MenuBanner(
@@ -59,6 +61,7 @@ fun MenuBanner(
     modifier: Modifier = Modifier,
     dismissContentDescription: AcornText =
         AcornText.Resource(composeBaseR.string.mozac_compose_base_close_button_content_description),
+    border: BorderStroke? = null,
 ) {
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
 
@@ -66,6 +69,7 @@ fun MenuBanner(
         modifier = modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = MaterialTheme.shapes.extraLarge,
         color = MaterialTheme.colorScheme.surfaceBright,
+        border = border,
     ) {
         Box {
             Row {

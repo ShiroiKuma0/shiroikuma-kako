@@ -50,6 +50,7 @@ import mozilla.components.service.fxa.store.Account
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.Image
+import org.mozilla.fenix.kako.kakoMenuCard
 import org.mozilla.fenix.theme.FirefoxTheme
 
 private val BUTTON_HEIGHT = 56.dp
@@ -104,8 +105,7 @@ internal fun MozillaAccountMenuItem(
                     this.contentDescription = contentDescription
                 }
                 .wrapContentSize()
-                .clip(MaterialTheme.shapes.extraSmall)
-                .background(color = MaterialTheme.colorScheme.surfaceBright)
+                .kakoMenuCard(shape = MaterialTheme.shapes.extraSmall)
                 .height(IntrinsicSize.Min)
                 .defaultMinSize(minHeight = BUTTON_HEIGHT)
                 .clickable { onClick() }

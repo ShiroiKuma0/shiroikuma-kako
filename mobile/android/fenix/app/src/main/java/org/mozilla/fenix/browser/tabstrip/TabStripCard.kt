@@ -32,7 +32,7 @@ internal val defaultTabStripCardElevation = 0.dp
  * @param modifier The modifier to be applied to the card.
  * @param backgroundColor The background color of the card.
  * @param elevation The elevation of the card.
- * @param border Optional border to draw around the card.
+ * @param border Optional traced outline of the card (白い熊 火狐 UI).
  * @param content The content of the card.
  */
 @Composable

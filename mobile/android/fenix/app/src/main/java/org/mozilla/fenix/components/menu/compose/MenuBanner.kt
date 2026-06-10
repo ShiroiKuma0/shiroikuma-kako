@@ -18,6 +18,7 @@ import mozilla.components.compose.base.theme.PreviewThemeProvider
 import mozilla.components.compose.base.theme.Theme
 import mozilla.components.compose.menu.ui.MenuBanner
 import org.mozilla.fenix.R
+import org.mozilla.fenix.kako.kakoMenuCardBorder
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
@@ -46,6 +47,7 @@ fun MenuBanner(
         onClick = onClick,
         modifier = modifier,
         dismissContentDescription = AcornText.Resource(R.string.browser_menu_default_banner_dismiss_promotion),
+        border = kakoMenuCardBorder(),
     )
 }
 
