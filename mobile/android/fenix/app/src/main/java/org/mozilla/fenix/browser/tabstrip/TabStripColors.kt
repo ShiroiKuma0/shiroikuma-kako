@@ -10,9 +10,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.platform.LocalContext
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
+import org.mozilla.fenix.kako.KakoSlot
+import org.mozilla.fenix.kako.KakoTheme
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.wallpapers.Wallpaper
@@ -98,12 +101,28 @@ data class TabStripColors(
          * Returns the default [TabStripColors] instance.
          */
         @Composable
-        fun default() = TabStripColors(
-            backgroundBrush = FirefoxTheme.gradients.accentSubtle.brush,
-            tabItemBackgroundColors = TabColors(
-                activeColor = MaterialTheme.colorScheme.surface,
-                inactiveColor = Color.Transparent,
-            ),
-        )
+        fun default(): TabStripColors {
+            // Fork: the 白い熊 火狐 tab strip draws its fills from the settable
+            // TAB_SELECTED / TAB_UNSELECTED slots on a TOOLBAR_FILL backdrop
+            // (tabs distinguish by traced borders, not fills).
+            KakoTheme.revision.intValue
+            val context = LocalContext.current
+            if (KakoTheme.isEnabled(context)) {
+                return TabStripColors(
+                    backgroundBrush = SolidColor(Color(KakoTheme.color(context, KakoSlot.TOOLBAR_FILL))),
+                    tabItemBackgroundColors = TabColors(
+                        activeColor = Color(KakoTheme.color(context, KakoSlot.TAB_SELECTED)),
+                        inactiveColor = Color(KakoTheme.color(context, KakoSlot.TAB_UNSELECTED)),
+                    ),
+                )
+            }
+            return TabStripColors(
+                backgroundBrush = FirefoxTheme.gradients.accentSubtle.brush,
+                tabItemBackgroundColors = TabColors(
+                    activeColor = MaterialTheme.colorScheme.surface,
+                    inactiveColor = Color.Transparent,
+                ),
+            )
+        }
     }
 }
