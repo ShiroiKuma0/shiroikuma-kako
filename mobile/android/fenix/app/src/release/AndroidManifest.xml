@@ -4,12 +4,10 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
 <!--
-  sharedUserId: This release type is meant to replace Firefox (Release channel) and therefore needs to inherit
-                its sharedUserId for all eternity. Shipping an app update without sharedUserId can have
-                fatal consequences. For example see:
-                - https://issuetracker.google.com/issues/36924841
-                - https://issuetracker.google.com/issues/36905922
+  This fork installs side by side with stock Firefox, so it must NOT declare
+  upstream's android:sharedUserId="org.mozilla.firefox.sharedID" — sharing a
+  uid with a Mozilla-signed app would make the install fail on signature
+  mismatch.
 -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    android:sharedUserId="${sharedUserId}">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 </manifest>
