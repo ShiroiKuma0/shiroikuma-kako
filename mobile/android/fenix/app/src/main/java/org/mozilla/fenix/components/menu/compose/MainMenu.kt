@@ -62,6 +62,7 @@ import org.mozilla.fenix.components.menu.MenuDialogTestTag.MORE_OPTION_CHEVRON
 import org.mozilla.fenix.components.menu.compose.header.MozillaAccountMenuItem
 import org.mozilla.fenix.components.menu.store.IPProtectionMenuState
 import org.mozilla.fenix.components.menu.store.WebExtensionMenuItem
+import org.mozilla.fenix.kako.kakoMenuCard
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
@@ -715,10 +716,7 @@ private fun MoreExtensionsMenuItem(
                 contentDescription = label
             }
             .wrapContentSize()
-            .clip(shape = RoundedCornerShape(4.dp))
-            .background(
-                color = MaterialTheme.colorScheme.surfaceDimVariant,
-            ),
+            .kakoMenuCard(shape = RoundedCornerShape(4.dp)),
     ) {
         MenuTextItem(
             label = label,

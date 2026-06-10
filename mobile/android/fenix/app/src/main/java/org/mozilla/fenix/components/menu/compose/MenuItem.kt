@@ -58,6 +58,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.MenuDialogTestTag.WEB_EXTENSION_ITEM
 import org.mozilla.fenix.compose.list.IconListItem
 import org.mozilla.fenix.compose.list.TextListItem
+import org.mozilla.fenix.kako.kakoMenuCard
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.DURATION_MS_MAIN_MENU_ITEM
 import mozilla.components.ui.icons.R as iconsR
@@ -147,10 +148,7 @@ internal fun MenuItem(
                 }
             }
             .wrapContentSize()
-            .clip(shape = ROUNDED_CORNER_SHAPE)
-            .background(
-                color = MaterialTheme.colorScheme.surfaceDimVariant,
-            ),
+            .kakoMenuCard(shape = ROUNDED_CORNER_SHAPE),
         labelModifier = labelModifier,
         colors = ListItemDefaults.colors(
             headlineColor = labelTextColor,
@@ -206,10 +204,7 @@ internal fun MenuTextItem(
             MENU_ITEM_HEIGHT_WITHOUT_DESC
         },
         modifier = modifier
-            .clip(shape = ROUNDED_CORNER_SHAPE)
-            .background(
-                color = MaterialTheme.colorScheme.surfaceDimVariant,
-            ),
+            .kakoMenuCard(shape = ROUNDED_CORNER_SHAPE),
         iconPainter = iconPainter,
         onClick = onClick,
     )
@@ -260,10 +255,7 @@ internal fun WebExtensionMenuItem(
                 testTagsAsResourceId = true
             }
             .wrapContentSize()
-            .clip(shape = ROUNDED_CORNER_SHAPE)
-            .background(
-                color = MaterialTheme.colorScheme.surfaceDimVariant,
-            ),
+            .kakoMenuCard(shape = ROUNDED_CORNER_SHAPE),
         afterListAction = {
             Row(
                 modifier = Modifier.padding(start = 16.dp),
@@ -324,10 +316,7 @@ internal fun MenuBadgeItem(
                 Modifier.semantics { disabled() },
             ) { !enabled }
             .semantics { disabled() }
-            .clip(shape = ROUNDED_CORNER_SHAPE)
-            .background(
-                color = MaterialTheme.colorScheme.surfaceDimVariant,
-            )
+            .kakoMenuCard(shape = ROUNDED_CORNER_SHAPE)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically,

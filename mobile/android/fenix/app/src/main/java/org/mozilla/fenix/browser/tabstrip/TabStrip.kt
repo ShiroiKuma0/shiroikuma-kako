@@ -72,6 +72,7 @@ import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.compose.Favicon
 import org.mozilla.fenix.compose.HorizontalFadingEdgeBox
+import org.mozilla.fenix.kako.kakoTabStripBorder
 import org.mozilla.fenix.compose.ext.isItemPartiallyVisible
 import org.mozilla.fenix.tabstray.browser.compose.ReorderableDragItemContainer
 import org.mozilla.fenix.tabstray.browser.compose.createListReorderState
@@ -362,6 +363,7 @@ private fun TabItem(
         } else {
             defaultTabStripCardElevation
         },
+        border = kakoTabStripBorder(isSelected = state.isSelected),
     ) {
         Row(
             modifier = Modifier

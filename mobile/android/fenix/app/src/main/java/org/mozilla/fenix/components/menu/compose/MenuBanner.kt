@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.theme.surfaceDimVariant
 import org.mozilla.fenix.R
+import org.mozilla.fenix.kako.kakoMenuCardBorder
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
@@ -69,6 +70,7 @@ fun MenuBanner(
             .clickable(onClick = onClick),
         shape = ROUNDED_CORNER_SHAPE,
         color = MaterialTheme.colorScheme.surfaceDimVariant,
+        border = kakoMenuCardBorder(),
     ) {
         Box {
             Row {

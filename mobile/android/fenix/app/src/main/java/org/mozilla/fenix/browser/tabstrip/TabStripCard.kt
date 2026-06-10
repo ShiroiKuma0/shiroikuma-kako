@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.browser.tabstrip
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -31,6 +32,7 @@ internal val selectedTabStripCardElevation = 4.dp
  * @param modifier The modifier to be applied to the card.
  * @param backgroundColor The background color of the card.
  * @param elevation The elevation of the card.
+ * @param border Optional traced outline of the card (白い熊 火狐 UI).
  * @param content The content of the card.
  */
 @Composable
@@ -38,12 +40,14 @@ fun TabStripCard(
     modifier: Modifier = Modifier,
     backgroundColor: Color = FirefoxTheme.colors.layer3,
     elevation: Dp = defaultTabStripCardElevation,
+    border: BorderStroke? = null,
     content: @Composable () -> Unit,
 ) {
     Card(
         shape = cardShape,
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
         elevation = CardDefaults.cardElevation(defaultElevation = elevation),
+        border = border,
         modifier = modifier,
     ) {
         content()

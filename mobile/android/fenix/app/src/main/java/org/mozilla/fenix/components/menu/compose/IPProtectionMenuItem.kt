@@ -37,6 +37,7 @@ import mozilla.components.compose.base.theme.surfaceDimVariant
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.store.IPProtectionMenuState
 import org.mozilla.fenix.components.menu.store.IPProtectionMenuStatus
+import org.mozilla.fenix.kako.kakoMenuCard
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
@@ -64,8 +65,7 @@ internal fun IPProtectionMenuItem(
     Row(
         modifier = Modifier
             .wrapContentSize()
-            .clip(ROUNDED_CORNER)
-            .background(MaterialTheme.colorScheme.surfaceDimVariant)
+            .kakoMenuCard(shape = ROUNDED_CORNER)
             .height(IntrinsicSize.Min)
             .defaultMinSize(minHeight = MENU_ITEM_MIN_HEIGHT),
         verticalAlignment = Alignment.CenterVertically,

@@ -7,13 +7,17 @@ package org.mozilla.fenix.kako
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
 import mozilla.components.compose.base.theme.AcornColors
+import mozilla.components.compose.base.theme.AcornForkOverrides
+import mozilla.components.compose.base.theme.ForkButtonStyle
 import mozilla.components.compose.base.theme.acornDarkColorScheme
 import mozilla.components.compose.base.theme.darkColorPalette
 import org.mozilla.fenix.R
@@ -48,6 +52,7 @@ enum class KakoSection(@param:StringRes val labelRes: Int) {
     TOOLBAR(R.string.kako_section_toolbar),
     MENU(R.string.kako_section_menu),
     TABS(R.string.kako_section_tabs),
+    BUTTONS(R.string.kako_section_buttons),
 }
 
 /**
@@ -69,13 +74,41 @@ enum class KakoSlot(
 
     // Search bar / toolbar.
     TOOLBAR_FILL("kako_theme_toolbar_fill", KakoSection.TOOLBAR, R.string.kako_slot_toolbar_fill),
+    ADDRESSBAR_BORDER("kako_theme_addressbar_border", KakoSection.TOOLBAR, R.string.kako_slot_addressbar_border),
+    TOOLBAR_TOP_BORDER("kako_theme_toolbar_top_border", KakoSection.TOOLBAR, R.string.kako_slot_toolbar_top_border),
 
     // Menus, cards and dialogs.
     MENU_BACKGROUND("kako_theme_menu_background", KakoSection.MENU, R.string.kako_slot_menu_background),
+    MENU_BORDER("kako_theme_menu_border", KakoSection.MENU, R.string.kako_slot_menu_border),
 
-    // Tab management.
+    // Tab strip.
     TAB_SELECTED("kako_theme_tab_selected", KakoSection.TABS, R.string.kako_slot_tab_selected),
     TAB_UNSELECTED("kako_theme_tab_unselected", KakoSection.TABS, R.string.kako_slot_tab_unselected),
+    TAB_BORDER("kako_theme_tab_border", KakoSection.TABS, R.string.kako_slot_tab_border),
+    TAB_ACTIVE_BORDER("kako_theme_tab_active_border", KakoSection.TABS, R.string.kako_slot_tab_active_border),
+
+    // Buttons.
+    BUTTON_BACKGROUND("kako_theme_button_background", KakoSection.BUTTONS, R.string.kako_slot_button_background),
+    BUTTON_TEXT("kako_theme_button_text", KakoSection.BUTTONS, R.string.kako_slot_button_text),
+    BUTTON_BORDER("kako_theme_button_border", KakoSection.BUTTONS, R.string.kako_slot_button_border),
+}
+
+/**
+ * One user-settable border thickness in dp (0 hides the border), sister-repo
+ * ThemeDimen style.
+ */
+enum class KakoDimen(
+    val key: String,
+    val section: KakoSection,
+    @param:StringRes val labelRes: Int,
+    val defaultDp: Int,
+) {
+    ADDRESSBAR_BORDER_WIDTH("kako_dimen_addressbar_border", KakoSection.TOOLBAR, R.string.kako_dimen_addressbar_border, 1),
+    TOOLBAR_TOP_BORDER_WIDTH("kako_dimen_toolbar_top_border", KakoSection.TOOLBAR, R.string.kako_dimen_toolbar_top_border, 1),
+    MENU_BORDER_WIDTH("kako_dimen_menu_border", KakoSection.MENU, R.string.kako_dimen_menu_border, 1),
+    TAB_BORDER_WIDTH("kako_dimen_tab_border", KakoSection.TABS, R.string.kako_dimen_tab_border, 1),
+    TAB_ACTIVE_BORDER_WIDTH("kako_dimen_tab_active_border", KakoSection.TABS, R.string.kako_dimen_tab_active_border, 2),
+    BUTTON_BORDER_WIDTH("kako_dimen_button_border", KakoSection.BUTTONS, R.string.kako_dimen_button_border, 1),
 }
 
 object KakoTheme {
@@ -93,6 +126,7 @@ object KakoTheme {
 
     fun setEnabled(context: Context, enabled: Boolean) {
         prefs(context).edit { putBoolean(KEY_ENABLED, enabled) }
+        refreshChromeOverrides(context)
         bump()
     }
 
@@ -106,11 +140,13 @@ object KakoTheme {
 
     fun setColor(context: Context, slot: KakoSlot, color: Int) {
         prefs(context).edit { putInt(slot.key, color) }
+        refreshChromeOverrides(context)
         bump()
     }
 
     fun clearColor(context: Context, slot: KakoSlot) {
         prefs(context).edit { remove(slot.key) }
+        refreshChromeOverrides(context)
         bump()
     }
 
@@ -118,12 +154,14 @@ object KakoTheme {
     fun resetAll(context: Context) {
         prefs(context).edit {
             KakoSlot.entries.forEach { remove(it.key) }
+            KakoDimen.entries.forEach { remove(it.key) }
             remove(KAKO_FONT_FAMILY_KEY)
             remove(KAKO_FONT_WEIGHT_KEY)
             remove(KAKO_FONT_SCALE_KEY)
             remove(KAKO_EXTENSION_ICON_SIZE_KEY)
             putBoolean(KEY_ENABLED, true)
         }
+        refreshChromeOverrides(context)
         bump()
     }
 
@@ -151,9 +189,59 @@ object KakoTheme {
         KakoSlot.BORDER -> color(context, KakoSlot.ACCENT)
         KakoSlot.TEXT_ON_ACCENT -> color(context, KakoSlot.BACKGROUND)
         KakoSlot.TOOLBAR_FILL -> color(context, KakoSlot.BACKGROUND)
+        KakoSlot.ADDRESSBAR_BORDER -> color(context, KakoSlot.BORDER)
+        KakoSlot.TOOLBAR_TOP_BORDER -> color(context, KakoSlot.BORDER)
         KakoSlot.MENU_BACKGROUND -> color(context, KakoSlot.BACKGROUND)
-        KakoSlot.TAB_SELECTED -> blendOnBackground(context, accent = color(context, KakoSlot.ACCENT))
+        KakoSlot.MENU_BORDER -> color(context, KakoSlot.BORDER)
+        // The active tab is marked by its border, not a fill (like Nightly).
+        KakoSlot.TAB_SELECTED -> color(context, KakoSlot.MENU_BACKGROUND)
         KakoSlot.TAB_UNSELECTED -> color(context, KakoSlot.MENU_BACKGROUND)
+        KakoSlot.TAB_BORDER -> color(context, KakoSlot.BORDER)
+        KakoSlot.TAB_ACTIVE_BORDER -> color(context, KakoSlot.ACCENT)
+        KakoSlot.BUTTON_BACKGROUND -> color(context, KakoSlot.BACKGROUND)
+        KakoSlot.BUTTON_TEXT -> color(context, KakoSlot.ACCENT)
+        KakoSlot.BUTTON_BORDER -> color(context, KakoSlot.BORDER)
+    }
+
+    /** Border thickness in dp of [dimen]; 0 hides the border. */
+    fun dimenDp(context: Context, dimen: KakoDimen): Int =
+        prefs(context).getInt(dimen.key, dimen.defaultDp)
+
+    fun setDimenDp(context: Context, dimen: KakoDimen, dp: Int) {
+        prefs(context).edit { putInt(dimen.key, dp) }
+        refreshChromeOverrides(context)
+        bump()
+    }
+
+    /**
+     * A [BorderStroke] for [slot]/[dimen], or null when disabled or 0-width.
+     * Fenix composables (tab strip, menu cards) call this per frame of recomposition.
+     */
+    fun borderStroke(context: Context, slot: KakoSlot, dimen: KakoDimen): BorderStroke? {
+        if (!isEnabled(context)) return null
+        val width = dimenDp(context, dimen)
+        if (width <= 0) return null
+        return BorderStroke(width.dp, Color(color(context, slot)))
+    }
+
+    /**
+     * Pushes the current slot values into the android-components fork hooks
+     * (address-bar outline, app-wide button style). Call after every change and
+     * once at startup.
+     */
+    fun refreshChromeOverrides(context: Context) {
+        if (!isEnabled(context)) {
+            AcornForkOverrides.addressBarBorder = null
+            AcornForkOverrides.buttonStyle = null
+            return
+        }
+        AcornForkOverrides.addressBarBorder =
+            borderStroke(context, KakoSlot.ADDRESSBAR_BORDER, KakoDimen.ADDRESSBAR_BORDER_WIDTH)
+        AcornForkOverrides.buttonStyle = ForkButtonStyle(
+            containerColor = Color(color(context, KakoSlot.BUTTON_BACKGROUND)),
+            contentColor = Color(color(context, KakoSlot.BUTTON_TEXT)),
+            border = borderStroke(context, KakoSlot.BUTTON_BORDER, KakoDimen.BUTTON_BORDER_WIDTH),
+        )
     }
 
     /**
@@ -174,6 +262,9 @@ object KakoTheme {
             ripple = accent,
             tabActive = c(KakoSlot.TAB_SELECTED),
             tabInactive = c(KakoSlot.TAB_UNSELECTED),
+            // The "slightly dimmer surface" grey behind menu items, library tiles
+            // and banners — readability comes from traced borders instead.
+            surfaceDimVariant = c(KakoSlot.MENU_BACKGROUND),
         )
     }
 
@@ -212,24 +303,22 @@ object KakoTheme {
             onSurface = text,
             surfaceVariant = card,
             onSurfaceVariant = textSecondary,
-            surfaceTint = accent,
+            // surfaceTint drives Material tonal elevation: keeping it at the background
+            // color stops sheets/dialogs from drifting into olive-grey.
+            surfaceTint = background,
             inverseSurface = text,
             inverseOnSurface = background,
             outline = border,
             outlineVariant = border.copy(alpha = ALPHA_SECONDARY),
             surfaceBright = card,
-            surfaceDim = background,
+            // The address-bar pill fill in the composable toolbar.
+            surfaceDim = c(KakoSlot.TOOLBAR_FILL),
             surfaceContainer = card,
             surfaceContainerHigh = card,
             surfaceContainerHighest = card,
             surfaceContainerLow = background,
             surfaceContainerLowest = background,
         )
-    }
-
-    private fun blendOnBackground(context: Context, accent: Int): Int {
-        val bg = Color(color(context, KakoSlot.BACKGROUND))
-        return Color(accent).copy(alpha = SELECTED_TAB_FRACTION).compositeOver(bg).toArgb()
     }
 
     private const val ALPHA_SECONDARY = 0.6f

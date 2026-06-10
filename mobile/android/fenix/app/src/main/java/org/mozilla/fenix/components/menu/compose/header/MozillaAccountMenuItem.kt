@@ -48,6 +48,7 @@ import mozilla.components.service.fxa.manager.AccountState.NotAuthenticated
 import mozilla.components.service.fxa.store.Account
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.Image
+import org.mozilla.fenix.kako.kakoMenuCard
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
@@ -103,8 +104,7 @@ internal fun MozillaAccountMenuItem(
                 this.contentDescription = contentDescription
             }
             .wrapContentSize()
-            .clip(shape = BUTTON_SHAPE)
-            .background(color = MaterialTheme.colorScheme.surfaceDimVariant)
+            .kakoMenuCard(shape = BUTTON_SHAPE)
             .height(IntrinsicSize.Min)
             .defaultMinSize(minHeight = BUTTON_HEIGHT)
             .clickable { onClick() }
