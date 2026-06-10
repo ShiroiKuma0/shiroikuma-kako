@@ -42,6 +42,7 @@ import mozilla.components.compose.base.modifier.debouncedClickable
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.store.IPProtectionMenuState
 import org.mozilla.fenix.components.menu.store.IPProtectionMenuStatus
+import org.mozilla.fenix.kako.kakoMenuCard
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
@@ -69,8 +70,7 @@ internal fun IPProtectionMenuItem(
         Row(
             modifier = Modifier
                 .wrapContentSize()
-                .clip(MaterialTheme.shapes.extraSmall)
-                .background(MaterialTheme.colorScheme.surfaceBright)
+                .kakoMenuCard(shape = MaterialTheme.shapes.extraSmall)
                 .height(IntrinsicSize.Min)
                 .defaultMinSize(minHeight = MENU_ITEM_MIN_HEIGHT),
             verticalAlignment = Alignment.CenterVertically,
