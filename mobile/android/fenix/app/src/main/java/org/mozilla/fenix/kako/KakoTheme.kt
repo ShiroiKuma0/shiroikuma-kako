@@ -37,6 +37,8 @@ private const val KEY_ENABLED = "kako_theme_enabled"
 const val KAKO_FONT_FAMILY_KEY = "kako_font_family"
 const val KAKO_FONT_WEIGHT_KEY = "kako_font_weight"
 const val KAKO_FONT_SCALE_KEY = "kako_font_scale"
+const val KAKO_EXTENSION_ICON_SIZE_KEY = "kako_extension_icon_size"
+const val KAKO_EXTENSION_ICON_SIZE_DEFAULT_DP = 24
 
 /**
  * Top-level sections of the 白い熊 火狐 UI page, in display order.
@@ -119,8 +121,18 @@ object KakoTheme {
             remove(KAKO_FONT_FAMILY_KEY)
             remove(KAKO_FONT_WEIGHT_KEY)
             remove(KAKO_FONT_SCALE_KEY)
+            remove(KAKO_EXTENSION_ICON_SIZE_KEY)
             putBoolean(KEY_ENABLED, true)
         }
+        bump()
+    }
+
+    /** Display size in dp of pinned extension toolbar icons. */
+    fun extensionIconSizeDp(context: Context): Int =
+        prefs(context).getInt(KAKO_EXTENSION_ICON_SIZE_KEY, KAKO_EXTENSION_ICON_SIZE_DEFAULT_DP)
+
+    fun setExtensionIconSizeDp(context: Context, sizeDp: Int) {
+        prefs(context).edit { putInt(KAKO_EXTENSION_ICON_SIZE_KEY, sizeDp) }
         bump()
     }
 
