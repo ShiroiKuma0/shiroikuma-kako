@@ -1,0 +1,7 @@
+# 白い熊 火狐 — artifact build of Firefox for Android (Fenix), arm64 only.
+# Prebuilt GeckoView is fetched for the checked-out revision; only
+# Kotlin/Java compiles locally. Use via: export MOZCONFIG=$PWD/tools/kako/mozconfig
+ac_add_options --enable-project=mobile/android
+ac_add_options --enable-artifact-builds
+ac_add_options --target=aarch64
+mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/objdir-kako
