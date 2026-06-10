@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
+<!-- 白い熊 火狐 UI — fork-only strings, deliberately untranslated. -->
+<resources>
+    <string name="kako_ui_title" translatable="false">白い熊 火狐 UI</string>
+    <string name="preferences_kako_ui" translatable="false">白い熊 火狐 UI</string>
+
+    <string name="kako_master_switch" translatable="false">黒黄テーマを使う</string>
+
+    <string name="kako_section_foundation" translatable="false">基盤</string>
+    <string name="kako_section_toolbar" translatable="false">検索バー・ツールバー</string>
+    <string name="kako_section_menu" translatable="false">メニュー・カード</string>
+    <string name="kako_section_tabs" translatable="false">タブ</string>
+
+    <string name="kako_subgroup_colors" translatable="false">色</string>
+    <string name="kako_subgroup_font" translatable="false">文字とフォント</string>
+
+    <string name="kako_slot_background" translatable="false">背景</string>
+    <string name="kako_slot_text" translatable="false">文字</string>
+    <string name="kako_slot_text_secondary" translatable="false">補助的な文字</string>
+    <string name="kako_slot_accent" translatable="false">アクセント</string>
+    <string name="kako_slot_border" translatable="false">枠線・区切り線</string>
+    <string name="kako_slot_text_on_accent" translatable="false">アクセント上の文字</string>
+    <string name="kako_slot_toolbar_fill" translatable="false">検索バーの背景</string>
+    <string name="kako_slot_menu_background" translatable="false">メニュー・カードの背景</string>
+    <string name="kako_slot_tab_selected" translatable="false">選択中のタブ</string>
+    <string name="kako_slot_tab_unselected" translatable="false">非選択のタブ</string>
+
+    <string name="kako_font_row" translatable="false">フォント</string>
+    <string name="kako_font_weight_row" translatable="false">太さ</string>
+    <string name="kako_font_scale_row" translatable="false">大きさ</string>
+    <string name="kako_font_scale_value" translatable="false">%1$d%%</string>
+    <string name="kako_font_sample" translatable="false">白い熊 火狐 — Aa Bb 字体見本 123</string>
+    <string name="kako_font_system_default" translatable="false">システム既定</string>
+    <string name="kako_font_monospace" translatable="false">等幅 (Monospace)</string>
+    <string name="kako_font_add" translatable="false">フォントを追加…</string>
+
+    <string name="kako_font_weight_inherit" translatable="false">継承</string>
+    <string name="kako_font_weight_100" translatable="false">Thin (100)</string>
+    <string name="kako_font_weight_300" translatable="false">Light (300)</string>
+    <string name="kako_font_weight_400" translatable="false">Regular (400)</string>
+    <string name="kako_font_weight_500" translatable="false">Medium (500)</string>
+    <string name="kako_font_weight_700" translatable="false">Bold (700)</string>
+    <string name="kako_font_weight_900" translatable="false">Black (900)</string>
+
+    <string name="kako_color_inherit" translatable="false">解除（継承に戻す）</string>
+    <string name="kako_reset" translatable="false">既定値に戻す</string>
+    <string name="kako_reset_message" translatable="false">全ての設定を既定の黒黄に戻しますか？</string>
+</resources>
