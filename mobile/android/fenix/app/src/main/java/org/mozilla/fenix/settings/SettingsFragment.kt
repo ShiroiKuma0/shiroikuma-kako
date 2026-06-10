@@ -368,6 +368,10 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
                 )
             }
 
+            resources.getString(R.string.pref_key_kako_ui) -> {
+                org.mozilla.fenix.NavGraphDirections.actionGlobalKakoUiSettingsFragment()
+            }
+
             resources.getString(R.string.pref_key_account) -> {
                 SettingsFragmentDirections.actionSettingsFragmentToAccountSettingsFragment()
             }
