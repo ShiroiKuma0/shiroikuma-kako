@@ -83,6 +83,7 @@ import org.mozilla.fenix.home.goBackFromHomepage
 import org.mozilla.fenix.home.goForwardFromHomepage
 import org.mozilla.fenix.home.toolbar.DisplayActions.FakeClicked
 import org.mozilla.fenix.home.toolbar.DisplayActions.MenuClicked
+import org.mozilla.fenix.home.toolbar.DisplayActions.MenuLongClicked
 import org.mozilla.fenix.home.toolbar.DisplayActions.VoiceSearchClicked
 import org.mozilla.fenix.home.toolbar.NavigationInteractions.NavigateBackClicked
 import org.mozilla.fenix.home.toolbar.NavigationInteractions.NavigateBackLongClicked
@@ -107,6 +108,8 @@ private const val DISPLAY_TOOLBAR_DELAY_AFTER_VOICE_REQUEST = 1_000L
 @VisibleForTesting
 internal sealed class DisplayActions : BrowserToolbarEvent {
     data class MenuClicked(override val source: Source) : DisplayActions()
+
+    data class MenuLongClicked(override val source: Source) : DisplayActions()
 
     data object FakeClicked : DisplayActions()
 
@@ -219,6 +222,15 @@ class BrowserToolbarMiddleware(
                     HomeFragmentDirections.actionGlobalMenuDialogFragment(accesspoint = MenuAccessPoint.Home),
                 )
                 removeMenuButtonHighlight()
+                next(action)
+            }
+
+            // Fork: long-pressing the menu button jumps straight to the 白い熊 火狐 UI page.
+            is MenuLongClicked -> {
+                navController.nav(
+                    R.id.homeFragment,
+                    NavGraphDirections.actionGlobalKakoUiSettingsFragment(),
+                )
                 next(action)
             }
 
@@ -696,6 +708,7 @@ class BrowserToolbarMiddleware(
                     contentDescription = R.string.content_description_menu,
                     highlighted = highlighted,
                     onClick = MenuClicked(source),
+                    onLongClick = MenuLongClicked(source),
                 )
             }
 
