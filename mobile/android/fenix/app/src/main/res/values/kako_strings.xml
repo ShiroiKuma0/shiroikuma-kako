@@ -46,6 +46,9 @@
     <string name="kako_font_weight_700" translatable="false">Bold (700)</string>
     <string name="kako_font_weight_900" translatable="false">Black (900)</string>
 
+    <string name="kako_extension_icon_size_row" translatable="false">拡張機能アイコンの大きさ</string>
+    <string name="kako_extension_icon_size_value" translatable="false">%1$ddp</string>
+
     <string name="kako_addon_add_to_toolbar" translatable="false">ツールバーに追加</string>
     <string name="kako_addon_remove_from_toolbar" translatable="false">ツールバーから削除</string>
 
