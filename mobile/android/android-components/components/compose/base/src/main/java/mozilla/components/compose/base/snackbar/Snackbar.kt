@@ -5,6 +5,7 @@
 package mozilla.components.compose.base.snackbar
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -31,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.R
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.button.TextButton
+import mozilla.components.compose.base.theme.AcornForkOverrides
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.base.theme.acornPrivateColorScheme
 import mozilla.components.compose.base.theme.privateColorPalette
@@ -87,14 +89,24 @@ fun Snackbar(
         state = dismissState,
         backgroundContent = {},
     ) {
+        // Fork: snackbars follow the 白い熊 火狐 UI flash style (black card, accent
+        // text, traced outline) instead of M3's inverse-surface fill.
+        val fork = AcornForkOverrides.snackbarStyle
         M3Snackbar(
             modifier = modifier
                 .padding(SnackbarPadding)
+                .then(
+                    fork?.border?.let { Modifier.border(it, SnackbarDefaults.shape) } ?: Modifier,
+                )
                 .semantics { testTagsAsResourceId = true }
                 .testTag(SNACKBAR_TEST_TAG),
             action = actionComposable,
             dismissAction = dismissActionComposable,
             actionOnNewLine = actionOnNewLine,
+            containerColor = fork?.containerColor ?: SnackbarDefaults.color,
+            contentColor = fork?.contentColor ?: SnackbarDefaults.contentColor,
+            actionContentColor = fork?.contentColor ?: SnackbarDefaults.actionContentColor,
+            dismissActionContentColor = fork?.contentColor ?: SnackbarDefaults.dismissActionContentColor,
         ) {
             Column {
                 val visuals = snackbarData.visuals as? SnackbarVisuals
