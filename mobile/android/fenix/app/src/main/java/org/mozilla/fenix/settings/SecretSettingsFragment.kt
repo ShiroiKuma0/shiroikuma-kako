@@ -159,7 +159,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
         }
 
         requirePreference<Preference>(R.string.pref_key_search_optimization).apply {
-            isVisible = Config.channel.isNightlyOrDebug
+            isVisible = true
         }
 
         requirePreference<SwitchPreferenceCompat>(
@@ -171,13 +171,13 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
         }
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_use_scroll_data_for_dynamic_toolbar).apply {
-            isVisible = Config.channel.isNightlyOrDebug
+            isVisible = true
             isChecked = context.settings().useNewDynamicToolbarBehaviour
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_address_sync).apply {
-            isVisible = Config.channel.isNightlyOrDebug
+            isVisible = true
             isChecked = context.settings().isAddressSyncEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
@@ -189,7 +189,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
         }
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_homepage_as_new_tab).apply {
-            isVisible = Config.channel.isNightlyOrDebug
+            isVisible = true
             isChecked = context.settings().enableHomepageAsNewTab
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
@@ -230,7 +230,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
         }
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_lna_feature_enabled).apply {
-            isVisible = Config.channel.isNightlyOrDebug
+            isVisible = true
             isChecked = context.settings().isLnaFeatureEnabled
             onPreferenceChangeListener = object : SharedPreferenceUpdater() {
                 override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
@@ -242,7 +242,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
         }
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_lna_blocking_enabled).apply {
-            isVisible = Config.channel.isNightlyOrDebug
+            isVisible = true
             isChecked = context.settings().isLnaBlockingEnabled
             onPreferenceChangeListener = object : SharedPreferenceUpdater() {
                 override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
@@ -254,7 +254,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
         }
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_lna_tracker_blocking_enabled).apply {
-            isVisible = Config.channel.isNightlyOrDebug
+            isVisible = true
             isChecked = context.settings().isLnaTrackerBlockingEnabled
             onPreferenceChangeListener = object : SharedPreferenceUpdater() {
                 override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
@@ -266,7 +266,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
         }
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_allow_settings_search).apply {
-            isVisible = Config.channel.isNightlyOrDebug
+            isVisible = true
             isChecked = context.settings().isSettingsSearchEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
@@ -322,7 +322,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
 
         // for performance reasons, this is only available in Nightly or Debug builds
         requirePreference<EditTextPreference>(R.string.pref_key_custom_glean_server_url).apply {
-            isVisible = Config.channel.isNightlyOrDebug && BuildConfig.GLEAN_CUSTOM_URL.isNullOrEmpty()
+            isVisible = BuildConfig.GLEAN_CUSTOM_URL.isNullOrEmpty()
         }
 
         requirePreference<Preference>(R.string.pref_key_remote_settings_server).apply {
@@ -352,7 +352,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
         }
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_shake_to_summarize).apply {
-            isVisible = Config.channel.isNightlyOrDebug
+            isVisible = true
             isChecked = context.settings().shakeToSummarizeFeatureFlagEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
@@ -364,7 +364,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
         }
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_ip_protection).apply {
-            isVisible = Config.channel.isNightlyOrDebug
+            isVisible = true
             isChecked = context.settings().isIPProtectionEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
@@ -394,31 +394,31 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
         }
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_terms_accepted).apply {
-            isVisible = Config.channel.isNightlyOrDebug || Config.channel.isBeta
+            isVisible = true
             isChecked = context.settings().hasAcceptedTermsOfService
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_terms_latest_date).apply {
-            isVisible = Config.channel.isNightlyOrDebug || Config.channel.isBeta
+            isVisible = true
             isChecked = context.settings().isTermsOfUsePublishedDebugDateEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_debug_terms_trigger_time).apply {
-            isVisible = Config.channel.isNightlyOrDebug || Config.channel.isBeta
+            isVisible = true
             isChecked = context.settings().isDebugTermsOfServiceTriggerTimeEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_isolated_process).apply {
-            isVisible = Config.channel.isNightlyOrDebug
+            isVisible = true
             isChecked = context.settings().isIsolatedProcessEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_app_zygote_process).apply {
-            isVisible = Config.channel.isNightlyOrDebug && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+            isVisible = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
             isChecked = context.settings().isAppZygoteEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
@@ -429,7 +429,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
         }
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_tab_groups).apply {
-            isVisible = Config.channel.isNightlyOrDebug
+            isVisible = true
             isChecked = context.settings().tabGroupsEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
@@ -446,19 +446,19 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
         }
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_native_share_sheet).apply {
-            isVisible = Config.channel.isNightlyOrDebug
+            isVisible = true
             isChecked = context.settings().nativeShareSheetEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_enable_longfox).apply {
-            isVisible = Config.channel.isNightlyOrDebug
+            isVisible = true
             isChecked = context.settings().longfoxEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_google_lens_integration).apply {
-            isVisible = Config.channel.isNightlyOrDebug
+            isVisible = true
             isChecked = context.settings().googleLensIntegrationEnabled
             onPreferenceChangeListener = SharedPreferenceUpdater()
         }
