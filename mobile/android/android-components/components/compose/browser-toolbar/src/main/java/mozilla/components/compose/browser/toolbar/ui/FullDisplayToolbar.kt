@@ -60,6 +60,14 @@ private const val LARGE_TOOLBAR_PADDING_DP = 24
 // Must match Fenix's R.dimen.kako_toolbar_second_row_height.
 private const val SECOND_ROW_HEIGHT_DP = 48
 
+// Fork: edge padding of both rows in the two-row layout — much tighter than the
+// stock 24dp so the chrome hugs the screen.
+private const val COMPACT_TOOLBAR_PADDING_DP = 4
+
+// Fork: how much the navigation buttons' 48dp touch targets overlap in the
+// two-row layout, tightening the back/forward/reload group.
+private const val NAV_BUTTONS_OVERLAP_DP = 8
+
 @Suppress("LongMethod", "LongParameterList", "CyclomaticComplexMethod", "CognitiveComplexMethod")
 @Composable
 internal fun FullDisplayToolbar(
@@ -70,6 +78,7 @@ internal fun FullDisplayToolbar(
     pageActionsStart: List<Action>,
     pageActionsEnd: List<Action>,
     browserActionsEnd: List<Action>,
+    browserActionsSecondRow: List<Action> = emptyList(),
     onInteraction: (BrowserToolbarEvent) -> Unit,
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
@@ -80,10 +89,10 @@ internal fun FullDisplayToolbar(
     pageActionsEndModifier: Modifier = Modifier,
     browserActionsEndModifier: Modifier = Modifier,
 ) {
-    // Fork: in the 白い熊 火狐 two-row layout the trailing browser actions (new tab,
-    // extensions, tab counter, menu) move to their own row under the address bar.
-    val showSecondRow = AcornForkOverrides.twoRowToolbar && browserActionsEnd.isNotEmpty()
-    val inlineBrowserActionsEnd = if (showSecondRow) emptyList() else browserActionsEnd
+    // Fork: the 白い熊 火狐 two-row layout — when the embedder fills the second-row
+    // list, a row of actions appears under the address bar and the horizontal
+    // paddings compact so the chrome hugs the screen edges.
+    val showSecondRow = browserActionsSecondRow.isNotEmpty()
 
     Surface(color = backgroundColor) {
         Box(
@@ -92,7 +101,10 @@ internal fun FullDisplayToolbar(
         ) {
             Column {
             Row(
-                modifier = Modifier.adaptiveHorizontalPadding(),
+                modifier = when (showSecondRow) {
+                    true -> Modifier.padding(horizontal = COMPACT_TOOLBAR_PADDING_DP.dp)
+                    false -> Modifier.adaptiveHorizontalPadding()
+                },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (browserActionsStart.isNotEmpty()) {
@@ -100,6 +112,12 @@ internal fun FullDisplayToolbar(
                         actions = browserActionsStart,
                         onInteraction = onInteraction,
                         modifier = browserActionsStartModifier,
+                        // Overlap the 48dp touch targets a little so the navigation
+                        // buttons read as one tight group.
+                        horizontalArrangement = when (showSecondRow) {
+                            true -> Arrangement.spacedBy((-NAV_BUTTONS_OVERLAP_DP).dp)
+                            false -> Arrangement.Start
+                        },
                     )
                 }
 
@@ -111,14 +129,14 @@ internal fun FullDisplayToolbar(
                                 false -> NO_TOOLBAR_PADDING_DP.dp
                             },
                             top = TOOLBAR_PADDING_DP.dp,
-                            end = when (inlineBrowserActionsEnd.isEmpty()) {
+                            end = when (browserActionsEnd.isEmpty()) {
                                 true -> TOOLBAR_PADDING_DP.dp
                                 false -> NO_TOOLBAR_PADDING_DP.dp
                             },
                             bottom = when (gravity) {
                                 Top -> TOOLBAR_PADDING_DP
                                 Bottom ->
-                                    if (inlineBrowserActionsEnd.isEmpty()) {
+                                    if (browserActionsEnd.isEmpty()) {
                                         NO_TOOLBAR_PADDING_DP
                                     } else {
                                         TOOLBAR_PADDING_DP
@@ -184,9 +202,9 @@ internal fun FullDisplayToolbar(
                     }
                 }
 
-                if (inlineBrowserActionsEnd.isNotEmpty()) {
+                if (browserActionsEnd.isNotEmpty()) {
                     ActionContainer(
-                        actions = inlineBrowserActionsEnd,
+                        actions = browserActionsEnd,
                         onInteraction = onInteraction,
                         modifier = browserActionsEndModifier,
                     )
@@ -198,14 +216,13 @@ internal fun FullDisplayToolbar(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(SECOND_ROW_HEIGHT_DP.dp)
-                        .adaptiveHorizontalPadding(smallScreenPaddingDp = TOOLBAR_PADDING_DP),
+                        .padding(horizontal = COMPACT_TOOLBAR_PADDING_DP.dp),
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     ActionContainer(
-                        actions = browserActionsEnd,
+                        actions = browserActionsSecondRow,
                         onInteraction = onInteraction,
-                        modifier = browserActionsEndModifier,
                     )
                 }
             }
@@ -247,13 +264,10 @@ internal fun FullDisplayToolbar(
  *
  * This is an interim fix for https://issuetracker.google.com/issues/515098186.
  */
-private fun Modifier.adaptiveHorizontalPadding(
-    // Fork: the 白い熊 火狐 second action row keeps a small inset on narrow screens.
-    smallScreenPaddingDp: Int = NO_TOOLBAR_PADDING_DP,
-) = layout { measurable, constraints ->
+private fun Modifier.adaptiveHorizontalPadding() = layout { measurable, constraints ->
     val isSmallWidthScreen = constraints.maxWidth < WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND.dp.roundToPx()
     val padding = when (isSmallWidthScreen) {
-        true -> smallScreenPaddingDp
+        true -> NO_TOOLBAR_PADDING_DP
         else -> LARGE_TOOLBAR_PADDING_DP
     }.dp.roundToPx()
 

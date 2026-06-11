@@ -88,6 +88,8 @@ data class DisplayState(
     ),
     val pageActionsEnd: List<Action> = emptyList(),
     val browserActionsEnd: List<Action> = emptyList(),
+    // Fork: actions shown on the second toolbar row, under the address bar.
+    val browserActionsSecondRow: List<Action> = emptyList(),
     val navigationActions: List<Action> = emptyList(),
     val progressBarConfig: ProgressBarConfig? = null,
     val cfr: BrowserToolbarCFR? = null,
