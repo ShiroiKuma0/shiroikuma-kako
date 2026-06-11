@@ -40,6 +40,7 @@ import mozilla.components.compose.browser.toolbar.concept.PageOrigin.Companion.P
 import mozilla.components.compose.browser.toolbar.concept.PageOrigin.Companion.PageOriginContextualMenuInteractions.PasteFromClipboardClicked
 import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction
 import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction.BrowserActionsEndUpdated
+import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction.BrowserActionsSecondRowUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction.BrowserActionsStartUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction.NavigationActionsUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction.PageActionsEndUpdated
@@ -50,6 +51,7 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.Ini
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent.Source
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarMenu
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.CombinedEventAndMenu
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.ContentDescription.StringResContentDescription
@@ -167,6 +169,14 @@ internal sealed class DisplayActions(override val source: Source) : BrowserToolb
     // Fork: a pinned extension's toolbar button was tapped.
     data class ExtensionActionClicked(val extensionId: String) : DisplayActions(Source.AddressBar.BrowserEnd)
 
+    // Fork: long-press menu on a pinned extension — move it one slot or unpin it.
+    data class ExtensionMoveClicked(val extensionId: String, val delta: Int) :
+        DisplayActions(Source.AddressBar.BrowserEnd)
+    data class ExtensionUnpinClicked(val extensionId: String) : DisplayActions(Source.AddressBar.BrowserEnd)
+
+    // Fork: the manage-extensions button at the end of the pinned extension row.
+    data object ManageExtensionsClicked : DisplayActions(Source.AddressBar.BrowserEnd)
+
     // Fork: long-pressing the menu button opens the 白い熊 火狐 UI page.
     data class MenuLongClicked(override val source: Source) : DisplayActions(source)
 }
@@ -278,6 +288,7 @@ class BrowserToolbarMiddleware(
                 observeProgressBarUpdates(store)
                 observeOrientationChanges(store)
                 observeTabsCountUpdates(store)
+                observeExtensionsUpdates(store)
                 observeMenuHighlightChanges(store)
                 observeAcceptingCancellingPrivateDownloads(store)
                 observePageNavigationStatus(store)
@@ -657,6 +668,38 @@ class BrowserToolbarMiddleware(
                 next(action)
             }
 
+            // Fork: reorder a pinned extension one slot and rebuild the toolbar so
+            // the move shows immediately.
+            is DisplayActions.ExtensionMoveClicked -> {
+                val ids = settings.toolbarPinnedExtensions
+                    .split(",").filter { it.isNotEmpty() }.toMutableList()
+                val from = ids.indexOf(action.extensionId)
+                val to = from + action.delta
+                if (from != -1 && to in ids.indices) {
+                    ids.removeAt(from)
+                    ids.add(to, action.extensionId)
+                    settings.toolbarPinnedExtensions = ids.joinToString(",")
+                    scope.launch { updateEndBrowserActions(store) }
+                }
+                next(action)
+            }
+
+            // Fork: open the Manage Extensions page.
+            is DisplayActions.ManageExtensionsClicked -> {
+                navController.navigate(NavGraphDirections.actionGlobalAddonsManagementFragment())
+                next(action)
+            }
+
+            // Fork: unpin a pinned extension from its long-press menu.
+            is DisplayActions.ExtensionUnpinClicked -> {
+                settings.toolbarPinnedExtensions = settings.toolbarPinnedExtensions
+                    .split(",")
+                    .filter { it.isNotEmpty() && it != action.extensionId }
+                    .joinToString(",")
+                scope.launch { updateEndBrowserActions(store) }
+                next(action)
+            }
+
             else -> next(action)
         }
     }
@@ -739,11 +782,23 @@ class BrowserToolbarMiddleware(
     )
 
     private suspend fun updateEndBrowserActions(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
-        store.dispatch(
-            BrowserActionsEndUpdated(
-                buildEndBrowserActions(),
-            ),
-        )
+        val (inlineActions, secondRowActions) = buildEndBrowserActionRows()
+        store.dispatch(BrowserActionsEndUpdated(inlineActions))
+        store.dispatch(BrowserActionsSecondRowUpdated(secondRowActions))
+    }
+
+    /**
+     * Fork: the pinned extension buttons depend on [browserStore]'s extension state,
+     * which is empty while extensions are still loading at cold start — rebuild the
+     * trailing actions whenever it changes so the icons appear without a re-entry.
+     */
+    private fun observeExtensionsUpdates(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
+        browserStore.observeWhileActive {
+            distinctUntilChangedBy { it.extensions }
+            .collect {
+                updateEndBrowserActions(store)
+            }
+        }
     }
 
     private fun buildStartPageActions(): List<Action> {
@@ -813,38 +868,46 @@ class BrowserToolbarMiddleware(
         }
     }
 
-    private suspend fun buildEndBrowserActions(): List<Action> {
+    /**
+     * Fork: distributes the trailing toolbar actions over the address-bar row and
+     * the 白い熊 火狐 second row. Single-row mode keeps upstream's order (shortcut,
+     * pinned extensions, tab counter, menu) inline; two-row mode keeps the shortcut
+     * (the new-tab plus) right of the address bar and moves the pinned extensions —
+     * followed by a manage-extensions button — tab counter and menu to the second row.
+     */
+    private suspend fun buildEndBrowserActionRows(): Pair<List<Action>, List<Action>> {
         val isWideWindow = isWideScreen()
         val isTallWindow = isTallScreen()
         val shouldUseExpandedToolbar = settings.shouldUseExpandedToolbar
-        val primarySlotAction = ShortcutType.fromValue(settings.toolbarSimpleShortcutKey)?.toToolbarAction()
+        val showEndActions = !shouldUseExpandedToolbar || !isTallWindow || isWideWindow
+        if (!showEndActions) return Pair(emptyList(), emptyList())
 
-        val configs = listOfNotNull(
-            primarySlotAction?.let {
-                ToolbarActionConfig(it) {
-                    !shouldUseExpandedToolbar || !isTallWindow || isWideWindow
-                }
-            },
-            ToolbarActionConfig(ToolbarAction.TabCounter) {
-                !shouldUseExpandedToolbar || !isTallWindow || isWideWindow
-            },
-            ToolbarActionConfig(ToolbarAction.Menu) {
-                !shouldUseExpandedToolbar || !isTallWindow || isWideWindow
-            },
-        )
+        val primary = ShortcutType.fromValue(settings.toolbarSimpleShortcutKey)?.toToolbarAction()
+            ?.let { buildAction(it, Source.AddressBar.BrowserEnd) }
+        val counterAndMenu = listOf(ToolbarAction.TabCounter, ToolbarAction.Menu)
+            .map { buildAction(it, Source.AddressBar.BrowserEnd) }
+        val extensions = buildPinnedExtensionActions()
 
-        val actions = configs.mapNotNull { config ->
-            config.takeIf { it.isVisible() }?.let { buildAction(it.action, Source.AddressBar.BrowserEnd) }
-        }.toMutableList()
-
-        // Fork: pinned extension buttons sit immediately right of the toolbar shortcut.
-        if (!shouldUseExpandedToolbar || !isTallWindow || isWideWindow) {
-            val insertAt = if (primarySlotAction != null) minOf(1, actions.size) else 0
-            actions.addAll(insertAt, buildPinnedExtensionActions())
+        val twoRows = KakoTheme.isEnabled(uiContext) && KakoTheme.toolbarTwoRows(uiContext)
+        return if (twoRows) {
+            Pair(
+                listOfNotNull(primary),
+                extensions + buildManageExtensionsAction() + counterAndMenu,
+            )
+        } else {
+            Pair(listOfNotNull(primary) + extensions + counterAndMenu, emptyList())
         }
-
-        return actions
     }
+
+    /**
+     * Fork: opens the Manage Extensions page — the desktop-style entry point at the
+     * end of the pinned extension buttons.
+     */
+    private fun buildManageExtensionsAction(): Action = ActionButtonRes(
+        drawableResId = iconsR.drawable.mozac_ic_extension_24,
+        contentDescription = R.string.browser_menu_extensions,
+        onClick = DisplayActions.ManageExtensionsClicked,
+    )
 
     /**
      * Fork: one toolbar button per pinned extension (Settings of the extension →
@@ -888,6 +951,33 @@ class BrowserToolbarMiddleware(
                 shouldTint = icon == null,
                 contentDescription = contentDescription,
                 onClick = DisplayActions.ExtensionActionClicked(extensionId),
+                // Long-press: reorder within the pinned row or unpin (desktop-style
+                // "move left/right" management without leaving the toolbar).
+                onLongClick = BrowserToolbarMenu {
+                    listOf(
+                        BrowserToolbarMenuButton(
+                            icon = DrawableResIcon(iconsR.drawable.mozac_ic_back_24),
+                            text = StringResText(R.string.kako_addon_move_left),
+                            contentDescription =
+                                StringResContentDescription(R.string.kako_addon_move_left),
+                            onClick = DisplayActions.ExtensionMoveClicked(extensionId, -1),
+                        ),
+                        BrowserToolbarMenuButton(
+                            icon = DrawableResIcon(iconsR.drawable.mozac_ic_forward_24),
+                            text = StringResText(R.string.kako_addon_move_right),
+                            contentDescription =
+                                StringResContentDescription(R.string.kako_addon_move_right),
+                            onClick = DisplayActions.ExtensionMoveClicked(extensionId, 1),
+                        ),
+                        BrowserToolbarMenuButton(
+                            icon = DrawableResIcon(iconsR.drawable.mozac_ic_cross_24),
+                            text = StringResText(R.string.kako_addon_remove_from_toolbar),
+                            contentDescription =
+                                StringResContentDescription(R.string.kako_addon_remove_from_toolbar),
+                            onClick = DisplayActions.ExtensionUnpinClicked(extensionId),
+                        ),
+                    )
+                },
             )
         }
     }
