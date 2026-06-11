@@ -104,6 +104,14 @@ sealed class BrowserDisplayToolbarAction : BrowserToolbarAction {
     data class BrowserActionsEndUpdated(val actions: List<ToolbarAction>) : BrowserDisplayToolbarAction()
 
     /**
+     * Fork: replaces the list of actions displayed on the second toolbar row
+     * under the address bar.
+     *
+     * @property actions The new list of [ToolbarAction]s.
+     */
+    data class BrowserActionsSecondRowUpdated(val actions: List<ToolbarAction>) : BrowserDisplayToolbarAction()
+
+    /**
      * Updates the [ProgressBarConfig] of the display toolbar.
      *
      * @property config The new configuration for what progress bar to show.
