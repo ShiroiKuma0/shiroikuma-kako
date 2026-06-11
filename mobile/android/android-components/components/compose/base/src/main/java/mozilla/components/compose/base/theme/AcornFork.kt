@@ -25,6 +25,14 @@ object AcornForkOverrides {
     /** Replacement style for snackbars and similar transient flashes. */
     @Volatile
     var snackbarStyle: ForkChromeStyle? = null
+
+    /**
+     * Lay the browser toolbar out on two rows: navigation buttons + address bar on
+     * top, the trailing browser actions (new tab, extensions, tab counter, menu)
+     * below. The embedder must report the matching extra toolbar height.
+     */
+    @Volatile
+    var twoRowToolbar: Boolean = false
 }
 
 /**
