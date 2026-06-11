@@ -46,6 +46,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.autofill.address.RegionAddressFeatureGate
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.settings.counterPreference
+import org.mozilla.fenix.kako.KakoTheme
 import org.mozilla.fenix.components.settings.featureFlagBooleanPreference
 import org.mozilla.fenix.components.settings.lazyFeatureFlagBooleanPreference
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
@@ -2703,6 +2704,14 @@ class Settings(
      * Returns the height of the browser toolbar height.
      */
     val browserToolbarHeight: Int
+        get() = browserToolbarBaseHeight + kakoToolbarSecondRowHeight
+
+    /**
+     * Fork: the height of a single toolbar row — what upstream called
+     * [browserToolbarHeight] before the 白い熊 火狐 two-row layout. Single-row-sized
+     * chrome (the find-in-page bar) keeps using this.
+     */
+    val browserToolbarBaseHeight: Int
         get() {
             val isTallWindow = appContext.resources.configuration.screenHeightDp > TALL_SCREEN_HEIGHT_DP
             val isWideWindow = appContext.resources.configuration.screenWidthDp > WIDE_SCREEN_WIDTH_DP
@@ -2714,6 +2723,25 @@ class Settings(
                 R.dimen.composable_browser_toolbar_height
             }
             return appContext.pixelSizeFor(dimen)
+        }
+
+    /**
+     * Fork: the extra height of the 白い熊 火狐 two-row toolbar. Non-zero only when
+     * the two-row layout is on and the trailing browser actions are shown inside the
+     * toolbar — the same visibility rule the toolbar middlewares apply to
+     * browserActionsEnd, so this matches what FullDisplayToolbar actually renders.
+     */
+    private val kakoToolbarSecondRowHeight: Int
+        get() {
+            if (!KakoTheme.isEnabled(appContext) || !KakoTheme.toolbarTwoRows(appContext)) return 0
+            val isTallWindow = appContext.resources.configuration.screenHeightDp > TALL_SCREEN_HEIGHT_DP
+            val isWideWindow = appContext.resources.configuration.screenWidthDp > WIDE_SCREEN_WIDTH_DP
+            val endActionsShown = !shouldUseExpandedToolbar || !isTallWindow || isWideWindow
+            return if (endActionsShown) {
+                appContext.pixelSizeFor(R.dimen.kako_toolbar_second_row_height)
+            } else {
+                0
+            }
         }
 
     /**

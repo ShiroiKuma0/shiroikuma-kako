@@ -29,6 +29,7 @@ import androidx.navigation.NavDirections
 import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
 import mozilla.components.concept.base.crash.Breadcrumb
+import mozilla.components.support.ktx.android.content.getColorFromAttr
 import mozilla.components.support.utils.ext.isLandscape
 import org.mozilla.fenix.NavHostActivity
 import org.mozilla.fenix.R

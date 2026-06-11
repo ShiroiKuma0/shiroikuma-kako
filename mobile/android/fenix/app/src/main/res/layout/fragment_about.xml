@@ -32,6 +32,22 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintWidth_percent="0.75" />
 
+        <!-- Fork: the app name under the logo — the stock layout carried the name
+             inside the wordmark image, which the fork replaces with its own logo. -->
+        <TextView
+            android:id="@+id/kako_app_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/about_header_title_margin_top"
+            android:text="@string/app_name"
+            android:textAlignment="center"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/wordmark" />
+
         <TextView
             android:id="@+id/about_content"
             style="@style/Header16TextStyle"
@@ -43,7 +59,7 @@
             android:textAlignment="center"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/wordmark"
+            app:layout_constraintTop_toBottomOf="@id/kako_app_name"
             app:layout_constraintWidth_percent="0.8"
             tools:text="@string/about_content" />
 
