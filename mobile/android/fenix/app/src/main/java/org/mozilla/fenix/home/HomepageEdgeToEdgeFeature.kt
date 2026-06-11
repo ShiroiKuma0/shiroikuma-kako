@@ -26,10 +26,13 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.LifecycleAwareFeature
+import androidx.core.graphics.drawable.toDrawable
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.AppStore
+import org.mozilla.fenix.kako.KakoSlot
+import org.mozilla.fenix.kako.KakoTheme
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.wallpapers.Wallpaper
 import com.google.android.material.R as materialR
@@ -110,6 +113,15 @@ class HomepageEdgeToEdgeFeature(
     }
 
     private fun setBackground(background: Background) {
+        // Fork: under the 白い熊 火狐 theme the window stays on the slot background
+        // color — resetting it to fx_mobile_surface would grey out the homepage,
+        // Settings and every other screen that shows the window through.
+        if (KakoTheme.isEnabled(activity)) {
+            activity.window?.setBackgroundDrawable(
+                KakoTheme.color(activity, KakoSlot.BACKGROUND).toDrawable(),
+            )
+            return
+        }
         val isPrivateMode = browsingModeManager.mode == BrowsingMode.Private
         activity.window?.setBackgroundDrawableResource(
             if (isPrivateMode) R.color.fx_mobile_private_surface else background.resourceId,
@@ -183,6 +195,8 @@ class HomepageEdgeToEdgeFeature(
 
         return when {
             !shouldShow -> Color.TRANSPARENT
+            // Fork: keep the status bar on the 白い熊 火狐 background slot.
+            KakoTheme.isEnabled(activity) -> KakoTheme.color(activity, KakoSlot.BACKGROUND)
             isPrivateMode -> ContextCompat.getColor(activity, R.color.fx_mobile_private_surface)
             !settings.isTabStripEnabled &&
                 toolbarState.isShowingResultsScreen && browsingModeManager.mode == BrowsingMode.Normal &&
