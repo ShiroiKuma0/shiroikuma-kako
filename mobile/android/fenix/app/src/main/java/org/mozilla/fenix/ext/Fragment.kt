@@ -28,6 +28,7 @@ import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.R as materialR
 import mozilla.components.concept.base.crash.Breadcrumb
+import mozilla.components.support.ktx.android.content.getColorFromAttr
 import mozilla.components.support.utils.ext.isLandscape
 import mozilla.components.support.utils.ext.pixelSizeFor
 import mozilla.components.ui.icons.R as iconsR

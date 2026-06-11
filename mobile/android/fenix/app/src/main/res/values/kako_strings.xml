@@ -63,6 +63,8 @@
     <string name="kako_font_weight_700" translatable="false">Bold (700)</string>
     <string name="kako_font_weight_900" translatable="false">Black (900)</string>
 
+    <string name="kako_toolbar_two_rows" translatable="false">ツールバーを二段にする</string>
+
     <string name="kako_extension_icon_size_row" translatable="false">拡張機能アイコンの大きさ</string>
     <string name="kako_extension_icon_size_value" translatable="false">%1$ddp</string>
 
