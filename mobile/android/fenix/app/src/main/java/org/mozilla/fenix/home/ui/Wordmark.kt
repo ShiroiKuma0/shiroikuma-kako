@@ -7,22 +7,29 @@ package org.mozilla.fenix.home.ui
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.R
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_WORDMARK_LOGO
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_WORDMARK_TEXT
+import org.mozilla.fenix.kako.KakoSlot
+import org.mozilla.fenix.kako.KakoTheme
+import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
  * Semantic property for accessing a Composable item's current resource property.
@@ -48,6 +55,23 @@ internal fun WordmarkLogo() {
 
 @Composable
 internal fun WordmarkText(color: Color?) {
+    // Fork: the stock wordmark is a "Firefox" logotype image — under the
+    // 白い熊 火狐 theme the app name is drawn as text in the TEXT slot instead.
+    val context = LocalContext.current
+    if (KakoTheme.isEnabled(context)) {
+        Text(
+            text = stringResource(R.string.app_name),
+            modifier = Modifier.semantics {
+                testTagsAsResourceId = true
+                testTag = HOMEPAGE_WORDMARK_TEXT
+            },
+            color = Color(KakoTheme.color(context, KakoSlot.TEXT)),
+            style = FirefoxTheme.typography.headline5,
+            fontWeight = FontWeight.Bold,
+        )
+        return
+    }
+
     Image(
         modifier = Modifier
             .semantics {
