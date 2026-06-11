@@ -254,10 +254,8 @@ object KakoTheme {
             AcornForkOverrides.addressBarBorder = null
             AcornForkOverrides.buttonStyle = null
             AcornForkOverrides.snackbarStyle = null
-            AcornForkOverrides.twoRowToolbar = false
             return
         }
-        AcornForkOverrides.twoRowToolbar = toolbarTwoRows(context)
         AcornForkOverrides.addressBarBorder =
             borderStroke(context, KakoSlot.ADDRESSBAR_BORDER, KakoDimen.ADDRESSBAR_BORDER_WIDTH)
         AcornForkOverrides.buttonStyle = ForkChromeStyle(
@@ -280,13 +278,9 @@ object KakoTheme {
         fun c(slot: KakoSlot) = Color(color(context, slot))
         val accent = c(KakoSlot.ACCENT)
         return darkColorPalette.copy(
-            layer2 = c(KakoSlot.MENU_BACKGROUND),
             layer3 = c(KakoSlot.TOOLBAR_FILL),
-            layerAccent = accent,
-            layerAccentNonOpaque = accent.copy(alpha = 0.12f),
             formDefault = c(KakoSlot.TEXT_SECONDARY),
             textOnColorPrimary = c(KakoSlot.TEXT_ON_ACCENT),
-            iconPrimaryInactive = c(KakoSlot.TEXT_SECONDARY),
             iconOnColor = c(KakoSlot.TEXT_ON_ACCENT),
             ripple = accent,
             tabActive = c(KakoSlot.TAB_SELECTED),

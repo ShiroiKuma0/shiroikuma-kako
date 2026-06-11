@@ -101,6 +101,12 @@ private fun reduce(state: BrowserToolbarState, action: BrowserToolbarAction): Br
             ),
         )
 
+        is BrowserDisplayToolbarAction.BrowserActionsSecondRowUpdated -> state.copy(
+            displayState = state.displayState.copy(
+                browserActionsSecondRow = action.actions,
+            ),
+        )
+
         is NavigationActionsUpdated -> state.copy(
             displayState = state.displayState.copy(
                 navigationActions = action.actions,
