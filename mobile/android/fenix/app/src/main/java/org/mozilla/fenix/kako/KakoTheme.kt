@@ -254,10 +254,8 @@ object KakoTheme {
             AcornForkOverrides.addressBarBorder = null
             AcornForkOverrides.buttonStyle = null
             AcornForkOverrides.snackbarStyle = null
-            AcornForkOverrides.twoRowToolbar = false
             return
         }
-        AcornForkOverrides.twoRowToolbar = toolbarTwoRows(context)
         AcornForkOverrides.addressBarBorder =
             borderStroke(context, KakoSlot.ADDRESSBAR_BORDER, KakoDimen.ADDRESSBAR_BORDER_WIDTH)
         AcornForkOverrides.buttonStyle = ForkChromeStyle(
