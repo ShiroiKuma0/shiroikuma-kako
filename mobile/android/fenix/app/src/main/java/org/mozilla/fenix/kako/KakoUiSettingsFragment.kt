@@ -22,6 +22,8 @@ import androidx.appcompat.widget.SwitchCompat
 import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import org.mozilla.fenix.R
+import org.mozilla.fenix.ext.requireComponents
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.showToolbar
 
 /**
@@ -96,6 +98,7 @@ class KakoUiSettingsFragment : Fragment() {
                 KakoDimen.entries.filter { it.section == section }.forEach { addDimenRow(it, indent = 1) }
                 if (section == KakoSection.TOOLBAR) {
                     addExtensionIconSizeRow(indent = 1)
+                    addExtensionOrderRow(indent = 1)
                 }
             }
         }
@@ -467,6 +470,23 @@ class KakoUiSettingsFragment : Fragment() {
                 )
             },
         )
+    }
+
+    private fun addExtensionOrderRow(indent: Int) {
+        val context = requireContext()
+        val ids = context.components.settings.toolbarPinnedExtensions.split(",").filter { it.isNotEmpty() }
+        addValueRow(
+            label = getString(R.string.kako_extension_order_row),
+            value = ids.size.toString(),
+            valueTypeface = Typeface.DEFAULT,
+            indent = indent,
+        ) {
+            val extensions = requireComponents.core.store.state.extensions
+            val entries = ids.map { id -> id to (extensions[id]?.name ?: id) }
+            KakoExtensionOrderDialog(context, entries) { newOrder ->
+                context.components.settings.toolbarPinnedExtensions = newOrder.joinToString(",")
+            }.show()
+        }
     }
 
     private fun addFontSample(indent: Int) {

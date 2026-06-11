@@ -70,6 +70,11 @@
 
     <string name="kako_addon_add_to_toolbar" translatable="false">ツールバーに追加</string>
     <string name="kako_addon_remove_from_toolbar" translatable="false">ツールバーから削除</string>
+    <string name="kako_addon_move_left" translatable="false">左へ移動</string>
+    <string name="kako_addon_move_right" translatable="false">右へ移動</string>
+    <string name="kako_extension_order_row" translatable="false">拡張機能の並び順</string>
+    <string name="kako_extension_order_title" translatable="false">拡張機能の並び順（ドラッグで並べ替え）</string>
+    <string name="kako_extension_order_empty" translatable="false">ツールバーに追加された拡張機能はありません</string>
 
     <string name="kako_color_inherit" translatable="false">解除（継承に戻す）</string>
     <string name="kako_reset" translatable="false">既定値に戻す</string>

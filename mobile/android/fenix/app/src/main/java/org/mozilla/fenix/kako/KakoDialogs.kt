@@ -12,12 +12,16 @@ import android.text.InputType
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.GridLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.core.graphics.toColorInt
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import org.mozilla.fenix.R
 import java.util.Locale
 
@@ -260,6 +264,115 @@ class KakoFontWeightPickerDialog(
             700 to R.string.kako_font_weight_700,
             900 to R.string.kako_font_weight_900,
         )
+    }
+}
+
+/**
+ * Drag-to-reorder list of the pinned extension toolbar buttons. Rows are dragged
+ * by long-press (or the ☰ handle); every completed drag reports the new id order
+ * through [onReordered], which persists it — so dismissing the dialog never loses
+ * a rearrangement.
+ */
+class KakoExtensionOrderDialog(
+    private val context: Context,
+    entries: List<Pair<String, String>>,
+    private val onReordered: (List<String>) -> Unit,
+) {
+    private val rows = entries.toMutableList()
+
+    fun show() {
+        val textColor = KakoTheme.color(context, KakoSlot.TEXT)
+
+        if (rows.isEmpty()) {
+            kakoDialog(
+                context,
+                context.getString(R.string.kako_extension_order_row),
+                TextView(context).apply {
+                    text = context.getString(R.string.kako_extension_order_empty)
+                    setTextColor(KakoTheme.color(context, KakoSlot.TEXT_SECONDARY))
+                    textSize = OPTION_TEXT_SIZE_SP
+                    setPadding(context.dp(24), context.dp(8), context.dp(24), context.dp(16))
+                },
+            ).show()
+            return
+        }
+
+        val adapter = object : RecyclerView.Adapter<RowHolder>() {
+            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RowHolder {
+                val handle = TextView(context).apply {
+                    text = HANDLE_GLYPH
+                    setTextColor(KakoTheme.color(context, KakoSlot.TEXT_SECONDARY))
+                    textSize = OPTION_TEXT_SIZE_SP
+                    setPadding(context.dp(24), 0, context.dp(16), 0)
+                }
+                val label = TextView(context).apply {
+                    setTextColor(textColor)
+                    textSize = OPTION_TEXT_SIZE_SP
+                    setPadding(0, 0, context.dp(24), 0)
+                }
+                val row = LinearLayout(context).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = Gravity.CENTER_VERTICAL
+                    minimumHeight = context.dp(48)
+                    layoutParams = RecyclerView.LayoutParams(
+                        RecyclerView.LayoutParams.MATCH_PARENT,
+                        RecyclerView.LayoutParams.WRAP_CONTENT,
+                    )
+                    setBackgroundResource(android.R.drawable.list_selector_background)
+                    addView(handle)
+                    addView(label)
+                }
+                return RowHolder(row, label)
+            }
+
+            override fun getItemCount(): Int = rows.size
+
+            override fun onBindViewHolder(holder: RowHolder, position: Int) {
+                holder.label.text = rows[position].second
+            }
+        }
+
+        val recycler = RecyclerView(context).apply {
+            layoutManager = LinearLayoutManager(context)
+            this.adapter = adapter
+            setPadding(0, context.dp(8), 0, context.dp(8))
+        }
+
+        ItemTouchHelper(
+            object : ItemTouchHelper.SimpleCallback(
+                ItemTouchHelper.UP or ItemTouchHelper.DOWN,
+                0,
+            ) {
+                override fun onMove(
+                    recyclerView: RecyclerView,
+                    viewHolder: RecyclerView.ViewHolder,
+                    target: RecyclerView.ViewHolder,
+                ): Boolean {
+                    val from = viewHolder.bindingAdapterPosition
+                    val to = target.bindingAdapterPosition
+                    if (from == RecyclerView.NO_POSITION || to == RecyclerView.NO_POSITION) return false
+                    rows.add(to, rows.removeAt(from))
+                    adapter.notifyItemMoved(from, to)
+                    return true
+                }
+
+                override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) = Unit
+
+                override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
+                    super.clearView(recyclerView, viewHolder)
+                    onReordered(rows.map { it.first })
+                }
+            },
+        ).attachToRecyclerView(recycler)
+
+        kakoDialog(context, context.getString(R.string.kako_extension_order_title), recycler).show()
+    }
+
+    private class RowHolder(row: View, val label: TextView) : RecyclerView.ViewHolder(row)
+
+    private companion object {
+        const val OPTION_TEXT_SIZE_SP = 18f
+        const val HANDLE_GLYPH = "☰"
     }
 }
 
