@@ -45,9 +45,12 @@ customBaseVersionName=151.0.4  # mirrors the upstream base tag; bump manually on
 ```
 
 `tools/kako/bump-build.sh` increments `customBuildNumber` by 1 and prints the
-full version `<base>+<n>` (monotonic; gaps from aborted builds are fine). The
-APK name embeds both. When `upstream-new-version` adopts a new tag, update
-`customBaseVersionName` by hand in the same commit that resolves the rebase.
+full version `<base>+<n>` (gaps from aborted builds are fine). The APK name
+embeds both. The counter **resets on each upstream adoption**: when
+`upstream-new-version` adopts a new tag, set `customBuildNumber=0` and update
+`customBaseVersionName` by hand in the same commit that resolves the rebase, so
+the new version's first build is `<newbase>+1`. (Android upgrade ordering uses
+versionCode, which is upstream-derived, so resetting the counter is safe.)
 
 ## Build pipeline (artifact mode — Kotlin/Java only compiles locally)
 
@@ -104,8 +107,10 @@ adb push "$OUT" /sdcard/tmp/
 - **Always build after changes** — bump, assemble, sign, verify, copy to
   `~/tmp/` — without being asked. A task is unfinished until the signed APK
   is on disk. Build failure → stop, surface the error verbatim.
-- **Always ask before `adb push`** — end every successful build report with
-  the push question; never push (or skip silently) without 白い熊's answer.
+- **Always ask before `adb push`** — after every successful build report, ask
+  whether to push **via the AskUserQuestion tool** (structured question mode,
+  options e.g. "Push to device" / "Not now"), not as a trailing sentence in
+  prose; never push (or skip silently) without 白い熊's answer.
   Device: Huawei Mate XT over USB debugging.
 - **Never `git push`** without an explicit go-ahead.
 - Engine (C++/Rust) changes are out of scope for artifact builds — flag
