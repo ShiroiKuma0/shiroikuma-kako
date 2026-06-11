@@ -62,6 +62,9 @@
     <!-- Browser Toolbar -->
     <dimen name="composable_browser_toolbar_height">64dp</dimen>
     <dimen name="composable_browser_toolbar_height_small">56dp</dimen>
+    <!-- Fork: the action row under the address bar in the 白い熊 火狐 two-row toolbar.
+         Must match SECOND_ROW_HEIGHT_DP in FullDisplayToolbar. -->
+    <dimen name="kako_toolbar_second_row_height">48dp</dimen>
     <dimen name="browser_toolbar_height">56dp</dimen>
     <dimen name="browser_navbar_height">60dp</dimen>
     <dimen name="browser_navbar_height_small">48dp</dimen>

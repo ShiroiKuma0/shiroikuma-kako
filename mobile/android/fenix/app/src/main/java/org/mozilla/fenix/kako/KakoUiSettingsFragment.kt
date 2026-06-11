@@ -89,6 +89,9 @@ class KakoUiSettingsFragment : Fragment() {
                 addSubgroupHeader(getString(R.string.kako_subgroup_font), indent = 1)
                 addFontRows(indent = 2)
             } else {
+                if (section == KakoSection.TOOLBAR) {
+                    addToolbarTwoRowsSwitch(indent = 1)
+                }
                 slots.forEach { addColorRow(it, indent = 1) }
                 KakoDimen.entries.filter { it.section == section }.forEach { addDimenRow(it, indent = 1) }
                 if (section == KakoSection.TOOLBAR) {
@@ -213,6 +216,22 @@ class KakoUiSettingsFragment : Fragment() {
                         }
                         rebuild()
                     }.show()
+                }
+            },
+        )
+    }
+
+    private fun addToolbarTwoRowsSwitch(indent: Int) {
+        val context = requireContext()
+        holder.addView(
+            SwitchCompat(context).apply {
+                text = getString(R.string.kako_toolbar_two_rows)
+                isChecked = KakoTheme.toolbarTwoRows(context)
+                setTextColor(KakoTheme.color(context, KakoSlot.TEXT))
+                textSize = ITEM_TEXT_SIZE_SP
+                setPaddingRelative(indentPx(indent), dp(8), dp(BASE_MARGIN_DP), dp(8))
+                setOnCheckedChangeListener { _, checked ->
+                    KakoTheme.setToolbarTwoRows(context, checked)
                 }
             },
         )
