@@ -117,6 +117,7 @@ fun BrowserToolbar(
                 pageActionsStart = uiState.displayState.pageActionsStart,
                 pageActionsEnd = uiState.displayState.pageActionsEnd,
                 browserActionsEnd = uiState.displayState.browserActionsEnd,
+                browserActionsSecondRow = uiState.displayState.browserActionsSecondRow,
                 onInteraction = { store.dispatch(it) },
                 useMinimalBottomToolbarWhenEnteringText = useMinimalBottomToolbarWhenEnteringText,
             )
