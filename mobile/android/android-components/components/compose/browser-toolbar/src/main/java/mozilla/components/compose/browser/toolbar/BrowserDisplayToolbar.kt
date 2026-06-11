@@ -67,6 +67,8 @@ fun BrowserDisplayToolbar(
     pageActionsStart: List<Action> = emptyList(),
     pageActionsEnd: List<Action> = emptyList(),
     browserActionsEnd: List<Action> = emptyList(),
+    // Fork: actions for the second toolbar row, under the address bar.
+    browserActionsSecondRow: List<Action> = emptyList(),
     onInteraction: (BrowserToolbarEvent) -> Unit,
     useMinimalBottomToolbarWhenEnteringText: Boolean = false,
 ) {
@@ -84,6 +86,7 @@ fun BrowserDisplayToolbar(
         pageActionsStart = pageActionsStart,
         pageActionsEnd = pageActionsEnd,
         browserActionsEnd = browserActionsEnd,
+        browserActionsSecondRow = browserActionsSecondRow,
         onInteraction = onInteraction,
         modifier = Modifier.fillMaxWidth(),
         backgroundColor = backgroundColor,
