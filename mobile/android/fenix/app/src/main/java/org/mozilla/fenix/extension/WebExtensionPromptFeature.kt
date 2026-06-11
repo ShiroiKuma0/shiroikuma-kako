@@ -49,6 +49,7 @@ import org.mozilla.fenix.addons.DownloadAddonDialogFragment
 import org.mozilla.fenix.addons.DownloadAddonDialogFragmentArgs
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.pixelSizeFor
+import org.mozilla.fenix.kako.KakoTheme
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.theme.ThemeManager
 import androidx.appcompat.R as appcompatR
@@ -377,31 +378,45 @@ class WebExtensionPromptFeature(
             permissions = permissions,
             origins = origins,
             dataCollectionPermissions = dataCollectionPermissions,
-            promptsStyling = AddonDialogFragment.PromptsStyling(
-                gravity = Gravity.BOTTOM,
-                shouldWidthMatchParent = true,
-                confirmButtonBackgroundColor = ThemeManager.resolveAttribute(
-                    appcompatR.attr.colorPrimary,
-                    context,
-                ),
-                confirmButtonTextColor = ThemeManager.resolveAttribute(
-                    materialR.attr.colorOnPrimary,
-                    context,
-                ),
-                confirmButtonDisabledBackgroundColor = ThemeManager.resolveAttribute(
-                    R.attr.actionPrimaryDisabled,
-                    context,
-                ),
-                confirmButtonDisabledTextColor = ThemeManager.resolveAttribute(
-                    R.attr.textActionPrimaryDisabled,
-                    context,
-                ),
-                confirmButtonRadius = context.pixelSizeFor(R.dimen.tab_corner_radius).toFloat(),
-                learnMoreLinkTextColor = ThemeManager.resolveAttribute(
-                    materialR.attr.colorTertiary,
-                    context,
-                ),
-            ),
+            // Fork: under the 白い熊 火狐 theme the confirm button keeps the theme's
+            // KakoButton style (black fill, yellow text, traced border) instead of
+            // being repainted with the accent fill, matching the Cancel button.
+            promptsStyling = if (KakoTheme.isEnabled(context)) {
+                AddonDialogFragment.PromptsStyling(
+                    gravity = Gravity.BOTTOM,
+                    shouldWidthMatchParent = true,
+                    learnMoreLinkTextColor = ThemeManager.resolveAttribute(
+                        materialR.attr.colorTertiary,
+                        context,
+                    ),
+                )
+            } else {
+                AddonDialogFragment.PromptsStyling(
+                    gravity = Gravity.BOTTOM,
+                    shouldWidthMatchParent = true,
+                    confirmButtonBackgroundColor = ThemeManager.resolveAttribute(
+                        appcompatR.attr.colorPrimary,
+                        context,
+                    ),
+                    confirmButtonTextColor = ThemeManager.resolveAttribute(
+                        materialR.attr.colorOnPrimary,
+                        context,
+                    ),
+                    confirmButtonDisabledBackgroundColor = ThemeManager.resolveAttribute(
+                        R.attr.actionPrimaryDisabled,
+                        context,
+                    ),
+                    confirmButtonDisabledTextColor = ThemeManager.resolveAttribute(
+                        R.attr.textActionPrimaryDisabled,
+                        context,
+                    ),
+                    confirmButtonRadius = context.pixelSizeFor(R.dimen.tab_corner_radius).toFloat(),
+                    learnMoreLinkTextColor = ThemeManager.resolveAttribute(
+                        materialR.attr.colorTertiary,
+                        context,
+                    ),
+                )
+            },
             onPositiveButtonClicked = { _, privateBrowsingAllowed, technicalAndInteractionDataAllowed ->
                 handlePermissions(
                     promptRequest,
@@ -557,19 +572,27 @@ class WebExtensionPromptFeature(
         if (!isInstallationInProgress && !hasExistingAddonPostInstallationDialogFragment()) {
             val dialog = AddonInstallationDialogFragment.newInstance(
                 addon = addon,
-                promptsStyling = AddonDialogFragment.PromptsStyling(
-                    gravity = Gravity.BOTTOM,
-                    shouldWidthMatchParent = true,
-                    confirmButtonBackgroundColor = ThemeManager.resolveAttribute(
-                        appcompatR.attr.colorPrimary,
-                        context,
-                    ),
-                    confirmButtonTextColor = ThemeManager.resolveAttribute(
-                        materialR.attr.colorOnPrimary,
-                        context,
-                    ),
-                    confirmButtonRadius = context.pixelSizeFor(R.dimen.tab_corner_radius).toFloat(),
-                ),
+                // Fork: same KakoButton fallback as the permissions dialog above.
+                promptsStyling = if (KakoTheme.isEnabled(context)) {
+                    AddonDialogFragment.PromptsStyling(
+                        gravity = Gravity.BOTTOM,
+                        shouldWidthMatchParent = true,
+                    )
+                } else {
+                    AddonDialogFragment.PromptsStyling(
+                        gravity = Gravity.BOTTOM,
+                        shouldWidthMatchParent = true,
+                        confirmButtonBackgroundColor = ThemeManager.resolveAttribute(
+                            appcompatR.attr.colorPrimary,
+                            context,
+                        ),
+                        confirmButtonTextColor = ThemeManager.resolveAttribute(
+                            materialR.attr.colorOnPrimary,
+                            context,
+                        ),
+                        confirmButtonRadius = context.pixelSizeFor(R.dimen.tab_corner_radius).toFloat(),
+                    )
+                },
                 onDismissed = {
                     consumePromptRequest()
                 },
