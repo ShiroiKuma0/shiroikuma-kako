@@ -43,6 +43,7 @@ const val KAKO_FONT_WEIGHT_KEY = "kako_font_weight"
 const val KAKO_FONT_SCALE_KEY = "kako_font_scale"
 const val KAKO_EXTENSION_ICON_SIZE_KEY = "kako_extension_icon_size"
 const val KAKO_EXTENSION_ICON_SIZE_DEFAULT_DP = 24
+const val KAKO_TOOLBAR_TWO_ROWS_KEY = "kako_toolbar_two_rows"
 
 /**
  * Top-level sections of the 白い熊 火狐 UI page, in display order.
@@ -159,8 +160,20 @@ object KakoTheme {
             remove(KAKO_FONT_WEIGHT_KEY)
             remove(KAKO_FONT_SCALE_KEY)
             remove(KAKO_EXTENSION_ICON_SIZE_KEY)
+            remove(KAKO_TOOLBAR_TWO_ROWS_KEY)
             putBoolean(KEY_ENABLED, true)
         }
+        refreshChromeOverrides(context)
+        bump()
+    }
+
+    /** Whether the browser toolbar is laid out on two rows (address bar on top,
+     * new tab/extensions/tab counter/menu below). Default on. */
+    fun toolbarTwoRows(context: Context): Boolean =
+        prefs(context).getBoolean(KAKO_TOOLBAR_TWO_ROWS_KEY, true)
+
+    fun setToolbarTwoRows(context: Context, enabled: Boolean) {
+        prefs(context).edit { putBoolean(KAKO_TOOLBAR_TWO_ROWS_KEY, enabled) }
         refreshChromeOverrides(context)
         bump()
     }
@@ -241,8 +254,10 @@ object KakoTheme {
             AcornForkOverrides.addressBarBorder = null
             AcornForkOverrides.buttonStyle = null
             AcornForkOverrides.snackbarStyle = null
+            AcornForkOverrides.twoRowToolbar = false
             return
         }
+        AcornForkOverrides.twoRowToolbar = toolbarTwoRows(context)
         AcornForkOverrides.addressBarBorder =
             borderStroke(context, KakoSlot.ADDRESSBAR_BORDER, KakoDimen.ADDRESSBAR_BORDER_WIDTH)
         AcornForkOverrides.buttonStyle = ForkChromeStyle(

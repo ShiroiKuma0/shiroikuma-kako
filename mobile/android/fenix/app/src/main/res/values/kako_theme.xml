@@ -60,16 +60,20 @@
         <item name="colorSurfaceContainerLow">@color/kako_black</item>
         <item name="colorSurfaceContainerLowest">@color/kako_black</item>
 
+        <!-- Fork branding: the 白い熊 火狐 logo replaces the Firefox wordmark on the
+             homepage header and the Settings → About page. -->
+        <item name="fenixLogo">@drawable/ic_kako_wordmark</item>
+        <item name="fenixWordmarkLogo">@drawable/ic_kako_wordmark</item>
+        <item name="fenixWordmarkSportLogo">@drawable/ic_kako_wordmark</item>
+
+        <!-- The private-browsing mask button on the homepage header. -->
+        <item name="mozac_ic_private_mode_circle_fill_icon_color">@color/kako_yellow</item>
+        <item name="mozac_ic_private_mode_circle_fill_background_color">@color/kako_black</item>
+
         <!-- Fenix design system attributes -->
         <item name="layer2">@color/kako_black</item>
         <item name="layer3">@color/kako_black</item>
-        <item name="actionPrimary">@color/kako_yellow</item>
-        <item name="textPrimary">@color/kako_yellow</item>
-        <item name="textSecondary">@color/kako_yellow_secondary</item>
-        <item name="textDisabled">@color/kako_yellow_disabled</item>
-        <item name="textAccent">@color/kako_yellow</item>
         <item name="textOnColorPrimary">@color/kako_black</item>
-        <item name="textActionPrimary">@color/kako_yellow</item>
         <item name="iconOnColor">@color/kako_black</item>
     </style>
 
