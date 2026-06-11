@@ -42,7 +42,9 @@ class FindInPageIntegration(
     private val engineView: EngineView,
     private val toolbarsHideCallback: () -> Unit,
     private val toolbarsResetCallback: () -> Unit,
-    private val findInPageHeight: Int = view.context.settings().browserToolbarHeight,
+    // Fork: the find bar is a single row — size it to one toolbar row even when
+    // the 白い熊 火狐 two-row toolbar is active.
+    private val findInPageHeight: Int = view.context.settings().browserToolbarBaseHeight,
 ) : LifecycleAwareFeature, UserInteractionHandler {
     @VisibleForTesting
     internal val feature by lazy { FindInPageFeature(store, view, engineView, ::onClose) }
