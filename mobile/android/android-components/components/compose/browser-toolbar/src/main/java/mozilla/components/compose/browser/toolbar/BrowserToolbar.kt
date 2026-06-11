@@ -122,6 +122,7 @@ fun BrowserToolbar(
                 pageActionsEnd = uiState.displayState.pageActionsEnd,
                 browserActionsEnd = uiState.displayState.browserActionsEnd,
                 browserActionsColor = browserActionsColor,
+                browserActionsSecondRow = uiState.displayState.browserActionsSecondRow,
                 onInteraction = { store.dispatch(it) },
                 useMinimalBottomToolbarWhenEnteringText = useMinimalBottomToolbarWhenEnteringText,
             )
