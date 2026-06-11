@@ -2489,7 +2489,9 @@ abstract class BaseBrowserFragment :
                     sessionId = customTabSessionId,
                     view = findInPageBar,
                     engineView = binding.engineView,
-                    findInPageHeight = requireComponents.settings.browserToolbarHeight,
+                    // Fork: the find bar is a single row — size it to one toolbar row even
+                    // when the 白い熊 火狐 two-row toolbar is active.
+                    findInPageHeight = requireComponents.settings.browserToolbarBaseHeight,
                     toolbarsHideCallback = {
                         expandBrowserView()
                     },
