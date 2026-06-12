@@ -11,10 +11,12 @@ import android.os.Build
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.navigation.NavController
+import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.launch
@@ -88,7 +90,6 @@ import mozilla.components.support.utils.ClipboardHandler
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.GleanMetrics.ReaderMode
-import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.GleanMetrics.Translations
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
@@ -936,6 +937,11 @@ class BrowserToolbarMiddleware(
             } ?: global ?: return@mapNotNull null
 
             val icon = runCatching { extensionAction.loadIcon?.invoke(iconSize) }.getOrNull()
+            // loadIcon suspends on a non-cancellable GeckoResult.await(): if the view
+            // scope died while we were suspended (close all tabs, exit, backgrounding),
+            // the coroutine resumes anyway and would run on into fragment lambdas whose
+            // requireContext() then throws. Stop here instead.
+            coroutineContext.ensureActive()
             val contentDescription = extensionAction.title?.takeUnless { it.isBlank() }
                 ?: extension.name
                 ?: extensionId
