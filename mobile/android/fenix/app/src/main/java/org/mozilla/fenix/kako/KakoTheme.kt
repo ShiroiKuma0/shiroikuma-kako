@@ -34,10 +34,14 @@ import org.mozilla.fenix.R
 
 const val KAKO_THEME_UNSET = Int.MIN_VALUE
 const val KAKO_PALETTE_BLACK = 0xFF000000.toInt()
-const val KAKO_PALETTE_YELLOW = 0xFFFFEB3B.toInt()
+const val KAKO_PALETTE_YELLOW = 0xFFFFFF00.toInt()
+
+/** The pre-migration default yellow (material #FFEB3B); see [KakoTheme.migratePureYellow]. */
+private const val KAKO_PALETTE_OLD_YELLOW = 0xFFFFEB3B.toInt()
 
 private const val PREFS_NAME = "kako_theme"
 private const val KEY_ENABLED = "kako_theme_enabled"
+private const val KEY_PURE_YELLOW_MIGRATED = "kako_pure_yellow_migrated"
 const val KAKO_FONT_FAMILY_KEY = "kako_font_family"
 const val KAKO_FONT_WEIGHT_KEY = "kako_font_weight"
 const val KAKO_FONT_SCALE_KEY = "kako_font_scale"
@@ -165,6 +169,27 @@ object KakoTheme {
         }
         refreshChromeOverrides(context)
         bump()
+    }
+
+    /**
+     * One-time migration: the default yellow changed from material yellow (#FFEB3B)
+     * to pure yellow (#FFFF00). Rewrites every persisted slot override whose RGB part
+     * is the old yellow to the new one, preserving the alpha byte. Runs at startup,
+     * before any slot color is read; guarded by [KEY_PURE_YELLOW_MIGRATED].
+     */
+    fun migratePureYellow(context: Context) {
+        val prefs = prefs(context)
+        if (prefs.getBoolean(KEY_PURE_YELLOW_MIGRATED, false)) return
+        prefs.edit {
+            KakoSlot.entries.forEach { slot ->
+                val stored = prefs.getInt(slot.key, KAKO_THEME_UNSET)
+                if (stored == KAKO_THEME_UNSET) return@forEach
+                if ((stored and RGB_MASK) == (KAKO_PALETTE_OLD_YELLOW and RGB_MASK)) {
+                    putInt(slot.key, (stored and RGB_MASK.inv()) or (KAKO_PALETTE_YELLOW and RGB_MASK))
+                }
+            }
+            putBoolean(KEY_PURE_YELLOW_MIGRATED, true)
+        }
     }
 
     /** Whether the browser toolbar is laid out on two rows (address bar on top,
@@ -346,6 +371,7 @@ object KakoTheme {
 
     private const val ALPHA_SECONDARY = 0.6f
     private const val SELECTED_TAB_FRACTION = 0.25f
+    private const val RGB_MASK = 0x00FFFFFF
 }
 
 private fun Int.withAlpha(alpha: Float): Int =
