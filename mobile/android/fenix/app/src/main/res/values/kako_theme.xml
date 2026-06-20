@@ -13,10 +13,10 @@
 -->
 <resources>
     <color name="kako_black">#FF000000</color>
-    <color name="kako_yellow">#FFFFEB3B</color>
-    <color name="kako_yellow_secondary">#99FFEB3B</color>
-    <color name="kako_yellow_disabled">#61FFEB3B</color>
-    <color name="kako_yellow_faint">#1FFFEB3B</color>
+    <color name="kako_yellow">#FFFFFF00</color>
+    <color name="kako_yellow_secondary">#99FFFF00</color>
+    <color name="kako_yellow_disabled">#61FFFF00</color>
+    <color name="kako_yellow_faint">#1FFFFF00</color>
 
     <style name="KakoThemeOverlay">
         <!-- Android framework -->
