@@ -62,6 +62,13 @@ ear/muzzle/cheek/tail contours stay visible). Master SVGs:
 `tools/kako/icon/icon-final.svg` (+ `-round`). Previews mirrored at
 `~/tmp/shiroikuma-kako-icon-preview{,-round}.png`.
 
+## 白い熊 UI default palette
+
+The 白い熊 火狐 UI (KakoTheme slots + `kako_theme.xml` overlay) seeds and resets to black
+`#000000` + **pure yellow `#FFFF00`** (`KAKO_PALETTE_BLACK` / `KAKO_PALETTE_YELLOW` in
+`fenix/kako/KakoTheme.kt`; the alpha-variant resources in `kako_theme.xml` share the same base).
+Never use material yellow `#FFEB3B` for fork UI defaults.
+
 ## Build & deploy pipeline (summary — see `kako-build` skill)
 
 Output APK: `shiroikuma-kako_<upstreamver>+<n>_arm64-v8a.apk` → always copied
