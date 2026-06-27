@@ -63,8 +63,9 @@ each adoption, so the new version's first build is `<newbase>+1`).
 
 Run the full **kako-build** pipeline (bump, `./mach build`, gradle assemble,
 sign, copy to `~/tmp/`). First build after a major bump re-downloads matching
-GeckoView artifacts — slower, expected. Then ask 白い熊 about `adb push` as
-usual.
+GeckoView artifacts — slower, expected. Then deliver automatically via the
+global `/after-build` skill (adb-push if the phone is connected, else scp to
+skhw — no prompt), per kako-build's standing rule.
 
 ## 5. Push (only with explicit go-ahead)
 
