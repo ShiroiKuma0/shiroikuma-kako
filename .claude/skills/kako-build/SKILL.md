@@ -95,11 +95,11 @@ ls -la "$OUT"
 ~/.mozbuild/android-sdk-linux/build-tools/36.1.0/aapt2 dump badging "$OUT" \
     | grep -E "^package|application-label:|native-code"
 
-# Deploy (ONLY after 白い熊's explicit OK). adb must ALSO run outside the
-# Bash sandbox — a sandboxed adb daemon cannot see USB devices and reports
-# "no devices/emulators found" even with the phone connected and authorized.
-# Always push to /sdcard/tmp (白い熊's chosen drop directory on the device).
-adb push "$OUT" /sdcard/tmp/
+# Deliver automatically (no prompt) — invoke the global /after-build skill once
+# the signed APK is in ~/tmp/. It runs /adb-check UNSANDBOXED (a sandboxed adb
+# daemon cannot see USB devices and reports "no devices/emulators found" even
+# with the phone connected), then /adb-push to /sdcard/tmp/ if the phone is
+# connected, otherwise /scp to skhw — announcing what landed. Never ask first.
 ```
 
 ## Standing rules
@@ -107,11 +107,11 @@ adb push "$OUT" /sdcard/tmp/
 - **Always build after changes** — bump, assemble, sign, verify, copy to
   `~/tmp/` — without being asked. A task is unfinished until the signed APK
   is on disk. Build failure → stop, surface the error verbatim.
-- **Always ask before `adb push`** — after every successful build report, ask
-  whether to push **via the AskUserQuestion tool** (structured question mode,
-  options e.g. "Push to device" / "Not now"), not as a trailing sentence in
-  prose; never push (or skip silently) without 白い熊's answer.
-  Device: Huawei Mate XT over USB debugging.
+- **Deliver automatically via `/after-build`** — after every successful build,
+  invoke the global `/after-build` skill without asking. It runs `/adb-check`
+  UNSANDBOXED, then `/adb-push` to `/sdcard/tmp/` if the phone is connected,
+  otherwise `/scp` to `skhw`, announcing what landed. No transfer prompt, no
+  "phone connected?" question. Device: Huawei Mate XT over USB debugging.
 - **Never `git push`** without an explicit go-ahead.
 - Engine (C++/Rust) changes are out of scope for artifact builds — flag
   before attempting; they force a full compile.
