@@ -938,6 +938,10 @@ def ensure_gradle_jdk_installations(
     # gradle.properties has no [section] header, so prepend a synthetic one
     # to satisfy configparser, then strip it back out on write.
     config = RawConfigParser()
+    # Gradle properties are case-sensitive; configparser's default optionxform
+    # lowercases keys, which collides keys differing only in case
+    # (DuplicateOptionError) and rewrites the user's keys in lowercase.
+    config.optionxform = str
     if gradle_props.exists():
         config.read_string("[DEFAULT]\n" + gradle_props.read_text(encoding="utf-8"))
     existing_paths = [
@@ -962,7 +966,13 @@ def ensure_gradle_jdk_installations(
     # Remove duplicates while preserving order.
     out_paths = list(dict.fromkeys(out_paths))
 
-    config["DEFAULT"][key] = ",".join(out_paths)
+    new_value = ",".join(out_paths)
+    if config.get("DEFAULT", key, fallback=None) == new_value:
+        # Nothing to update — don't rewrite the user's file (a configparser
+        # round-trip drops comments and reflows formatting).
+        return
+
+    config["DEFAULT"][key] = new_value
     gradle_props.parent.mkdir(parents=True, exist_ok=True)
     buf = StringIO()
     config.write(buf)
