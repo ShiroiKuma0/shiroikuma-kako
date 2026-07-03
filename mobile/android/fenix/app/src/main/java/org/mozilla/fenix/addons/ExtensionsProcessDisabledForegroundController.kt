@@ -20,6 +20,7 @@ import mozilla.components.support.webextensions.ExtensionsProcessDisabledPromptO
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.kako.showKako
 
 /**
  * Controller for handling extensions process spawning disabled events. When the app is in foreground this will call for
@@ -101,10 +102,10 @@ class ExtensionsProcessDisabledForegroundController(
                 setTitle(R.string.extension_process_crash_dialog_title)
             }
 
-            val dialog = builder.show()
+            val dialog = builder.showKako()
             shouldCreateDialog = false
             onDismissDialog = {
-                dialog?.dismiss()
+                dialog.dismiss()
                 shouldCreateDialog = true
             }
         }

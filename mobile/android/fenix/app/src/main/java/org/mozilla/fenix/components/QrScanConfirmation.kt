@@ -12,6 +12,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import mozilla.components.support.ktx.android.content.res.getSpanned
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 import org.mozilla.fenix.R
+import org.mozilla.fenix.kako.showKako
 
 /**
  * Shows the dialog informing the user that a scanned QR code does not contain a usable web address.
@@ -26,8 +27,7 @@ internal fun Context.showQrScanInvalidUrlDialog(onDismiss: () -> Unit) {
             dialog.dismiss()
         }
         .setOnCancelListener { onDismiss() }
-        .create()
-        .apply { show() }
+        .showKako()
         .withCenterAlignedButtons()
 }
 
@@ -61,7 +61,6 @@ internal fun Context.showQrScanConfirmationDialog(
             dialog.dismiss()
         }
         .setOnCancelListener { onDeny() }
-        .create()
-        .apply { show() }
+        .showKako()
         .withCenterAlignedButtons()
 }

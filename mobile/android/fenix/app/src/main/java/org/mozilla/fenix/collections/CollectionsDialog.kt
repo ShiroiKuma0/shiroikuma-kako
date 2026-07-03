@@ -23,6 +23,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.TabCollectionStorage
 import org.mozilla.fenix.ext.getDefaultCollectionNumber
 import org.mozilla.fenix.ext.increaseTapArea
+import org.mozilla.fenix.kako.createKako
 
 /**
  * A lambda that is invoked when a confirmation button in a [CollectionsDialog] is clicked.
@@ -82,7 +83,7 @@ fun CollectionsDialog.show(context: Context) {
                 dialog.cancel()
             }
 
-    val dialog = builder.create().withCenterAlignedButtons()
+    val dialog = builder.createKako().withCenterAlignedButtons()
     val collectionNames = arrayOf(context.getString(R.string.tab_tray_add_new_collection)) + collections
     val collectionsListAdapter =
         CollectionsListAdapter(collectionNames) {
@@ -132,7 +133,7 @@ internal fun CollectionsDialog.showAddNewDialog(
                 onNegativeButtonClick.invoke()
                 dialog.cancel()
             }
-            .create()
+            .createKako()
             .withCenterAlignedButtons()
 
     collectionNameEditText.doOnTextChanged { text, _, _, _ ->

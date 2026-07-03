@@ -52,6 +52,11 @@
         <item name="colorOnSurfaceVariant">@color/kako_yellow_secondary</item>
         <item name="colorOutline">@color/kako_yellow</item>
         <item name="colorOutlineVariant">@color/kako_yellow_secondary</item>
+        <!-- Destructive actions (e.g. the DestructiveButton "Delete browsing data") read
+             ?attr/colorError for their text/icon; keep the fork monochrome by tracing them
+             yellow on black rather than the stock pink-on-grey. -->
+        <item name="colorError">@color/kako_yellow</item>
+        <item name="colorOnError">@color/kako_black</item>
         <item name="colorSurfaceBright">@color/kako_black</item>
         <item name="colorSurfaceDim">@color/kako_black</item>
         <item name="colorSurfaceContainer">@color/kako_black</item>

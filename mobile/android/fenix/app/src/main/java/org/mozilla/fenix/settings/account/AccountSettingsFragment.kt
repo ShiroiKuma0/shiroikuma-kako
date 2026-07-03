@@ -56,6 +56,7 @@ import org.mozilla.fenix.ext.getPreferenceKey
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.secure
 import org.mozilla.fenix.ext.showToolbar
+import org.mozilla.fenix.kako.showKako
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.settings.requirePreference
 import org.mozilla.fenix.settings.scrollToPreferenceWithHighlight
@@ -437,7 +438,7 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
                     }
                     create().withCenterAlignedButtons()
                 }
-                .show()
+                .showKako()
                 .secure(activity)
             it.components.settings.incrementShowLoginsSecureWarningSyncCount()
         }

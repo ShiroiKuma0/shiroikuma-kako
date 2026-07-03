@@ -229,6 +229,7 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.ext.secure
 import org.mozilla.fenix.ext.tabClosedUndoMessage
+import org.mozilla.fenix.kako.showKako
 import org.mozilla.fenix.messaging.FenixMessageSurfaceId
 import org.mozilla.fenix.messaging.MessagingFeature
 import org.mozilla.fenix.microsurvey.ui.MicrosurveyRequestPrompt
@@ -842,7 +843,7 @@ abstract class BaseBrowserFragment :
                                                 Breadcrumb("FirstPartyDownloadDialog onDismiss")
                                             )
                                         }
-                                        .show()
+                                        .showKako()
                             } else {
                                 if (!FxNimbus.features.downloadsCustomLocation.value().enabled) {
                                     showFirstPartyDownloadDialog(
@@ -910,7 +911,7 @@ abstract class BaseBrowserFragment :
                             ) { dialog, _ ->
                                 dialog.dismiss()
                             }
-                            .show()
+                            .showKako()
                     },
             )
 
@@ -1787,7 +1788,7 @@ abstract class BaseBrowserFragment :
 
                 create()
             }
-            .show()
+            .showKako()
             .withCenterAlignedButtons()
             .secure(activity)
 
@@ -2756,7 +2757,7 @@ abstract class BaseBrowserFragment :
                         Breadcrumb("FirstPartyDownloadDialog onDismiss")
                     )
                 }
-                .show()
+                .showKako()
     }
 
     private fun showRenameDownloadDialog(
