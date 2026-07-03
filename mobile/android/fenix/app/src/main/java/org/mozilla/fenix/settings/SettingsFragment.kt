@@ -83,6 +83,7 @@ import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.ext.showToolbarWithIconButton
 import org.mozilla.fenix.home.maybeNavigateToSystemSetToDefaultAction
 import org.mozilla.fenix.home.maybeRequestDefaultBrowserPrompt
+import org.mozilla.fenix.kako.showKako
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.perf.ProfilerViewModel
 import org.mozilla.fenix.perf.ProfilerViewModelFactory
@@ -540,7 +541,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
                             binding.customAmoUser.showKeyboard()
                             create().withCenterAlignedButtons()
                         }
-                        .show()
+                        .showKako()
 
                     null
                 }

@@ -25,6 +25,7 @@ import mozilla.components.ui.widgets.withCenterAlignedButtons
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.secure
+import org.mozilla.fenix.kako.showKako
 import org.mozilla.fenix.settings.biometric.BiometricPromptFeature
 
 /** Allows handling of biometric authentication with compose. */
@@ -214,7 +215,7 @@ private fun showPinDialogWarning(
             }
             create().withCenterAlignedButtons()
         }
-        .show()
+        .showKako()
         .secure(activity)
     activity.components.settings.incrementSecureWarningCount()
 }
