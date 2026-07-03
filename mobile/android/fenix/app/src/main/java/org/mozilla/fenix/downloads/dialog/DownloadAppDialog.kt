@@ -37,6 +37,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.feature.downloads.ui.DownloaderApp
 import org.mozilla.fenix.R
+import org.mozilla.fenix.kako.createKako
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
@@ -82,7 +83,7 @@ internal fun createDownloadAppDialog(
             onDismiss.invoke()
         }
 
-    dialog = builder.create()
+    dialog = builder.createKako()
     return dialog
 }
 
