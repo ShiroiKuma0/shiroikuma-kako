@@ -25,6 +25,7 @@ import mozilla.components.support.utils.OnEnterAnimationCompleteListener
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.requireComponents
+import org.mozilla.fenix.kako.createKako
 import org.mozilla.fenix.settings.downloads.DefaultAndroidFileUtils
 import org.mozilla.fenix.settings.downloads.DefaultDownloadLocationFormatter
 import org.mozilla.fenix.settings.downloads.MissingUriPermission
@@ -118,7 +119,7 @@ class RenameAndChangeLocationDialogFragment : DialogFragment(), OnEnterAnimation
 
         promptAbuserDetector.start()
 
-        return MaterialAlertDialogBuilder(requireContext()).setView(composeView).create()
+        return MaterialAlertDialogBuilder(requireContext()).setView(composeView).createKako()
     }
 
     private fun buildDialogTitle(): String {

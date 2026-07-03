@@ -524,6 +524,8 @@ class KakoUiSettingsFragment : Fragment() {
                             rebuild()
                         }
                         .setNegativeButton(android.R.string.cancel, null)
+                        .create()
+                        .applyKakoBorder()
                         .show()
                 }
             },

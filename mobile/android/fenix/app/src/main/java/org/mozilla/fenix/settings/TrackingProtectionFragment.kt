@@ -27,6 +27,7 @@ import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.openToBrowser
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.showToolbar
+import org.mozilla.fenix.kako.createKako
 import org.mozilla.fenix.trackingprotection.TrackingProtectionMode
 import org.mozilla.fenix.utils.view.addToRadioGroup
 
@@ -462,7 +463,7 @@ class TrackingProtectionFragment : PreferenceFragmentCompat(), SystemInsetsPadde
                     }
                     setCancelable(false)
                 }
-                .create()
+                .createKako()
         alertDialog.show()
     }
 
