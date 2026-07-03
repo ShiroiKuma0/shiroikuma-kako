@@ -25,6 +25,7 @@ import mozilla.components.ui.widgets.withCenterAlignedButtons
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.secure
 import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.kako.showKako
 import org.mozilla.fenix.settings.biometric.BiometricPromptFeature
 
 /**
@@ -210,6 +211,6 @@ private fun showPinDialogWarning(
             context.startActivity(intent)
         }
         create().withCenterAlignedButtons()
-    }.show().secure(activity)
+    }.showKako().secure(activity)
     activity.settings().incrementSecureWarningCount()
 }

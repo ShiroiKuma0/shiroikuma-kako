@@ -213,6 +213,7 @@ import org.mozilla.fenix.ext.secure
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.tabClosedUndoMessage
 import org.mozilla.fenix.ext.updateMicrosurveyPromptForConfigurationChange
+import org.mozilla.fenix.kako.showKako
 import org.mozilla.fenix.messaging.FenixMessageSurfaceId
 import org.mozilla.fenix.messaging.MessagingFeature
 import org.mozilla.fenix.microsurvey.ui.MicrosurveyRequestPrompt
@@ -781,7 +782,7 @@ abstract class BaseBrowserFragment :
                                     context.components.analytics.crashReporter.recordCrashBreadcrumb(
                                         Breadcrumb("FirstPartyDownloadDialog onDismiss"),
                                     )
-                                }.show()
+                                }.showKako()
                         } else {
                             if (!FxNimbus.features.downloadsCustomLocation.value().enabled) {
                                 showFirstPartyDownloadDialog(
@@ -847,7 +848,7 @@ abstract class BaseBrowserFragment :
                         R.string.download_file_has_not_enough_storage_dialog_cancel_button_text,
                     ) { dialog, _ ->
                         dialog.dismiss()
-                    }.show()
+                    }.showKako()
             },
         )
 
@@ -1550,7 +1551,7 @@ abstract class BaseBrowserFragment :
             }
 
             create()
-        }.show().withCenterAlignedButtons().secure(activity)
+        }.showKako().withCenterAlignedButtons().secure(activity)
 
         context.settings().incrementSecureWarningCount()
     }
@@ -2565,7 +2566,7 @@ abstract class BaseBrowserFragment :
                 context.components.analytics.crashReporter.recordCrashBreadcrumb(
                     Breadcrumb("FirstPartyDownloadDialog onDismiss"),
                 )
-            }.show()
+            }.showKako()
     }
 
     private fun showRenameDownloadDialog(

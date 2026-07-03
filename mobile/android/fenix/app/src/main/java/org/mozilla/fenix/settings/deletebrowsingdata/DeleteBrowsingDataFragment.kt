@@ -30,6 +30,7 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
+import org.mozilla.fenix.kako.showKako
 import org.mozilla.fenix.utils.Settings
 
 /**
@@ -165,7 +166,7 @@ class DeleteBrowsingDataFragment : Fragment(R.layout.fragment_delete_browsing_da
                     deleteSelected()
                 }
                 create().withCenterAlignedButtons()
-            }.show()
+            }.showKako()
         }
     }
 
