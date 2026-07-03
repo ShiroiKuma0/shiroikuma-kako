@@ -41,6 +41,7 @@ import org.mozilla.fenix.components.menu.store.MenuAction
 import org.mozilla.fenix.components.menu.store.MenuState
 import org.mozilla.fenix.components.menu.store.SummarizationMenuState
 import org.mozilla.fenix.components.metrics.MetricsUtils
+import org.mozilla.fenix.kako.showKako
 import org.mozilla.fenix.summarization.eligibility.SummarizationEligibilityChecker
 import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryConfiguration
 import org.mozilla.fenix.summarization.onboarding.SummarizeDiscoveryEvent
@@ -294,7 +295,7 @@ class MenuDialogMiddleware(
                     dialog.dismiss()
                 }
                 create().withCenterAlignedButtons()
-            }.show()
+            }.showKako()
 
             onDismiss()
 

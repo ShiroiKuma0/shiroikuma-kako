@@ -24,6 +24,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.showToolbar
+import org.mozilla.fenix.kako.showKako
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.SecretSettingsPrefDefaults
 
@@ -90,7 +91,7 @@ class SearchOptimizationFragment : PreferenceFragmentCompat(), SystemInsetsPadde
             .setNegativeButton(R.string.preferences_debug_settings_reset_defaults_cancel) { dialog, _ ->
                 dialog.cancel()
             }
-            .show()
+            .showKako()
     }
 
     private fun reloadPreferenceFragment() {
