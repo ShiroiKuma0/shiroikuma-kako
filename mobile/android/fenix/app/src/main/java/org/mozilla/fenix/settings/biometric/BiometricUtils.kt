@@ -25,6 +25,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.ext.secure
+import org.mozilla.fenix.kako.showKako
 
 /**
  * Allows handling of biometric authentication workflows.
@@ -139,6 +140,6 @@ private fun showPinDialogWarning(
             context.startActivity(intent)
         }
         create().withCenterAlignedButtons()
-    }.show().secure(activity)
+    }.showKako().secure(activity)
     activity.components.settings.incrementSecureWarningCount()
 }

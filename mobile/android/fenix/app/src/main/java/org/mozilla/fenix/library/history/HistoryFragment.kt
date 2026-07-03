@@ -118,6 +118,7 @@ import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.ext.setTextColor
+import org.mozilla.fenix.kako.createKako
 import org.mozilla.fenix.library.LibraryPageFragment
 import org.mozilla.fenix.library.history.HistoryFragmentAction.SearchClicked
 import org.mozilla.fenix.library.history.HistoryFragmentAction.SearchDismissed
@@ -807,7 +808,7 @@ class HistoryFragment :
                 }
 
                 GleanHistory.removePromptOpened.record(NoExtras())
-            }.create().withCenterAlignedButtons()
+            }.createKako().withCenterAlignedButtons()
     }
 
     private fun buildToolbarStore() = fragmentStore(

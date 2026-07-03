@@ -48,6 +48,7 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.getPreferenceKey
 import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.ext.requireComponents
+import org.mozilla.fenix.kako.showKako
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.settings.downloads.DownloadLocationManager
 import org.mozilla.fenix.theme.ThemeManager
@@ -442,7 +443,7 @@ abstract class AddonPopupBaseFragment :
                 requireContext().components.analytics.crashReporter.recordCrashBreadcrumb(
                     Breadcrumb("FirstPartyDownloadDialog onDismiss"),
                 )
-            }.show()
+            }.showKako()
     }
 
     private fun showRenameDownloadDialog(

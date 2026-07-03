@@ -36,6 +36,7 @@ import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.loadIntoView
 import org.mozilla.fenix.ext.nav
+import org.mozilla.fenix.kako.showKako
 
 private const val MAX_ITEMS_PER_PAGE = 50
 
@@ -123,7 +124,7 @@ class SitePermissionsExceptionsFragment :
                 setNegativeButton(R.string.clear_permissions_negative) { dialog: DialogInterface, _ ->
                     dialog.cancel()
                 }
-            }.show().withCenterAlignedButtons()
+            }.showKako().withCenterAlignedButtons()
         }
     }
 
