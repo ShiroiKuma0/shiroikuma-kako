@@ -5,23 +5,28 @@
 package org.mozilla.fenix.kako
 
 import android.app.AlertDialog
+import android.app.Dialog
 import android.content.Context
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.InsetDrawable
 import android.text.InputType
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.GridLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog as AppCompatAlertDialog
 import androidx.core.graphics.toColorInt
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import org.mozilla.fenix.R
 import java.util.Locale
 
@@ -32,6 +37,70 @@ import java.util.Locale
 
 private fun Context.dp(value: Int): Int =
     TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value.toFloat(), resources.displayMetrics).toInt()
+
+/**
+ * The fork's signature dialog frame: a black rounded panel ringed in the kako
+ * yellow border. Shared by both the programmatic dialogs below and every stock
+ * Material alert dialog (via [applyKakoBorder]) so every dialog looks the same.
+ */
+internal fun Context.kakoDialogBackground(): GradientDrawable = GradientDrawable().apply {
+    cornerRadius = dp(8).toFloat()
+    setColor(KakoTheme.color(this@kakoDialogBackground, KakoSlot.MENU_BACKGROUND))
+    setStroke(dp(1), KakoTheme.color(this@kakoDialogBackground, KakoSlot.BORDER))
+}
+
+/**
+ * Give any (Material) alert dialog the kako yellow frame; returns the receiver for
+ * chaining.
+ *
+ * The visible rounded panel of a Material alert dialog is a [MaterialShapeDrawable]
+ * — but not on the window/decor (which is larger than the panel and floats it in the
+ * middle, so a decor-level background or foreground border lands off the panel). So we
+ * find that shape in the view tree (the one on the largest view, to skip button shapes)
+ * and stroke it in place: the border then sits exactly on the panel edge with Material's
+ * own corner radius. The shape only exists once the dialog is laid out, so we stroke in a
+ * [Dialog.setOnShowListener] and on the next frame; the immediate pass covers the
+ * already-shown prompt-hook path. No call site claims the show listener, so taking it here
+ * is safe.
+ */
+internal fun <T : Dialog> T.applyKakoBorder(): T = apply {
+    val w = window ?: return@apply
+    val decor = w.decorView as? FrameLayout ?: return@apply
+    fun stamp() {
+        // parentPanel is the dialog's content root; the window background's 10dp inset is
+        // applied to it as padding, so its bounds coincide with the visible rounded panel
+        // (the decor itself is larger). We draw the ring as the decor's foreground — which
+        // is painted on top and provably visible — but inset to parentPanel's measured
+        // position so the border lands exactly on the panel rather than out at the decor edge.
+        val panel = w.findViewById<View>(androidx.appcompat.R.id.parentPanel) ?: return
+        if (panel.width == 0 || panel.height == 0) return
+        val pos = IntArray(2).also { panel.getLocationInWindow(it) }
+        val origin = IntArray(2).also { decor.getLocationInWindow(it) }
+        val left = pos[0] - origin[0]
+        val top = pos[1] - origin[1]
+        val ring = GradientDrawable().apply {
+            cornerRadius = context.dp(MATERIAL_DIALOG_CORNER_DP).toFloat()
+            setStroke(context.dp(2), KakoTheme.color(context, KakoSlot.BORDER))
+        }
+        decor.foregroundGravity = Gravity.FILL
+        decor.foreground = InsetDrawable(
+            ring,
+            left,
+            top,
+            decor.width - left - panel.width,
+            decor.height - top - panel.height,
+        )
+    }
+    stamp()
+    setOnShowListener { stamp() }
+    decor.post { stamp() }
+}
+
+/** [MaterialAlertDialogBuilder.create] plus the kako border. */
+internal fun MaterialAlertDialogBuilder.createKako(): AppCompatAlertDialog = create().applyKakoBorder()
+
+/** [MaterialAlertDialogBuilder.show]-equivalent that adds the kako border first. */
+internal fun MaterialAlertDialogBuilder.showKako(): AppCompatAlertDialog = createKako().also { it.show() }
 
 private fun kakoDialog(context: Context, title: CharSequence, content: View): AlertDialog {
     val text = KakoTheme.color(context, KakoSlot.TEXT)
@@ -48,13 +117,7 @@ private fun kakoDialog(context: Context, title: CharSequence, content: View): Al
         .setNegativeButton(android.R.string.cancel, null)
         .create()
         .apply {
-            window?.setBackgroundDrawable(
-                GradientDrawable().apply {
-                    cornerRadius = context.dp(8).toFloat()
-                    setColor(KakoTheme.color(context, KakoSlot.MENU_BACKGROUND))
-                    setStroke(context.dp(1), KakoTheme.color(context, KakoSlot.BORDER))
-                },
-            )
+            window?.setBackgroundDrawable(context.kakoDialogBackground())
             setOnShowListener {
                 getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(KakoTheme.color(context, KakoSlot.ACCENT))
                 getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(KakoTheme.color(context, KakoSlot.ACCENT))
@@ -377,3 +440,6 @@ class KakoExtensionOrderDialog(
 }
 
 private const val TITLE_TEXT_SIZE_SP = 18f
+
+/** Material's own alert-dialog corner radius (@dimen/material_dialog_corner_radius). */
+private const val MATERIAL_DIALOG_CORNER_DP = 28

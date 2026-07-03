@@ -54,6 +54,7 @@ import org.mozilla.fenix.addons.DownloadAddonDialogFragmentArgs
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.kako.KakoTheme
+import org.mozilla.fenix.kako.createKako
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.theme.ThemeManager
 
@@ -647,7 +648,7 @@ class WebExtensionPromptFeature(
                     .setPositiveButton(android.R.string.ok) { _, _ -> }
                     .setCancelable(false)
                     .setView(view)
-                    .create()
+                    .createKako()
                     .withCenterAlignedButtons()
             dialog.show()
 
