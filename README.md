@@ -1,18 +1,57 @@
-![Firefox Browser](./docs/readme/readme-banner.svg)
+<div align="center">
 
-[Firefox](https://firefox.com/) is a fast, reliable and private web browser from the non-profit [Mozilla organization](https://mozilla.org/).
+<img src="tools/kako/icon/icon-final-round.svg" width="120" alt="白い熊 火狐 icon" />
 
-### Contributing
+# 白い熊 火狐
 
-To learn how to contribute to Firefox read the [Firefox Contributors' Quick Reference document](https://firefox-source-docs.mozilla.org/contributing/contribution_quickref.html).
+**Firefox for Android in pure black & yellow, with extension freedom on the release channel.**
 
-We use [bugzilla.mozilla.org](https://bugzilla.mozilla.org/) as our issue tracker, please file bugs there.
+A fork of [Mozilla Firefox](https://github.com/mozilla-firefox/firefox) (Fenix, release channel) with **major additions**: custom AMO extension collections unlocked on release, a fully settable black/yellow UI with external fonts, pinned extension buttons on a two-row toolbar, about:config, and a line-traced launcher fox.
 
-### Resources
+Installs **side-by-side** with stock Firefox/Beta/Nightly (app id `shiroikuma.kako`).
 
-* [Firefox Source Docs](https://firefox-source-docs.mozilla.org/) is our primary documentation repository
-* Nightly development builds can be downloaded from [Firefox Nightly page](https://www.mozilla.org/firefox/channel/desktop/#nightly)
+**📥 Latest release: [`152.0.4+1`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & APK downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
 
-If you have a question about developing Firefox, and can't find the solution
-on [Firefox Source Docs](https://firefox-source-docs.mozilla.org/), you can try asking your question on Matrix at
-chat.mozilla.org in the [Introduction channel](https://chat.mozilla.org/#/room/#introduction:mozilla.org).
+</div>
+
+---
+
+## 🧩 Extension freedom on the release channel
+Stock Fenix locks custom AMO add-on collections behind Nightly. This fork opens those channel gates on release: point the browser at any AMO collection and install everything in it — collection extensions are AMO-signed, so release signing enforcement never objects. `about:config` and the full secret-settings menu (five taps on the About logo) are unlocked too.
+
+---
+
+## 🖤💛 The 白い熊 火狐 UI
+A dedicated settings page (pinned at the top of Settings, or long-press the menu button) themes the whole browser from user-settable color slots — seeded pure black `#000000` / pure yellow `#FFFF00` — with live Compose restyling, external ttf/otf font import (family, weight, 70–160% size scale), and 0.5 dp-stepped border thickness sliders. Chrome is traced Nightly-style: outlined address pill, bordered tabs and menu cards, kako-framed alert dialogs, true-black windows.
+
+---
+
+## 📌 Pinned extensions & the two-row toolbar
+Any extension with a browser action can be pinned to the toolbar from its settings screen, desktop-style — with its real multicolor icon, an icon-size slider, long-press reordering, and a drag-to-reorder dialog. A toggleable two-row layout keeps navigation and the address pill on top and moves new tab, pinned extensions, manage-extensions, tab counter and menu to their own row beneath.
+
+---
+
+## 🦊 The line-traced fox
+The launcher icon is the Nightly fox redrawn as yellow line art on black — adaptive and legacy mipmaps rendered from the master SVGs in `tools/kako/icon/`.
+
+---
+
+## Built on Mozilla Firefox
+A fork of [mozilla-firefox/firefox](https://github.com/mozilla-firefox/firefox) tracking the **release** channel tag-to-tag (app id `shiroikuma.kako`, so it coexists with the official builds). All credit to Mozilla for the browser itself; the code remains under the [Mozilla Public License 2.0](LICENSE).
+
+Branch model: `release` is a byte-identical upstream mirror; **`custom`** carries every fork commit, rebased onto each adopted `FIREFOX_*_RELEASE` tag.
+
+## Building
+Artifact build (prebuilt GeckoView engine; only Kotlin/Java compiles locally), arm64-v8a:
+
+```bash
+git clone --branch custom git@github.com:ShiroiKuma0/shiroikuma-kako.git
+cd shiroikuma-kako
+./mach bootstrap          # choose "GeckoView/Firefox for Android Artifact Mode"
+
+export MOZCONFIG=$PWD/tools/kako/mozconfig
+./mach build
+./mach gradle fenix:assembleRelease
+# APK: objdir-kako/gradle/build/mobile/android/fenix/app/outputs/apk/release/fenix-arm64-v8a-release.apk
+# then zipalign + apksigner with your own keystore
+```
