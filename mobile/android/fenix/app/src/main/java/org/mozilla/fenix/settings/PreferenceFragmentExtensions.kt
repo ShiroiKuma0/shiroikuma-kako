@@ -14,6 +14,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.pixelSizeFor
+import org.mozilla.fenix.kako.createKako
 
 /**
  * Displays a custom [MaterialAlertDialogBuilder] for an [EditTextPreference].
@@ -65,7 +66,7 @@ fun PreferenceFragmentCompat.showCustomEditTextPreferenceDialog(
         .setView(container)
         .setPositiveButton(android.R.string.ok, null)
         .setNegativeButton(android.R.string.cancel, null)
-        .create()
+        .createKako()
 
     dialog.show()
 

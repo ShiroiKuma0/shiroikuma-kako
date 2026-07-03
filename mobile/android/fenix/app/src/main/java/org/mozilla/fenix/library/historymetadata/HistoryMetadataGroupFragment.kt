@@ -44,6 +44,7 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.ext.setTextColor
 import org.mozilla.fenix.ext.showToolbar
+import org.mozilla.fenix.kako.createKako
 import org.mozilla.fenix.library.LibraryPageFragment
 import org.mozilla.fenix.library.history.History
 import org.mozilla.fenix.library.historymetadata.controller.DefaultHistoryMetadataGroupController
@@ -310,7 +311,7 @@ class HistoryMetadataGroupFragment :
                     interactor.onDeleteAllConfirmed()
                     dialog.dismiss()
                 }
-                .create().withCenterAlignedButtons()
+                .createKako().withCenterAlignedButtons()
 
         companion object {
             const val TAG = "DELETE_CONFIRMATION_DIALOG_FRAGMENT"
