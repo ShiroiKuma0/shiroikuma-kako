@@ -26,6 +26,7 @@ import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.showToolbar
+import org.mozilla.fenix.kako.showKako
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.PhoneFeature.AUTOPLAY
 import org.mozilla.fenix.settings.PhoneFeature.CAMERA
@@ -164,7 +165,7 @@ class SitePermissionsDetailsExceptionsFragment : PreferenceFragmentCompat(), Sys
                 setNegativeButton(R.string.clear_permissions_negative) { dialog: DialogInterface, _ ->
                     dialog.cancel()
                 }
-            }.show().withCenterAlignedButtons()
+            }.showKako().withCenterAlignedButtons()
 
             true
         }

@@ -46,6 +46,7 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.ext.secure
 import org.mozilla.fenix.ext.showToolbar
+import org.mozilla.fenix.kako.showKako
 import org.mozilla.fenix.settings.SharedPreferenceUpdater
 import org.mozilla.fenix.settings.SyncPreferenceView
 import org.mozilla.fenix.settings.autofill.ui.AccountAuthState
@@ -433,7 +434,7 @@ class AutofillSettingFragment : BiometricPromptPreferenceFragment(), SystemInset
             }
 
             create().withCenterAlignedButtons()
-        }.show().secure(activity)
+        }.showKako().secure(activity)
         context.components.settings.incrementSecureWarningCount()
     }
 

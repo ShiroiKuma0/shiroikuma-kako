@@ -38,6 +38,7 @@ import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.appstate.AppAction.QrScannerAction
 import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.kako.showKako
 
 /**
  * Handles QR Scan Activity requests and results.
@@ -113,7 +114,7 @@ class QrScanFenixFeature(
                         dialog.dismiss()
                     }
                     create().withCenterAlignedButtons()
-                }.show()
+                }.showKako()
             } else {
                 val appName = context.resources.getString(R.string.app_name)
                 MaterialAlertDialogBuilder(context).apply {
@@ -136,7 +137,7 @@ class QrScanFenixFeature(
                         dialog.dismiss()
                     }
                     create().withCenterAlignedButtons()
-                }.show()
+                }.showKako()
             }
         }
         appStore.dispatch(QrScannerAction.QrScannerInputConsumed)

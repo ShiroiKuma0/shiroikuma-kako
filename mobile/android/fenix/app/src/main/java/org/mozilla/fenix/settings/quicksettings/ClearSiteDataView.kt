@@ -22,6 +22,7 @@ import mozilla.components.ui.widgets.withCenterAlignedButtons
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.QuicksettingsClearSiteDataBinding
 import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.kako.showKako
 
 /**
  * Contract declaring all possible user interactions with [ClearSiteDataView].
@@ -113,6 +114,6 @@ class ClearSiteDataView(
                 interactor.onClearSiteDataClicked(baseDomain)
             }
             create().withCenterAlignedButtons()
-        }.show()
+        }.showKako()
     }
 }
