@@ -49,6 +49,7 @@ import org.mozilla.fenix.home.topsites.AddShortcutEntryPoint
 import org.mozilla.fenix.home.topsites.AddShortcutSource
 import org.mozilla.fenix.home.topsites.ShortcutsFragmentDirections
 import org.mozilla.fenix.home.topsites.interactor.TopSiteInteractor
+import org.mozilla.fenix.kako.showKako
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.utils.Settings
 import java.lang.ref.WeakReference
@@ -200,7 +201,7 @@ class DefaultTopSiteController(
                 setNegativeButton(R.string.top_sites_rename_dialog_cancel) { dialog, _ ->
                     dialog.cancel()
                 }
-            }.show().withCenterAlignedButtons().also { dialog ->
+            }.showKako().withCenterAlignedButtons().also { dialog ->
                 dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                     val urlText = urlEditText.text.toString()
 

@@ -41,6 +41,7 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.ext.showToolbarWithIconButton
+import org.mozilla.fenix.kako.showKako
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.SecretSettingsPrefDefaults
 import mozilla.components.ui.icons.R as iconsR
@@ -532,7 +533,7 @@ class SecretSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFra
             .setNegativeButton(R.string.preferences_debug_settings_reset_defaults_cancel) { dialog, _ ->
                 dialog.cancel()
             }
-            .show()
+            .showKako()
     }
 
     override fun onPreferenceTreeClick(preference: Preference): Boolean {
