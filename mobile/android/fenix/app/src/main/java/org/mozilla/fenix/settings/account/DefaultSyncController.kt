@@ -14,6 +14,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
+import org.mozilla.fenix.kako.showKako
 
 interface SyncController {
     fun handleCameraPermissionsNeeded()
@@ -37,7 +38,7 @@ class DefaultSyncController(
      */
     override fun handleCameraPermissionsNeeded() {
         val dialog = buildDialog()
-        dialog.show()
+        dialog.showKako()
     }
 
     /**
