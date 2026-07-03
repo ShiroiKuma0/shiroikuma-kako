@@ -422,6 +422,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         visibilityLifecycleCallback = VisibilityLifecycleCallback(getSystemService())
         registerActivityLifecycleCallbacks(visibilityLifecycleCallback)
         registerActivityLifecycleCallbacks(MarkersActivityLifecycleCallbacks(components.core.engine))
+        org.mozilla.fenix.kako.KakoDialogBorder.install(this)
 
         components.appStartReasonProvider.registerInAppOnCreate(this)
         components.startupActivityLog.registerInAppOnCreate(this)
