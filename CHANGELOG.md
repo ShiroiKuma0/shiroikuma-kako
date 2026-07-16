@@ -4,6 +4,20 @@ Everything built on top of stock Firefox for Android (Fenix, release channel).
 Tags are `<upstream-base>+<build>`; the fork commits live on `custom`, rebased
 onto each adopted `FIREFOX_*_RELEASE` tag.
 
+## 152.0.6+1 — 2026-07-16
+
+Upstream-base update; the fork feature set is unchanged from 152.0.4+1. Base:
+Firefox **152.0.6** (`FIREFOX_152_0_6_RELEASE`), adopted via 152.0.5.
+
+### Upstream adoptions
+
+- **Adopt upstream Firefox 152.0.5** — point release; one rebase conflict
+  (upstream added an import next to the kako-border import in
+  SecretSettingsFragment; both kept).
+- **Adopt upstream Firefox 152.0.6** — point release; conflict-free rebase.
+- Both carry upstream's security and stability fixes on the 152 branch; the
+  `release` mirror stays byte-identical to upstream.
+
 ## 152.0.4+1 — 2026-07-03
 
 First published release. Base: Firefox **152.0.4** (`FIREFOX_152_0_4_RELEASE`).
