@@ -6,11 +6,11 @@
 
 **Firefox for Android in pure black & yellow, with extension freedom on the release channel.**
 
-A fork of [Mozilla Firefox](https://github.com/mozilla-firefox/firefox) (Fenix, release channel) with **major additions**: custom AMO extension collections unlocked on release, a fully settable black/yellow UI with external fonts, pinned extension buttons on a two-row toolbar, whole-profile export & import, about:config, and a line-traced launcher fox.
+A fork of [Mozilla Firefox](https://github.com/mozilla-firefox/firefox) (Fenix, release channel) with **major additions**: custom AMO extension collections unlocked on release, a fully settable black/yellow UI with external fonts, pinned extension buttons on a two-row toolbar, whole-profile export & import — scriptable from outside the app — about:config, and a line-traced launcher fox.
 
 Installs **side-by-side** with stock Firefox/Beta/Nightly (app id `shiroikuma.kako`).
 
-**📥 Latest release: [`153.0+4`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & APK downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
+**📥 Latest release: [`153.0+5`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & APK downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
 
 </div>
 
@@ -28,6 +28,11 @@ A dedicated settings page (pinned at the top of Settings, or long-press the menu
 
 ## 💾 Export & import the whole profile
 Pick a backup directory once; the page then shows the newest export in it every time you open it. One panel exports — or restores — the browser by category: the 白い熊 UI theme, imported fonts, **every installed extension** (re-installed from AMO on restore, with its enabled and private-browsing state, the pinned toolbar order, and your custom collection), Firefox's own settings, bookmarks, saved passwords, credit cards and addresses. The archive is a plain ZIP of readable JSON — no databases, no opaque blobs — so it stays inspectable and portable. Credentials necessarily travel as plaintext inside it, which the panel says out loud; treat the file like the passwords it holds.
+
+---
+
+## 🤖 Backups that another app can trigger
+The same export answers a token-gated broadcast, so an automation app can back the browser up headlessly — no Activity, no tapping — and be told the exact path, byte count and category count of the ZIP it just wrote, with live progress reported as real counts (`区分 3/8 — Fonts`) rather than a percentage. Nothing is reachable until the switch inside Export / Import is turned on, and the shared secret behind it never travels inside a backup.
 
 ---
 
