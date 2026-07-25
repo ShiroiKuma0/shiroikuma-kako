@@ -41,6 +41,13 @@
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="QueryAllPackagesPermission" />
 
+    <!-- 白い熊 火狐: lets the state-export automation contract honour the `path` extra and
+         write the backup ZIP to an arbitrary absolute directory, the way every sister app
+         does. Must be granted by hand (Settings → All files access); without it the
+         automation export falls back to the configured SAF export directory. -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
+
     <!-- Needed to post notifications on devices with Android 13 and later-->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
@@ -870,6 +877,18 @@
             android:exported="false">
             <intent-filter>
                 <action android:name="org.mozilla.fenix.ACTION_PRINT" />
+            </intent-filter>
+        </receiver>
+
+        <!-- 白い熊 火狐: the sister-app state-export automation contract. No
+             android:permission — the caller cannot hold one, so the token is the gate
+             (see KakoAutomation). -->
+        <receiver
+            android:name="org.mozilla.fenix.kako.KakoStateExportReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="${applicationId}.action.EXPORT_STATE" />
+                <action android:name="${applicationId}.action.LIST_CATEGORIES" />
             </intent-filter>
         </receiver>
 
