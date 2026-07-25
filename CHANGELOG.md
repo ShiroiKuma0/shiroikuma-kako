@@ -4,6 +4,99 @@ Everything built on top of stock Firefox for Android (Fenix, release channel).
 Tags are `<upstream-base>+<build>`; the fork commits live on `custom`, rebased
 onto each adopted `FIREFOX_*_RELEASE` tag.
 
+## 153.0+4 — 2026-07-25
+
+New upstream major and the fork's first backup feature. Base: Firefox
+**153.0** (`FIREFOX_153_0_RELEASE`), adopted from 152.0.6.
+
+### Major features
+
+- **Export / Import — the whole profile, by category.** A new first section on
+  the 白い熊 火狐 UI page. A SAF export directory is chosen once and kept in its
+  own SharedPreferences file, so the setting itself never travels inside an
+  export; the page queries that directory on every opening for the newest
+  `shiroikuma-kako-*.zip` and shows its timestamp. The panel lists eight
+  categories, all selected by default: 白い熊 UI (colours · borders · toolbar),
+  fonts, extensions, Firefox settings, bookmarks, saved passwords, credit cards
+  and addresses.
+- **The archive is plain, readable JSON in a ZIP** — one pretty-printed file per
+  category plus a `manifest.json` and the raw font files. No databases, no
+  serialized objects, no opaque blobs. Preferences serialize as a typed
+  `key → {t, v}` map (boolean/int/long/float/string/string-set).
+- **Restores merge, never wipe.** A preference absent from the export keeps its
+  current value, so a partial archive cannot strip settings it never carried.
+  Device-local and ephemeral keys (telemetry ids, experiment state, install and
+  migration stamps, CFR counters, the one-time yellow-migration flag) are
+  excluded in both directions.
+- **Every installed extension travels, not just the pinned ones.** Each
+  non-built-in add-on is recorded with its enabled and private-browsing state,
+  alongside the pinned toolbar order and the custom AMO collection (both moved
+  out of the general settings into this category). A restore re-installs each
+  missing add-on from its AMO listing — looked up by id, so it works whatever
+  collection is configured — and re-applies the recorded state.
+- **The restore answers Gecko's install permission prompt itself.** Gecko parks
+  that prompt in the browser store and stalls the install until it is answered;
+  Fenix's own prompt UI is bound to the browser and home screens, which are
+  stopped while the UI page is up, so nothing else ever would. The grant is the
+  one the backup recorded — data-collection consent is never given on the user's
+  behalf. Installs run one at a time (the store holds a single prompt) on the
+  main thread, because the AddonManager calls land in GeckoView's
+  `WebExtensionController`, which asserts a Handler thread.
+- **Personal data stores.** Bookmarks export as one subtree per Places root and
+  merge back under the matching live root — whole folders through the bulk
+  `insertTree`, loose items individually. Saved logins restore through `addMany`
+  and credit cards through the storage's own encryption, so a single malformed
+  row cannot abort a restore. Passwords, card numbers and postal addresses can
+  only travel as plaintext inside the ZIP; each carries a red warning under its
+  checkbox saying so.
+
+### UI & theming
+
+- **The UI page adopts the kxkb look.** Section headings are 20 sp bold accent
+  titles underlined exactly as wide as their own text (a `match_parent` rule
+  inside a `wrap_content` column), sub-headings 17 sp with thinner underlines.
+  Top-level sections are separated by 1 px full-width hairlines — none before
+  the first. Rows follow the 36/54/72/90 dp indent ladder at 16 sp with 13 sp
+  values, and colour swatches become 38 dp rounded squares.
+- **Export/Import panel styling** follows the Kōjiki flow with the ArcaneChat
+  button line: a bordered, tappable directory box, thin 40 %-alpha dividers, and
+  black stadium pills with an accent stroke — Cancel alone on the left in the
+  neutral slot, Import and Export grouped on the right, claimed after `show()`
+  so they never auto-dismiss the panel.
+- **The no-directory message is red** and becomes ordinary text once a directory
+  is set; "no export yet in this directory" is red too.
+- **Success closes the whole chain.** The yellow-framed result dialogs dismiss
+  everything beneath them: OK after an export, and "Later" after an import,
+  close the info dialog, the panel and the UI page together; "Restart now"
+  relaunches the launcher task and ends the process so every cache is rebuilt.
+  Failures ("Export failed…", "No categories selected.") toast and leave the
+  panel open with the selection intact.
+
+### Upstream adoption
+
+- **Adopt upstream Firefox 153.0** — new major; the rebase re-applied each fork
+  commit's intent onto upstream's refactors rather than forcing the old patch
+  shape:
+  - `SecretSettingsFragment`: upstream hoisted `context.settings()` into a local
+    and added tab-groups drag-and-drop and onboarding gates (opened like the
+    rest); the removed `allow_settings_search` block was dropped.
+  - `app/build.gradle`: upstream moved version wiring to the new `onVariants`
+    API — the kako `versionName` override now lives in that block.
+  - Menu and tab-strip chrome: upstream renamed the card shape and fill tokens
+    (`MaterialTheme.shapes.extraSmall`, `surfaceBright`); `kakoMenuCard` and the
+    banner border were re-applied on them.
+  - `AcornColors` was slimmed upstream — `layer3`, `ripple`, `tabActive` and
+    `tabInactive` are gone. Tab-strip fills now come from the fork slots through
+    a new `TabStripColors.default()` override, with upstream's gradient as the
+    fallback when the 白い熊 UI is switched off.
+  - The `Context.settings()` extension was removed upstream; every fork call
+    site now uses `components.settings`.
+  - `FindInPageIntegration`: upstream added its own `findInPageHeight`
+    parameter, so the single-row height moved to the `BaseBrowserFragment` call
+    site.
+  - `NeutralButton`: the surface/outline restyle re-applied on upstream's new
+    Material 3 outlined-button parent.
+
 ## 152.0.6+1 — 2026-07-16
 
 Upstream-base update; the fork feature set is unchanged from 152.0.4+1. Base:
