@@ -93,11 +93,17 @@
     <string name="kako_eim_select_all" translatable="false">Select all</string>
     <string name="kako_eim_cat_ui" translatable="false">白い熊 UI (colours · borders · toolbar)</string>
     <string name="kako_eim_cat_fonts" translatable="false">Fonts</string>
-    <string name="kako_eim_cat_extensions" translatable="false">Pinned extensions</string>
+    <string name="kako_eim_cat_extensions" translatable="false">Extensions (installed · pinned · order)</string>
     <string name="kako_eim_cat_app_settings" translatable="false">Firefox settings</string>
+    <string name="kako_eim_cat_bookmarks" translatable="false">Bookmarks</string>
+    <string name="kako_eim_cat_logins" translatable="false">Saved passwords</string>
+    <string name="kako_eim_cat_cards" translatable="false">Credit cards</string>
+    <string name="kako_eim_cat_addresses" translatable="false">Addresses</string>
+    <string name="kako_eim_plaintext_warning" translatable="false">Leaves the encrypted store — written as plaintext in the ZIP.</string>
     <string name="kako_eim_export" translatable="false">Export</string>
     <string name="kako_eim_import" translatable="false">Import</string>
     <string name="kako_eim_none_selected" translatable="false">No categories selected.</string>
+    <string name="kako_eim_importing" translatable="false">Importing… extensions are re-downloaded from AMO.</string>
     <string name="kako_eim_export_ok" translatable="false">Exported: %1$s</string>
     <string name="kako_eim_export_fail" translatable="false">Export failed: %1$s</string>
     <string name="kako_eim_import_fail" translatable="false">Import failed: %1$s</string>
