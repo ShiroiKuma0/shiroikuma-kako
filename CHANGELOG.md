@@ -4,6 +4,87 @@ Everything built on top of stock Firefox for Android (Fenix, release channel).
 Tags are `<upstream-base>+<build>`; the fork commits live on `custom`, rebased
 onto each adopted `FIREFOX_*_RELEASE` tag.
 
+## 153.0+5 — 2026-07-25
+
+The browser joins 白い熊's cross-app backup batch: a sister automation app can
+now trigger this export headlessly and be told exactly what was written. Base:
+Firefox **153.0** (`FIREFOX_153_0_RELEASE`).
+
+### Major features
+
+- **The sister-app state-export automation contract.** A new exported broadcast
+  receiver answers `shiroikuma.kako.action.EXPORT_STATE` and
+  `shiroikuma.kako.action.LIST_CATEGORIES`, the wire shape every 白い熊 app
+  speaks, so 自由作業盤's 保存復元 project can back up the whole family in one
+  run. `EXPORT_STATE` runs the existing category ZIP export with no Activity and
+  no interaction; `LIST_CATEGORIES` enumerates what can be exported so the
+  caller can render a picker. One request writes exactly one ZIP.
+- **A token is the gate, because the caller cannot hold a permission.** A master
+  switch — **off** until it is turned on — plus a 24-byte `SecureRandom` secret,
+  hex-encoded, generated lazily on first read and compared in constant time with
+  `MessageDigest.isEqual`. It lives in its own SharedPreferences file, which is
+  not one of the files the export reads, so the token can never travel inside a
+  backup ZIP. A disabled switch and a wrong token are reported as distinct
+  errors, because they debug differently.
+- **The reply is a fresh broadcast, and nothing else.** EMUI will not reliably
+  carry a live Binder into another app's manifest receiver and severs the
+  ordered-broadcast result channel between third-party apps, so `ResultReceiver`,
+  `PendingIntent`, `Messenger` and `setResultData` are all unusable here. The
+  receiver replies with a plain broadcast carrying
+  `FLAG_INCLUDE_STOPPED_PACKAGES` — without which a backgrounded caller never
+  hears the answer — echoing the caller's correlation id verbatim and reporting
+  `OK:<absolute path>|<bytes>|<human size>|<n> categories`. Exactly one terminal
+  reply per request, guarded by an `AtomicBoolean` so an asynchronous success and
+  a synchronous error can never both fire. The byte count and the display size
+  are computed here, since the caller cannot stat the file.
+- **Progress reports real counts, never a percentage.** While exporting, the
+  receiver broadcasts `区分 3/8 — Fonts` alongside structured `current`, `total`
+  and `unit` extras, throttled to at most one every 500 ms with the closing one
+  always sent.
+- **The export core is called, not copied.** `KakoExim.export()` gained an
+  `onProgress(done, total, label)` hook and is now driven by two thin callers —
+  the Export/Import panel and this receiver — rather than being duplicated for
+  automation. Broadcast delivery is held open with `goAsync()` while the work
+  runs on an IO dispatcher, since the export walks Places, the logins store and
+  the autofill store before writing.
+- **The two automation rows live inside the Export/Import section**, directly
+  below the export-directory box and the panel row: the master switch with a
+  one-line explanation, and a token row showing the secret abbreviated
+  (`80922d8c…4c49a87c`) that copies it in full on tap and carries a
+  **Regenerate** action warning that pasted copies must be updated. It is a
+  backup feature, so it sits where backup already sits — identically in every
+  sister app.
+
+### Export format & behavior
+
+- **Backups follow the family file-name convention.** Every archive the fork
+  writes — from the panel as much as from automation — is now
+  `shiroikuma-kako_<yyyy-MM-dd_HH-mm-ss>.zip`: no version, no `-export` infix,
+  no decoration. 白い熊 keeps every app's backups in one directory, so they must
+  sort and read uniformly. The "last export" query still recognises the older
+  `shiroikuma-kako-<version>-export_*.zip` names, so previously written backups
+  stay visible.
+- **Category ids are the stable ones the archive already used.** A category's id
+  is now the bare `kako_ui` / `fonts` / `extensions` / `app_settings` /
+  `bookmarks` / `logins` / `credit_cards` / `addresses` that `manifest.json`
+  lists and the automation `items` extra accepts, with the `<id>.json` ZIP entry
+  derived from it. The entry names are unchanged, so archives written by earlier
+  builds import exactly as before.
+- **The manifest records the app version** that produced the archive, alongside
+  the format, version, package, timestamp and category list.
+- **Categories are written in a fixed order** — the declaration order, not the
+  order the caller happened to select them in — so two exports of the same
+  selection read identically.
+
+### Packaging
+
+- **`MANAGE_EXTERNAL_STORAGE` is declared**, as in the sister apps, so the
+  contract's directory override can be honoured with plain file I/O. Android
+  only grants it by hand, so turning the automation switch on offers to open
+  that settings screen; until it is granted the export falls back to the
+  configured SAF directory, and says `no-storage-access` rather than writing
+  somewhere the caller did not ask for.
+
 ## 153.0+4 — 2026-07-25
 
 New upstream major and the fork's first backup feature. Base: Firefox
