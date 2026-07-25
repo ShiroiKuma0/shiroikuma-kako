@@ -112,4 +112,16 @@
     <string name="kako_eim_import_done_body" translatable="false">Restored:\n\n%1$s\n\nRestart to apply everything.</string>
     <string name="kako_eim_restart_now" translatable="false">Restart now</string>
     <string name="kako_eim_restart_later" translatable="false">Later</string>
+
+    <!-- Automation export (the sister-app state-export contract) — the last two rows of
+         the Export / Import section. -->
+    <string name="kako_automation_switch" translatable="false">Automation export</string>
+    <string name="kako_automation_switch_desc" translatable="false">Let sister-app tasks trigger this export via the token-gated EXPORT_STATE intent.</string>
+    <string name="kako_automation_token_row" translatable="false">Automation token (tap to copy)</string>
+    <string name="kako_automation_token_copied" translatable="false">Automation token copied</string>
+    <string name="kako_automation_regenerate" translatable="false">Regenerate</string>
+    <string name="kako_automation_regenerated" translatable="false">Automation token regenerated — update pasted copies</string>
+    <string name="kako_automation_files_title" translatable="false">All files access</string>
+    <string name="kako_automation_files_body" translatable="false">Without All-files access this app cannot write a backup to the directory an automation task asks for, and falls back to the export directory set above.\n\nGrant it now?</string>
+    <string name="kako_automation_files_grant" translatable="false">Open settings</string>
 </resources>

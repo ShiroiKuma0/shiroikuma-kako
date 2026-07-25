@@ -5,10 +5,15 @@
 package org.mozilla.fenix.kako
 
 import android.app.AlertDialog
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.Settings
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -18,8 +23,10 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.SwitchCompat
+import androidx.core.net.toUri
 import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -255,6 +262,145 @@ class KakoUiSettingsFragment : Fragment() {
                 }
             },
         )
+
+        addAutomationRows()
+    }
+
+    /**
+     * The sister-app automation contract's two rows, appended directly below the existing
+     * export rows — this is a backup feature, so it lives where backup lives, and every
+     * sister app puts them in the same place. Nothing is reachable until the switch is on.
+     */
+    private fun addAutomationRows() {
+        val context = requireContext()
+        val text = KakoTheme.color(context, KakoSlot.TEXT)
+        val accent = KakoTheme.color(context, KakoSlot.ACCENT)
+
+        val toggle = SwitchCompat(context).apply {
+            isChecked = KakoAutomation.enabled(context)
+            setOnCheckedChangeListener { _, checked ->
+                KakoAutomation.setEnabled(context, checked)
+                if (checked) promptForAllFilesAccess()
+            }
+        }
+        holder.addView(
+            LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPaddingRelative(dp(ROW_START_DP), dp(5), dp(END_MARGIN_DP), dp(5))
+                addView(
+                    LinearLayout(context).apply {
+                        orientation = LinearLayout.VERTICAL
+                        addView(
+                            TextView(context).apply {
+                                this.text = getString(R.string.kako_automation_switch)
+                                setTextColor(text)
+                                textSize = ITEM_TEXT_SIZE_SP
+                            },
+                        )
+                        addView(
+                            TextView(context).apply {
+                                this.text = getString(R.string.kako_automation_switch_desc)
+                                setTextColor(KakoTheme.color(context, KakoSlot.TEXT_SECONDARY))
+                                textSize = VALUE_TEXT_SIZE_SP
+                                setPadding(0, dp(3), 0, 0)
+                            },
+                        )
+                    },
+                    LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f),
+                )
+                addView(toggle)
+                setOnClickListener { toggle.toggle() }
+            },
+        )
+
+        // The token itself: tap to copy the whole secret, Regenerate on the right.
+        val tokenValue = TextView(context).apply {
+            this.text = KakoAutomation.abbreviated(KakoAutomation.token(context))
+            setTextColor(accent)
+            setTypeface(typeface, Typeface.BOLD)
+            textSize = VALUE_TEXT_SIZE_SP
+            setPadding(0, dp(3), 0, 0)
+        }
+        holder.addView(
+            LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPaddingRelative(dp(ROW_START_DP), dp(5), dp(END_MARGIN_DP), dp(5))
+                setBackgroundResource(android.R.drawable.list_selector_background)
+                addView(
+                    LinearLayout(context).apply {
+                        orientation = LinearLayout.VERTICAL
+                        addView(
+                            TextView(context).apply {
+                                this.text = getString(R.string.kako_automation_token_row)
+                                setTextColor(text)
+                                textSize = ITEM_TEXT_SIZE_SP
+                            },
+                        )
+                        addView(tokenValue)
+                    },
+                    LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f),
+                )
+                addView(
+                    TextView(context).apply {
+                        this.text = getString(R.string.kako_automation_regenerate)
+                        setTextColor(KakoExim.WARN_COLOR)
+                        setTypeface(typeface, Typeface.BOLD)
+                        textSize = VALUE_TEXT_SIZE_SP
+                        setPaddingRelative(dp(12), dp(8), 0, dp(8))
+                        setBackgroundResource(android.R.drawable.list_selector_background)
+                        setOnClickListener {
+                            val fresh = KakoAutomation.regenerateToken(context)
+                            tokenValue.text = KakoAutomation.abbreviated(fresh)
+                            toast(getString(R.string.kako_automation_regenerated), long = true)
+                        }
+                    },
+                )
+                setOnClickListener {
+                    val clipboard = context.getSystemService(ClipboardManager::class.java)
+                    clipboard?.setPrimaryClip(
+                        ClipData.newPlainText("token", KakoAutomation.token(context)),
+                    )
+                    toast(getString(R.string.kako_automation_token_copied))
+                }
+            },
+        )
+    }
+
+    /**
+     * Writing to the directory an automation task names needs All-files access; the export
+     * degrades to the configured SAF directory without it, so this only offers the grant.
+     */
+    private fun promptForAllFilesAccess() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
+        if (Environment.isExternalStorageManager()) return
+        val context = requireContext()
+        AlertDialog.Builder(context)
+            .setTitle(R.string.kako_automation_files_title)
+            .setMessage(R.string.kako_automation_files_body)
+            .setPositiveButton(R.string.kako_automation_files_grant) { _, _ ->
+                runCatching {
+                    startActivity(
+                        Intent(
+                            Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
+                            "package:${context.packageName}".toUri(),
+                        ),
+                    )
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .create()
+            .applyKakoBorder()
+            .show()
+    }
+
+    private fun toast(message: String, long: Boolean = false) {
+        Toast.makeText(
+            requireContext(),
+            message,
+            if (long) Toast.LENGTH_LONG else Toast.LENGTH_SHORT,
+        ).show()
     }
 
     // Rows
