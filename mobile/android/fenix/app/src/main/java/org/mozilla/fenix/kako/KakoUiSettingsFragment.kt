@@ -5,6 +5,7 @@
 package org.mozilla.fenix.kako
 
 import android.app.AlertDialog
+import android.content.Intent
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
@@ -21,14 +22,20 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
+import kotlinx.coroutines.CoroutineScope
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.showToolbar
 
 /**
- * The 白い熊 火狐 UI page — built like the sister repos' ThemeActivity: programmatic
- * sections with accent headers, subgroups, and deeply indented individual rows.
+ * The 白い熊 火狐 UI page — kxkb-styled: every heading is a bold accent title with a
+ * text-wide underline, top-level sections are separated by thin full-width hairlines,
+ * and rows follow the kxkb indent ladder (36/54/72/90dp). The first section is
+ * Export / Import (Kōjiki flow): a settable export directory queried on opening for
+ * the latest export, and a category panel with the ArcaneChat pill button line.
  * Every change persists immediately and restyles both this page and (through
  * [KakoTheme.revision]) all live Compose surfaces.
  */
@@ -44,6 +51,47 @@ class KakoUiSettingsFragment : Fragment() {
             KakoFonts.setFontFamily(requireContext(), imported)
         }
         rebuild()
+    }
+
+    // Export / Import wiring (SAF launchers live on the fragment; the panel calls back).
+
+    private var eximDialog: KakoEximDialog? = null
+
+    private val dirPicker = registerForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        uri ?: return@registerForActivityResult
+        runCatching {
+            requireContext().contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+            )
+        }
+        KakoExim.setDirUri(requireContext(), uri)
+        eximDialog?.refreshStatus()
+        rebuild()
+    }
+
+    private val importPicker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri ?: return@registerForActivityResult
+        eximDialog?.onImportPicked(uri)
+    }
+
+    private val exportSaver = registerForActivityResult(
+        ActivityResultContracts.CreateDocument("application/zip"),
+    ) { uri ->
+        uri ?: return@registerForActivityResult
+        eximDialog?.onExportTarget(uri)
+    }
+
+    private val eximHost = object : KakoEximDialog.Host {
+        override val scope: CoroutineScope get() = lifecycleScope
+        override fun pickDirectory() = dirPicker.launch(KakoExim.dirUri(requireContext()))
+        override fun launchImportPicker() =
+            importPicker.launch(arrayOf("application/zip", "application/octet-stream", "*/*"))
+        override fun launchExportSaver(fileName: String) = exportSaver.launch(fileName)
+        override fun closePage() {
+            eximDialog = null
+            findNavController().popBackStack()
+        }
     }
 
     override fun onCreateView(
@@ -73,6 +121,14 @@ class KakoUiSettingsFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         showToolbar(getString(R.string.kako_ui_title))
+        // Re-query the export directory for the latest export on every opening.
+        rebuild()
+    }
+
+    override fun onDestroyView() {
+        eximDialog?.dismiss()
+        eximDialog = null
+        super.onDestroyView()
     }
 
     private fun rebuild() {
@@ -80,15 +136,16 @@ class KakoUiSettingsFragment : Fragment() {
         holder.removeAllViews()
         scroll.setBackgroundColor(KakoTheme.color(context, KakoSlot.BACKGROUND))
 
+        addEximSection()
         addMasterSwitch()
 
         KakoSection.entries.forEach { section ->
             addSectionHeader(getString(section.labelRes))
             val slots = KakoSlot.entries.filter { it.section == section }
             if (section == KakoSection.FOUNDATION) {
-                addSubgroupHeader(getString(R.string.kako_subgroup_colors), indent = 1)
+                addSubgroupHeader(getString(R.string.kako_subgroup_colors))
                 slots.forEach { addColorRow(it, indent = 2) }
-                addSubgroupHeader(getString(R.string.kako_subgroup_font), indent = 1)
+                addSubgroupHeader(getString(R.string.kako_subgroup_font))
                 addFontRows(indent = 2)
             } else {
                 if (section == KakoSection.TOOLBAR) {
@@ -106,6 +163,100 @@ class KakoUiSettingsFragment : Fragment() {
         addResetButton()
     }
 
+    // Export / Import — the first separated section (Kōjiki flow).
+
+    private fun addEximSection() {
+        val context = requireContext()
+        addSectionHeader(getString(R.string.kako_eim_heading), first = true)
+
+        // The bordered, clearly-tappable export-directory box — red value while unset.
+        val accent = KakoTheme.color(context, KakoSlot.ACCENT)
+        val dirName = KakoExim.exportDir(context)?.name ?: KakoExim.dirUri(context)?.lastPathSegment
+        holder.addView(
+            LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                isClickable = true
+                setPadding(dp(12), dp(10), dp(12), dp(10))
+                background = GradientDrawable().apply {
+                    cornerRadius = dp(10).toFloat()
+                    setColor(KakoTheme.color(context, KakoSlot.MENU_BACKGROUND))
+                    setStroke(dp(2), accent)
+                }
+                setOnClickListener { eximHost.pickDirectory() }
+                addView(
+                    TextView(context).apply {
+                        text = getString(R.string.kako_eim_dir)
+                        setTextColor(accent)
+                        textSize = 12f
+                    },
+                )
+                addView(
+                    TextView(context).apply {
+                        text = dirName ?: getString(R.string.kako_eim_dir_unset)
+                        setTextColor(
+                            if (dirName == null) KakoExim.WARN_COLOR else KakoTheme.color(context, KakoSlot.TEXT),
+                        )
+                        setTypeface(typeface, Typeface.BOLD)
+                        textSize = 15f
+                    },
+                )
+            },
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                marginStart = dp(ROW_START_DP)
+                marginEnd = dp(END_MARGIN_DP)
+                topMargin = dp(8)
+            },
+        )
+
+        // The latest export in the chosen directory — queried on every page opening.
+        val (statusMsg, warn) = when {
+            KakoExim.exportDir(context) == null ->
+                getString(R.string.kako_eim_warn_nodir) to true
+            else -> KakoExim.latestExport(context)?.let {
+                getString(R.string.kako_eim_last, KakoExim.fmtTs(it.lastModified())) to false
+            } ?: (getString(R.string.kako_eim_warn_none) to true)
+        }
+        holder.addView(
+            TextView(context).apply {
+                text = statusMsg
+                textSize = 14f
+                setTextColor(if (warn) KakoExim.WARN_COLOR else KakoTheme.color(context, KakoSlot.TEXT))
+                alpha = if (warn) 1f else 0.8f
+                setPaddingRelative(dp(ROW_START_DP) + dp(2), dp(4), dp(END_MARGIN_DP), dp(4))
+            },
+        )
+
+        // The row opening the category panel.
+        holder.addView(
+            LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                setPaddingRelative(dp(ROW_START_DP), dp(5), dp(END_MARGIN_DP), dp(5))
+                setBackgroundResource(android.R.drawable.list_selector_background)
+                addView(
+                    TextView(context).apply {
+                        text = getString(R.string.kako_eim_heading)
+                        setTextColor(KakoTheme.color(context, KakoSlot.TEXT))
+                        textSize = ITEM_TEXT_SIZE_SP
+                    },
+                )
+                addView(
+                    TextView(context).apply {
+                        text = getString(R.string.kako_eim_row_summary)
+                        setTextColor(KakoTheme.color(context, KakoSlot.TEXT_SECONDARY))
+                        textSize = VALUE_TEXT_SIZE_SP
+                        setPadding(0, dp(3), 0, 0)
+                    },
+                )
+                setOnClickListener {
+                    eximDialog = KakoEximDialog(requireContext(), eximHost).also { it.show() }
+                }
+            },
+        )
+    }
+
     // Rows
 
     private fun addMasterSwitch() {
@@ -116,7 +267,7 @@ class KakoUiSettingsFragment : Fragment() {
                 isChecked = KakoTheme.isEnabled(context)
                 setTextColor(KakoTheme.color(context, KakoSlot.TEXT))
                 textSize = ITEM_TEXT_SIZE_SP
-                setPaddingRelative(dp(BASE_MARGIN_DP), dp(12), dp(BASE_MARGIN_DP), dp(12))
+                setPaddingRelative(dp(HEADING_START_DP), dp(12), dp(END_MARGIN_DP), dp(12))
                 setOnCheckedChangeListener { _, checked ->
                     KakoTheme.setEnabled(context, checked)
                     KakoFonts.refresh(context)
@@ -126,41 +277,66 @@ class KakoUiSettingsFragment : Fragment() {
         )
     }
 
-    private fun addSectionHeader(label: String) {
+    /**
+     * kxkb-style top-level heading: a thin full-width hairline separates it from the
+     * previous section (skipped for the first), then a bold accent title underlined
+     * exactly as wide as its text — the underline is a match_parent View inside a
+     * wrap_content column, so it measures to the title.
+     */
+    private fun addSectionHeader(label: String, first: Boolean = false) {
         val context = requireContext()
         val accent = KakoTheme.color(context, KakoSlot.ACCENT)
         holder.addView(
             LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
-                setPaddingRelative(dp(BASE_MARGIN_DP), dp(20), dp(BASE_MARGIN_DP), dp(4))
+                setPadding(0, if (first) dp(12) else dp(10), 0, dp(2))
+                if (!first) {
+                    addView(
+                        View(context).apply { setBackgroundColor(accent) },
+                        LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 1),
+                    )
+                }
                 addView(
-                    TextView(context).apply {
-                        text = label
-                        setTextColor(accent)
-                        textSize = SECTION_TEXT_SIZE_SP
-                        setTypeface(typeface, Typeface.BOLD)
+                    LinearLayout(context).apply {
+                        orientation = LinearLayout.VERTICAL
+                        setPaddingRelative(dp(HEADING_START_DP), dp(8), 0, 0)
+                        addView(
+                            TextView(context).apply {
+                                text = label
+                                setTextColor(accent)
+                                textSize = SECTION_TEXT_SIZE_SP
+                                setTypeface(typeface, Typeface.BOLD)
+                            },
+                            LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.WRAP_CONTENT,
+                                LinearLayout.LayoutParams.WRAP_CONTENT,
+                            ),
+                        )
+                        addView(
+                            View(context).apply { setBackgroundColor(accent) },
+                            LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.MATCH_PARENT,
+                                dpF(2.5f),
+                            ).apply { topMargin = dp(2) },
+                        )
                     },
-                )
-                addView(
-                    View(context).apply {
-                        setBackgroundColor(accent)
-                        layoutParams = LinearLayout.LayoutParams(
-                            LinearLayout.LayoutParams.MATCH_PARENT,
-                            dp(2),
-                        ).apply { topMargin = dp(6) }
-                    },
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ),
                 )
             },
         )
     }
 
-    private fun addSubgroupHeader(label: String, indent: Int) {
+    /** kxkb sub-heading: smaller bold accent title, text-wide 1.5dp underline, no hairline. */
+    private fun addSubgroupHeader(label: String) {
         val context = requireContext()
         val accent = KakoTheme.color(context, KakoSlot.ACCENT)
         holder.addView(
             LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
-                setPaddingRelative(indentPx(indent), dp(12), dp(BASE_MARGIN_DP), dp(2))
+                setPaddingRelative(dp(SUB_START_DP), dp(10), 0, dp(2))
                 addView(
                     TextView(context).apply {
                         text = label
@@ -168,15 +344,23 @@ class KakoUiSettingsFragment : Fragment() {
                         textSize = SUBGROUP_TEXT_SIZE_SP
                         setTypeface(typeface, Typeface.BOLD)
                     },
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ),
                 )
                 addView(
-                    View(context).apply {
-                        setBackgroundColor(accent)
-                        layoutParams = LinearLayout.LayoutParams(dp(SUBGROUP_RULE_WIDTH_DP), dp(2))
-                            .apply { topMargin = dp(4) }
-                    },
+                    View(context).apply { setBackgroundColor(accent) },
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        dpF(1.5f),
+                    ).apply { topMargin = dp(2) },
                 )
             },
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ),
         )
     }
 
@@ -186,8 +370,7 @@ class KakoUiSettingsFragment : Fragment() {
             LinearLayout(context).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
-                minimumHeight = dp(48)
-                setPaddingRelative(indentPx(indent), dp(4), dp(BASE_MARGIN_DP), dp(4))
+                setPaddingRelative(indentPx(indent), dp(5), dp(END_MARGIN_DP), dp(5))
                 setBackgroundResource(android.R.drawable.list_selector_background)
                 addView(
                     TextView(context).apply {
@@ -203,9 +386,9 @@ class KakoUiSettingsFragment : Fragment() {
                 addView(
                     View(context).apply {
                         background = GradientDrawable().apply {
-                            shape = GradientDrawable.OVAL
+                            cornerRadius = dp(4).toFloat()
                             setColor(KakoTheme.color(context, slot))
-                            setStroke(dp(2), KakoTheme.color(context, KakoSlot.BORDER))
+                            setStroke(dpF(1.5f), KakoTheme.color(context, KakoSlot.BORDER))
                         }
                     },
                     LinearLayout.LayoutParams(dp(SWATCH_SIZE_DP), dp(SWATCH_SIZE_DP)),
@@ -232,7 +415,7 @@ class KakoUiSettingsFragment : Fragment() {
                 isChecked = KakoTheme.toolbarTwoRows(context)
                 setTextColor(KakoTheme.color(context, KakoSlot.TEXT))
                 textSize = ITEM_TEXT_SIZE_SP
-                setPaddingRelative(indentPx(indent), dp(8), dp(BASE_MARGIN_DP), dp(8))
+                setPaddingRelative(indentPx(indent), dp(8), dp(END_MARGIN_DP), dp(8))
                 setOnCheckedChangeListener { _, checked ->
                     KakoTheme.setToolbarTwoRows(context, checked)
                 }
@@ -288,8 +471,7 @@ class KakoUiSettingsFragment : Fragment() {
             LinearLayout(context).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
-                minimumHeight = dp(48)
-                setPaddingRelative(indentPx(indent), dp(4), dp(BASE_MARGIN_DP), dp(4))
+                setPaddingRelative(indentPx(indent), dp(5), dp(END_MARGIN_DP), dp(5))
                 setBackgroundResource(android.R.drawable.list_selector_background)
                 addView(
                     TextView(context).apply {
@@ -304,7 +486,7 @@ class KakoUiSettingsFragment : Fragment() {
                         text = value
                         typeface = valueTypeface
                         setTextColor(KakoTheme.color(context, KakoSlot.TEXT_SECONDARY))
-                        textSize = ITEM_TEXT_SIZE_SP
+                        textSize = VALUE_TEXT_SIZE_SP
                     },
                 )
                 setOnClickListener { onClick() }
@@ -317,12 +499,12 @@ class KakoUiSettingsFragment : Fragment() {
         val valueView = TextView(context).apply {
             text = getString(R.string.kako_font_scale_value, KakoFonts.fontScale(context))
             setTextColor(KakoTheme.color(context, KakoSlot.TEXT_SECONDARY))
-            textSize = ITEM_TEXT_SIZE_SP
+            textSize = VALUE_TEXT_SIZE_SP
         }
         holder.addView(
             LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
-                setPaddingRelative(indentPx(indent), dp(4), dp(BASE_MARGIN_DP), dp(4))
+                setPaddingRelative(indentPx(indent), dp(4), dp(END_MARGIN_DP), dp(4))
                 addView(
                     LinearLayout(context).apply {
                         orientation = LinearLayout.HORIZONTAL
@@ -368,13 +550,13 @@ class KakoUiSettingsFragment : Fragment() {
         val valueView = TextView(context).apply {
             text = getString(R.string.kako_dimen_value, KakoTheme.dimenDp(context, dimen))
             setTextColor(KakoTheme.color(context, KakoSlot.TEXT_SECONDARY))
-            textSize = ITEM_TEXT_SIZE_SP
+            textSize = VALUE_TEXT_SIZE_SP
         }
         // The slider works in half-dp steps (0.5dp minimum visible thickness).
         holder.addView(
             LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
-                setPaddingRelative(indentPx(indent), dp(4), dp(BASE_MARGIN_DP), dp(4))
+                setPaddingRelative(indentPx(indent), dp(4), dp(END_MARGIN_DP), dp(4))
                 addView(
                     LinearLayout(context).apply {
                         orientation = LinearLayout.HORIZONTAL
@@ -422,12 +604,12 @@ class KakoUiSettingsFragment : Fragment() {
         val valueView = TextView(context).apply {
             text = getString(R.string.kako_extension_icon_size_value, KakoTheme.extensionIconSizeDp(context))
             setTextColor(KakoTheme.color(context, KakoSlot.TEXT_SECONDARY))
-            textSize = ITEM_TEXT_SIZE_SP
+            textSize = VALUE_TEXT_SIZE_SP
         }
         holder.addView(
             LinearLayout(context).apply {
                 orientation = LinearLayout.VERTICAL
-                setPaddingRelative(indentPx(indent), dp(4), dp(BASE_MARGIN_DP), dp(4))
+                setPaddingRelative(indentPx(indent), dp(4), dp(END_MARGIN_DP), dp(4))
                 addView(
                     LinearLayout(context).apply {
                         orientation = LinearLayout.HORIZONTAL
@@ -500,7 +682,7 @@ class KakoUiSettingsFragment : Fragment() {
                     TypedValue.COMPLEX_UNIT_SP,
                     SAMPLE_TEXT_SIZE_SP * KakoFonts.fontScale(context) / 100f,
                 )
-                setPaddingRelative(indentPx(indent), dp(4), dp(BASE_MARGIN_DP), dp(8))
+                setPaddingRelative(indentPx(indent), dp(4), dp(END_MARGIN_DP), dp(8))
             },
         )
     }
@@ -533,12 +715,12 @@ class KakoUiSettingsFragment : Fragment() {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
             ).apply {
-                setMargins(dp(BASE_MARGIN_DP), dp(24), dp(BASE_MARGIN_DP), dp(8))
+                setMargins(dp(END_MARGIN_DP), dp(24), dp(END_MARGIN_DP), dp(8))
             },
         )
     }
 
-    // Geometry
+    // Geometry — the kxkb indent ladder: heading 36dp, sub-heading 54dp, rows 72/90dp.
 
     private fun dp(value: Int): Int = TypedValue.applyDimension(
         TypedValue.COMPLEX_UNIT_DIP,
@@ -546,16 +728,26 @@ class KakoUiSettingsFragment : Fragment() {
         resources.displayMetrics,
     ).toInt()
 
-    private fun indentPx(level: Int): Int = dp(BASE_MARGIN_DP) + level * dp(INDENT_STEP_DP)
+    private fun dpF(value: Float): Int = TypedValue.applyDimension(
+        TypedValue.COMPLEX_UNIT_DIP,
+        value,
+        resources.displayMetrics,
+    ).toInt().coerceAtLeast(1)
+
+    private fun indentPx(level: Int): Int =
+        dp(ROW_START_DP + (level - 1) * (ROW_L2_START_DP - ROW_START_DP))
 
     private companion object {
-        const val BASE_MARGIN_DP = 16
-        const val INDENT_STEP_DP = 32
-        const val SWATCH_SIZE_DP = 28
-        const val SUBGROUP_RULE_WIDTH_DP = 120
-        const val SECTION_TEXT_SIZE_SP = 18f
-        const val SUBGROUP_TEXT_SIZE_SP = 16f
-        const val ITEM_TEXT_SIZE_SP = 15f
+        const val HEADING_START_DP = 36
+        const val SUB_START_DP = 54
+        const val ROW_START_DP = 72
+        const val ROW_L2_START_DP = 90
+        const val END_MARGIN_DP = 16
+        const val SWATCH_SIZE_DP = 38
+        const val SECTION_TEXT_SIZE_SP = 20f
+        const val SUBGROUP_TEXT_SIZE_SP = 17f
+        const val ITEM_TEXT_SIZE_SP = 16f
+        const val VALUE_TEXT_SIZE_SP = 13f
         const val SAMPLE_TEXT_SIZE_SP = 18f
         const val FONT_SCALE_MIN = 70
         const val FONT_SCALE_MAX = 160
