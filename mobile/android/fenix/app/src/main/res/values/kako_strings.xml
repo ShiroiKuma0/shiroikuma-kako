@@ -79,4 +79,31 @@
     <string name="kako_color_inherit" translatable="false">解除（継承に戻す）</string>
     <string name="kako_reset" translatable="false">既定値に戻す</string>
     <string name="kako_reset_message" translatable="false">全ての設定を既定の黒黄に戻しますか？</string>
+
+    <!-- Export / Import (Kōjiki flow, ArcaneChat button line) -->
+    <string name="kako_eim_heading" translatable="false">Export / Import</string>
+    <string name="kako_eim_row_summary" translatable="false">Export or import every setting — colours, fonts, extensions, Firefox settings — by category.</string>
+    <string name="kako_eim_title" translatable="false">Export / Import — 白い熊 火狐</string>
+    <string name="kako_eim_desc" translatable="false">Save or load every setting — colours, fonts, extensions, Firefox settings — as selectable categories.</string>
+    <string name="kako_eim_dir" translatable="false">Export directory (tap to choose)</string>
+    <string name="kako_eim_dir_unset" translatable="false">Not set — tap to choose a directory</string>
+    <string name="kako_eim_warn_nodir" translatable="false">No directory set yet — pick one to enable one-tap export.</string>
+    <string name="kako_eim_warn_none" translatable="false">No export in this directory yet.</string>
+    <string name="kako_eim_last" translatable="false">Last export: %1$s</string>
+    <string name="kako_eim_select_all" translatable="false">Select all</string>
+    <string name="kako_eim_cat_ui" translatable="false">白い熊 UI (colours · borders · toolbar)</string>
+    <string name="kako_eim_cat_fonts" translatable="false">Fonts</string>
+    <string name="kako_eim_cat_extensions" translatable="false">Pinned extensions</string>
+    <string name="kako_eim_cat_app_settings" translatable="false">Firefox settings</string>
+    <string name="kako_eim_export" translatable="false">Export</string>
+    <string name="kako_eim_import" translatable="false">Import</string>
+    <string name="kako_eim_none_selected" translatable="false">No categories selected.</string>
+    <string name="kako_eim_export_ok" translatable="false">Exported: %1$s</string>
+    <string name="kako_eim_export_fail" translatable="false">Export failed: %1$s</string>
+    <string name="kako_eim_import_fail" translatable="false">Import failed: %1$s</string>
+    <string name="kako_eim_import_none" translatable="false">No 白い熊 火狐 export found in that file.</string>
+    <string name="kako_eim_import_done_title" translatable="false">✓ Import — 100% success</string>
+    <string name="kako_eim_import_done_body" translatable="false">Restored:\n\n%1$s\n\nRestart to apply everything.</string>
+    <string name="kako_eim_restart_now" translatable="false">Restart now</string>
+    <string name="kako_eim_restart_later" translatable="false">Later</string>
 </resources>
