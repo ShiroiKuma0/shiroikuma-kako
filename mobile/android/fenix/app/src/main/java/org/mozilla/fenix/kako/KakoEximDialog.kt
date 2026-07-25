@@ -227,10 +227,10 @@ class KakoEximDialog(
         }
         val dir = KakoExim.exportDir(context)
         if (dir == null) {
-            host.launchExportSaver(KakoExim.exportFileName(context))
+            host.launchExportSaver(KakoExim.exportFileName())
         } else {
             val cats = selected()
-            val name = KakoExim.exportFileName(context)
+            val name = KakoExim.exportFileName()
             host.scope.launch {
                 val result = withContext(Dispatchers.IO) {
                     runCatching {
