@@ -112,8 +112,7 @@ class KakoEximDialog(
             setTypeface(typeface, Typeface.BOLD)
             textSize = 15f
             buttonTintList = ColorStateList.valueOf(accent)
-            // The sensitive categories start off, so "all" does not either.
-            isChecked = false
+            isChecked = true
             setPadding(dp(8), dp(7), 0, dp(7))
         }
         root.addView(selectAll)
@@ -124,7 +123,7 @@ class KakoEximDialog(
                 setTextColor(text)
                 textSize = 15f
                 buttonTintList = ColorStateList.valueOf(accent)
-                isChecked = !cat.sensitive
+                isChecked = true
                 setPadding(dp(8), dp(7), 0, dp(7))
             }
             checks[cat] = box
