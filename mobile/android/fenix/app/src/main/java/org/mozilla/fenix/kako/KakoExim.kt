@@ -59,9 +59,9 @@ object KakoExim {
      * One exportable category; [id] doubles as the JSON file name inside the ZIP.
      *
      * [sensitive] marks the categories that can only travel as plaintext inside the
-     * ZIP (passwords, card numbers, postal addresses). Those start unchecked in the
-     * panel so a routine colours-and-fonts export never writes credentials to shared
-     * storage unasked.
+     * ZIP (passwords, card numbers, postal addresses); the panel prints a warning
+     * under each. Every category is selected by default — the export is meant to be
+     * a complete backup — so the resulting ZIP deserves the care its contents do.
      */
     enum class Cat(
         val id: String,
