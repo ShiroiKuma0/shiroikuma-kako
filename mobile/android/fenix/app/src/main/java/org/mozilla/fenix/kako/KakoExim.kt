@@ -10,9 +10,19 @@ import android.net.Uri
 import androidx.annotation.StringRes
 import androidx.core.content.edit
 import androidx.documentfile.provider.DocumentFile
+import mozilla.appservices.places.BookmarkRoot
+import mozilla.components.concept.storage.BookmarkNode
+import mozilla.components.concept.storage.BookmarkNodeType
+import mozilla.components.concept.storage.CreditCardNumber
+import mozilla.components.concept.storage.LoginEntry
+import mozilla.components.concept.storage.NewCreditCardFields
+import mozilla.components.concept.storage.UpdatableAddressFields
+import mozilla.components.concept.storage.bookmarks.InsertableBookmarkTreeNode
+import mozilla.components.concept.storage.bookmarks.InsertableBookmarkTreeRoot
 import org.json.JSONArray
 import org.json.JSONObject
 import org.mozilla.fenix.R
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.utils.Settings
 import java.io.File
 import java.io.OutputStream
@@ -45,13 +55,36 @@ object KakoExim {
     private const val EXIMPORT_PREFS = "kako_eximport"
     private const val KEY_DIR_URI = "dir_uri"
 
-    /** One exportable category; [id] doubles as the JSON file name inside the ZIP. */
-    enum class Cat(val id: String, @param:StringRes val labelRes: Int) {
+    /**
+     * One exportable category; [id] doubles as the JSON file name inside the ZIP.
+     *
+     * [sensitive] marks the categories that can only travel as plaintext inside the
+     * ZIP (passwords, card numbers, postal addresses). Those start unchecked in the
+     * panel so a routine colours-and-fonts export never writes credentials to shared
+     * storage unasked.
+     */
+    enum class Cat(
+        val id: String,
+        @param:StringRes val labelRes: Int,
+        val sensitive: Boolean = false,
+    ) {
         KAKO_UI("kako_ui.json", R.string.kako_eim_cat_ui),
         FONTS("fonts.json", R.string.kako_eim_cat_fonts),
         EXTENSIONS("extensions.json", R.string.kako_eim_cat_extensions),
         APP_SETTINGS("app_settings.json", R.string.kako_eim_cat_app_settings),
+        BOOKMARKS("bookmarks.json", R.string.kako_eim_cat_bookmarks),
+        LOGINS("logins.json", R.string.kako_eim_cat_logins, sensitive = true),
+        CARDS("credit_cards.json", R.string.kako_eim_cat_cards, sensitive = true),
+        ADDRESSES("addresses.json", R.string.kako_eim_cat_addresses, sensitive = true),
     }
+
+    /** The Places roots whose subtrees travel with [Cat.BOOKMARKS]. */
+    private val BOOKMARK_ROOTS = listOf(
+        BookmarkRoot.Mobile.id,
+        BookmarkRoot.Menu.id,
+        BookmarkRoot.Toolbar.id,
+        BookmarkRoot.Unfiled.id,
+    )
 
     // The font keys live in the kako_theme prefs but ride with the FONTS category.
     private val FONT_KEYS = setOf(KAKO_FONT_FAMILY_KEY, KAKO_FONT_WEIGHT_KEY, KAKO_FONT_SCALE_KEY)
@@ -107,7 +140,7 @@ object KakoExim {
     // Export
 
     /** Writes the selected categories to [out]; returns a short summary ("N categories"). */
-    fun export(context: Context, cats: Set<Cat>, out: OutputStream): String {
+    suspend fun export(context: Context, cats: Set<Cat>, out: OutputStream): String {
         ZipOutputStream(out).use { zip ->
             fun put(name: String, bytes: ByteArray) {
                 zip.putNextEntry(ZipEntry(name))
@@ -135,13 +168,23 @@ object KakoExim {
                             put("fonts/${font.name}", font.readBytes())
                         }
                     }
-                    Cat.EXTENSIONS -> put(cat.id, exportPrefs(fenixPrefs(context)) {
-                        it == pinnedExtensionsKey(context)
-                    })
+                    Cat.EXTENSIONS -> put(
+                        cat.id,
+                        JSONObject().apply {
+                            // The pinned set/order and the custom AMO collection…
+                            put("prefs", prefsJson(fenixPrefs(context)) { it in extensionKeys(context) })
+                            // …plus every installed add-on, not only the pinned ones.
+                            put("installed", KakoAddons.installedJson(context))
+                        }.toString(2).toByteArray(),
+                    )
                     Cat.APP_SETTINGS -> put(cat.id, exportPrefs(fenixPrefs(context)) { key ->
-                        key != pinnedExtensionsKey(context) &&
+                        key !in extensionKeys(context) &&
                             APP_SETTINGS_EXCLUDE_FRAGMENTS.none { key.contains(it, ignoreCase = true) }
                     })
+                    Cat.BOOKMARKS -> put(cat.id, exportBookmarks(context))
+                    Cat.LOGINS -> put(cat.id, exportLogins(context))
+                    Cat.CARDS -> put(cat.id, exportCards(context))
+                    Cat.ADDRESSES -> put(cat.id, exportAddresses(context))
                 }
             }
         }
@@ -161,7 +204,7 @@ object KakoExim {
      * ("Label: N" lines). A category missing from the file is skipped silently; a
      * failing category is skipped without aborting the rest.
      */
-    fun import(context: Context, zip: ByteArray, cats: Set<Cat>): String {
+    suspend fun import(context: Context, zip: ByteArray, cats: Set<Cat>): String {
         val entries = readZip(zip)
         val lines = mutableListOf<String>()
 
@@ -183,13 +226,20 @@ object KakoExim {
                         }
                         count
                     }
-                    Cat.EXTENSIONS -> importPrefs(fenixPrefs(context), bytes) {
-                        it == pinnedExtensionsKey(context)
+                    Cat.EXTENSIONS -> {
+                        val root = JSONObject(String(bytes))
+                        val prefs = root.optJSONObject("prefs") ?: JSONObject()
+                        importPrefsJson(fenixPrefs(context), prefs) { it in extensionKeys(context) } +
+                            KakoAddons.restore(context, root.optJSONArray("installed"))
                     }
                     Cat.APP_SETTINGS -> importPrefs(fenixPrefs(context), bytes) { key ->
-                        key != pinnedExtensionsKey(context) &&
+                        key !in extensionKeys(context) &&
                             APP_SETTINGS_EXCLUDE_FRAGMENTS.none { key.contains(it, ignoreCase = true) }
                     }
+                    Cat.BOOKMARKS -> importBookmarks(context, bytes)
+                    Cat.LOGINS -> importLogins(context, bytes)
+                    Cat.CARDS -> importCards(context, bytes)
+                    Cat.ADDRESSES -> importAddresses(context, bytes)
                 }
             }.getOrDefault(-1)
             if (applied >= 0) lines.add("${context.getString(cat.labelRes)}: $applied")
@@ -204,9 +254,242 @@ object KakoExim {
         return lines.joinToString("\n")
     }
 
+    // Personal data — saved logins, autofill, bookmarks.
+    //
+    // These leave the encrypted on-device stores and land as plaintext in the ZIP:
+    // that is the only portable form, and it is why their categories are marked
+    // [Cat.sensitive] and start unchecked.
+
+    private suspend fun exportLogins(context: Context): ByteArray {
+        val logins = context.components.core.passwordsStorage.list()
+        val array = JSONArray()
+        logins.forEach { login ->
+            val entry = login.toEntry()
+            array.put(
+                JSONObject().apply {
+                    put("origin", entry.origin)
+                    put("formActionOrigin", entry.formActionOrigin ?: JSONObject.NULL)
+                    put("httpRealm", entry.httpRealm ?: JSONObject.NULL)
+                    put("usernameField", entry.usernameField)
+                    put("passwordField", entry.passwordField)
+                    put("username", entry.username)
+                    put("password", entry.password)
+                },
+            )
+        }
+        return JSONObject().put("logins", array).toString(2).toByteArray()
+    }
+
+    /** Restores logins through [addMany] so one malformed row cannot abort the rest. */
+    private suspend fun importLogins(context: Context, bytes: ByteArray): Int {
+        val array = JSONObject(String(bytes)).optJSONArray("logins") ?: return 0
+        val entries = (0 until array.length()).mapNotNull { index ->
+            val obj = array.optJSONObject(index) ?: return@mapNotNull null
+            LoginEntry(
+                origin = obj.optString("origin"),
+                formActionOrigin = obj.optStringOrNull("formActionOrigin"),
+                httpRealm = obj.optStringOrNull("httpRealm"),
+                usernameField = obj.optString("usernameField"),
+                passwordField = obj.optString("passwordField"),
+                username = obj.optString("username"),
+                password = obj.optString("password"),
+            )
+        }
+        if (entries.isEmpty()) return 0
+        return context.components.core.passwordsStorage.addMany(entries).count { it.isSuccess }
+    }
+
+    private suspend fun exportCards(context: Context): ByteArray {
+        val storage = context.components.core.autofillStorage
+        val crypto = storage.getCreditCardCrypto()
+        // The key is mutex-serialized — resolve it once for the whole batch.
+        val key = crypto.getOrGenerateKey()
+        val array = JSONArray()
+        storage.getAllCreditCards().forEach { card ->
+            val number = crypto.decrypt(key, card.encryptedCardNumber)?.number ?: return@forEach
+            array.put(
+                JSONObject().apply {
+                    put("billingName", card.billingName)
+                    put("cardNumber", number)
+                    put("cardNumberLast4", card.cardNumberLast4)
+                    put("expiryMonth", card.expiryMonth)
+                    put("expiryYear", card.expiryYear)
+                    put("cardType", card.cardType)
+                },
+            )
+        }
+        return JSONObject().put("creditCards", array).toString(2).toByteArray()
+    }
+
+    private suspend fun importCards(context: Context, bytes: ByteArray): Int {
+        val array = JSONObject(String(bytes)).optJSONArray("creditCards") ?: return 0
+        val storage = context.components.core.autofillStorage
+        var applied = 0
+        for (index in 0 until array.length()) {
+            val obj = array.optJSONObject(index) ?: continue
+            // The storage encrypts the plaintext number itself on insert.
+            runCatching {
+                storage.addCreditCard(
+                    NewCreditCardFields(
+                        billingName = obj.optString("billingName"),
+                        plaintextCardNumber = CreditCardNumber.Plaintext(obj.optString("cardNumber")),
+                        cardNumberLast4 = obj.optString("cardNumberLast4"),
+                        expiryMonth = obj.optLong("expiryMonth"),
+                        expiryYear = obj.optLong("expiryYear"),
+                        cardType = obj.optString("cardType"),
+                    ),
+                )
+                applied++
+            }
+        }
+        return applied
+    }
+
+    private suspend fun exportAddresses(context: Context): ByteArray {
+        val array = JSONArray()
+        context.components.core.autofillStorage.getAllAddresses().forEach { address ->
+            array.put(
+                JSONObject().apply {
+                    put("name", address.name)
+                    put("organization", address.organization)
+                    put("streetAddress", address.streetAddress)
+                    put("addressLevel3", address.addressLevel3)
+                    put("addressLevel2", address.addressLevel2)
+                    put("addressLevel1", address.addressLevel1)
+                    put("postalCode", address.postalCode)
+                    put("country", address.country)
+                    put("tel", address.tel)
+                    put("email", address.email)
+                },
+            )
+        }
+        return JSONObject().put("addresses", array).toString(2).toByteArray()
+    }
+
+    private suspend fun importAddresses(context: Context, bytes: ByteArray): Int {
+        val array = JSONObject(String(bytes)).optJSONArray("addresses") ?: return 0
+        val storage = context.components.core.autofillStorage
+        var applied = 0
+        for (index in 0 until array.length()) {
+            val obj = array.optJSONObject(index) ?: continue
+            runCatching {
+                storage.addAddress(
+                    UpdatableAddressFields(
+                        name = obj.optString("name"),
+                        organization = obj.optString("organization"),
+                        streetAddress = obj.optString("streetAddress"),
+                        addressLevel3 = obj.optString("addressLevel3"),
+                        addressLevel2 = obj.optString("addressLevel2"),
+                        addressLevel1 = obj.optString("addressLevel1"),
+                        postalCode = obj.optString("postalCode"),
+                        country = obj.optString("country"),
+                        tel = obj.optString("tel"),
+                        email = obj.optString("email"),
+                    ),
+                )
+                applied++
+            }
+        }
+        return applied
+    }
+
+    /** Each Places root is exported as its own subtree so a restore lands back in place. */
+    private suspend fun exportBookmarks(context: Context): ByteArray {
+        val storage = context.components.core.bookmarksStorage
+        val roots = JSONObject()
+        BOOKMARK_ROOTS.forEach { root ->
+            val tree = storage.getTree(root, recursive = true).getOrNull() ?: return@forEach
+            roots.put(root, JSONArray(tree.children.orEmpty().map { bookmarkToJson(it) }))
+        }
+        return JSONObject().put("roots", roots).toString(2).toByteArray()
+    }
+
+    private fun bookmarkToJson(node: BookmarkNode): JSONObject = JSONObject().apply {
+        put("type", node.type.name)
+        put("title", node.title ?: JSONObject.NULL)
+        put("url", node.url ?: JSONObject.NULL)
+        put("dateAdded", node.dateAdded)
+        put("lastModified", node.lastModified)
+        if (node.type == BookmarkNodeType.FOLDER) {
+            put("children", JSONArray(node.children.orEmpty().map { bookmarkToJson(it) }))
+        }
+    }
+
+    /**
+     * Merges each exported root's children back under the matching live root: folders
+     * go in whole through the bulk [insertTree], loose items through [addItem]. The
+     * subtrees are appended, so importing twice duplicates rather than overwrites.
+     */
+    private suspend fun importBookmarks(context: Context, bytes: ByteArray): Int {
+        val roots = JSONObject(String(bytes)).optJSONObject("roots") ?: return 0
+        val storage = context.components.core.bookmarksStorage
+        var applied = 0
+        BOOKMARK_ROOTS.forEach { root ->
+            val children = roots.optJSONArray(root) ?: return@forEach
+            for (index in 0 until children.length()) {
+                val obj = children.optJSONObject(index) ?: continue
+                val inserted = runCatching {
+                    when (obj.optString("type")) {
+                        BookmarkNodeType.FOLDER.name -> {
+                            val folder = jsonToInsertable(obj) as? InsertableBookmarkTreeNode.Folder
+                                ?: return@runCatching false
+                            storage.insertTree(InsertableBookmarkTreeRoot(root, folder)).isSuccess
+                        }
+                        BookmarkNodeType.ITEM.name -> {
+                            val url = obj.optStringOrNull("url") ?: return@runCatching false
+                            storage.addItem(root, url, obj.optString("title"), null).isSuccess
+                        }
+                        else -> false
+                    }
+                }.getOrDefault(false)
+                if (inserted) applied++
+            }
+        }
+        return applied
+    }
+
+    private fun jsonToInsertable(obj: JSONObject): InsertableBookmarkTreeNode? {
+        val dateAdded = obj.optLong("dateAdded")
+        val lastModified = obj.optLong("lastModified")
+        return when (obj.optString("type")) {
+            BookmarkNodeType.FOLDER.name -> {
+                val children = obj.optJSONArray("children")
+                InsertableBookmarkTreeNode.Folder(
+                    title = obj.optStringOrNull("title"),
+                    dateAddedTimestamp = dateAdded,
+                    lastModifiedTimestamp = lastModified,
+                    position = null,
+                    children = (0 until (children?.length() ?: 0)).mapNotNull { index ->
+                        children?.optJSONObject(index)?.let { jsonToInsertable(it) }
+                    },
+                )
+            }
+            BookmarkNodeType.ITEM.name -> InsertableBookmarkTreeNode.Item(
+                title = obj.optStringOrNull("title"),
+                url = obj.optStringOrNull("url") ?: return null,
+                dateAddedTimestamp = dateAdded,
+                lastModifiedTimestamp = lastModified,
+                position = null,
+            )
+            BookmarkNodeType.SEPARATOR.name -> InsertableBookmarkTreeNode.Separator(
+                dateAddedTimestamp = dateAdded,
+                lastModifiedTimestamp = lastModified,
+                position = null,
+            )
+            else -> null
+        }
+    }
+
+    /** JSON null and the literal string "null" both mean "absent" here. */
+    private fun JSONObject.optStringOrNull(key: String): String? =
+        if (isNull(key)) null else optString(key).takeIf { it.isNotEmpty() }
+
     // Prefs <-> JSON (typed t/v map)
 
-    private fun exportPrefs(sp: SharedPreferences, include: (String) -> Boolean): ByteArray {
+    private fun exportPrefs(sp: SharedPreferences, include: (String) -> Boolean): ByteArray =
+        prefsJson(sp, include).toString(2).toByteArray()
+
+    private fun prefsJson(sp: SharedPreferences, include: (String) -> Boolean): JSONObject {
         val root = JSONObject()
         for ((key, value) in sp.all) {
             if (!include(key)) continue
@@ -221,12 +504,18 @@ object KakoExim {
             } ?: continue
             root.put(key, entry)
         }
-        return root.toString(2).toByteArray()
+        return root
     }
 
     /** Merged restore: one putX per included key; returns the number applied. */
-    private fun importPrefs(sp: SharedPreferences, bytes: ByteArray, include: (String) -> Boolean): Int {
-        val root = JSONObject(String(bytes))
+    private fun importPrefs(sp: SharedPreferences, bytes: ByteArray, include: (String) -> Boolean): Int =
+        importPrefsJson(sp, JSONObject(String(bytes)), include)
+
+    private fun importPrefsJson(
+        sp: SharedPreferences,
+        root: JSONObject,
+        include: (String) -> Boolean,
+    ): Int {
         var applied = 0
         sp.edit {
             for (key in root.keys()) {
@@ -253,8 +542,17 @@ object KakoExim {
     private fun fenixPrefs(context: Context): SharedPreferences =
         context.getSharedPreferences(Settings.FENIX_PREFERENCES, Context.MODE_PRIVATE)
 
-    private fun pinnedExtensionsKey(context: Context): String =
-        context.getString(R.string.pref_key_kako_toolbar_extensions)
+    /**
+     * The Fenix settings that belong to [Cat.EXTENSIONS] rather than to the general
+     * settings: the pinned toolbar set/order and the custom AMO collection the fork
+     * installs extensions from. Restoring the collection needs a restart to bite,
+     * which the import dialog offers anyway.
+     */
+    private fun extensionKeys(context: Context): Set<String> = setOf(
+        context.getString(R.string.pref_key_kako_toolbar_extensions),
+        context.getString(R.string.pref_key_override_amo_user),
+        context.getString(R.string.pref_key_override_amo_collection),
+    )
 
     private fun readZip(zip: ByteArray): Map<String, ByteArray> {
         val entries = mutableMapOf<String, ByteArray>()
