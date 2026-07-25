@@ -45,7 +45,17 @@ object KakoExim {
 
     const val FORMAT = "kako-export"
     const val VERSION = 1
-    const val EXPORT_PREFIX = "shiroikuma-kako-"
+
+    /**
+     * The family file-name convention (白い熊, 2026-07-25): every backup any sister app
+     * writes is `<english-dash-separated-app-name>_<yyyy-MM-dd_HH-mm-ss>.zip` — no version,
+     * no infix, no suffix — so one directory holding all apps' backups sorts and reads
+     * uniformly. Both the panel and the automation receiver use it.
+     */
+    const val EXPORT_PREFIX = "shiroikuma-kako_"
+
+    /** The pre-convention name (`shiroikuma-kako-<version>-export_<stamp>.zip`) stays recognised. */
+    const val LEGACY_EXPORT_PREFIX = "shiroikuma-kako-"
 
     /** Warning red used by the exim status lines (Kōjiki convention). */
     const val WARN_COLOR = 0xFFFF5252.toInt()
@@ -56,7 +66,9 @@ object KakoExim {
     private const val KEY_DIR_URI = "dir_uri"
 
     /**
-     * One exportable category; [id] doubles as the JSON file name inside the ZIP.
+     * One exportable category. [id] is the stable identifier — it names the category in
+     * the ZIP manifest, in [fileName] (the `<id>.json` entry), and in the `items` extra of
+     * the automation contract ([KakoStateExportReceiver]).
      *
      * [sensitive] marks the categories that can only travel as plaintext inside the
      * ZIP (passwords, card numbers, postal addresses); the panel prints a warning
@@ -68,14 +80,22 @@ object KakoExim {
         @param:StringRes val labelRes: Int,
         val sensitive: Boolean = false,
     ) {
-        KAKO_UI("kako_ui.json", R.string.kako_eim_cat_ui),
-        FONTS("fonts.json", R.string.kako_eim_cat_fonts),
-        EXTENSIONS("extensions.json", R.string.kako_eim_cat_extensions),
-        APP_SETTINGS("app_settings.json", R.string.kako_eim_cat_app_settings),
-        BOOKMARKS("bookmarks.json", R.string.kako_eim_cat_bookmarks),
-        LOGINS("logins.json", R.string.kako_eim_cat_logins, sensitive = true),
-        CARDS("credit_cards.json", R.string.kako_eim_cat_cards, sensitive = true),
-        ADDRESSES("addresses.json", R.string.kako_eim_cat_addresses, sensitive = true),
+        KAKO_UI("kako_ui", R.string.kako_eim_cat_ui),
+        FONTS("fonts", R.string.kako_eim_cat_fonts),
+        EXTENSIONS("extensions", R.string.kako_eim_cat_extensions),
+        APP_SETTINGS("app_settings", R.string.kako_eim_cat_app_settings),
+        BOOKMARKS("bookmarks", R.string.kako_eim_cat_bookmarks),
+        LOGINS("logins", R.string.kako_eim_cat_logins, sensitive = true),
+        CARDS("credit_cards", R.string.kako_eim_cat_cards, sensitive = true),
+        ADDRESSES("addresses", R.string.kako_eim_cat_addresses, sensitive = true),
+        ;
+
+        /** This category's JSON entry inside the ZIP. */
+        val fileName: String get() = "$id.json"
+
+        companion object {
+            fun byId(id: String): Cat? = entries.firstOrNull { it.id == id }
+        }
     }
 
     /** The Places roots whose subtrees travel with [Cat.BOOKMARKS]. */
@@ -116,12 +136,18 @@ object KakoExim {
     fun exportDir(context: Context): DocumentFile? =
         dirUri(context)?.let { DocumentFile.fromTreeUri(context, it) }?.takeIf { it.isDirectory }
 
-    /** The newest `shiroikuma-kako-*.zip` in the chosen directory, or null. */
+    /** The chosen directory's display name, for status lines and automation replies. */
+    fun dirLabel(context: Context): String? =
+        exportDir(context)?.name ?: dirUri(context)?.lastPathSegment
+
+    /** The newest export in the chosen directory — the current name or the legacy one — or null. */
     fun latestExport(context: Context): DocumentFile? {
         val dir = exportDir(context) ?: return null
         return runCatching {
-            dir.listFiles().filter {
-                it.isFile && it.name?.startsWith(EXPORT_PREFIX) == true && it.name?.endsWith(".zip") == true
+            dir.listFiles().filter { file ->
+                val name = file.name.orEmpty()
+                file.isFile && name.endsWith(".zip") &&
+                    (name.startsWith(EXPORT_PREFIX) || name.startsWith(LEGACY_EXPORT_PREFIX))
             }.maxByOrNull { it.lastModified() }
         }.getOrNull()
     }
@@ -129,18 +155,28 @@ object KakoExim {
     fun fmtTs(ts: Long): String =
         SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ROOT).format(Date(ts))
 
-    fun exportFileName(context: Context): String {
-        val version = runCatching {
-            context.packageManager.getPackageInfo(context.packageName, 0).versionName
-        }.getOrNull() ?: "unknown"
-        val stamp = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.ROOT).format(Date())
-        return "$EXPORT_PREFIX$version-export_$stamp.zip"
-    }
+    fun exportFileName(): String =
+        EXPORT_PREFIX + SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.ROOT).format(Date()) + ".zip"
 
     // Export
 
-    /** Writes the selected categories to [out]; returns a short summary ("N categories"). */
-    suspend fun export(context: Context, cats: Set<Cat>, out: OutputStream): String {
+    /**
+     * Writes the selected categories to [out]; returns a short summary ("N categories").
+     *
+     * The single export core, callable headlessly: the Export/Import panel and the
+     * automation receiver ([KakoStateExportReceiver]) are both thin callers of this.
+     * [onProgress] (done, total, category label) fires after each written category —
+     * the receiver forwards it as contract progress broadcasts; UI callers omit it.
+     */
+    suspend fun export(
+        context: Context,
+        cats: Set<Cat>,
+        out: OutputStream,
+        onProgress: (done: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
+    ): String {
+        // Enum order, not selection order — the ZIP and its progress line read the same
+        // however the caller assembled the set.
+        val ordered = Cat.entries.filter { it in cats }
         ZipOutputStream(out).use { zip ->
             fun put(name: String, bytes: ByteArray) {
                 zip.putNextEntry(ZipEntry(name))
@@ -152,24 +188,30 @@ object KakoExim {
                 put("format", FORMAT)
                 put("version", VERSION)
                 put("app", context.packageName)
+                put(
+                    "appVersion",
+                    runCatching {
+                        context.packageManager.getPackageInfo(context.packageName, 0).versionName
+                    }.getOrNull() ?: "unknown",
+                )
                 put("createdTs", System.currentTimeMillis())
-                put("categories", JSONArray(cats.map { it.id.removeSuffix(".json") }))
+                put("categories", JSONArray(ordered.map { it.id }))
             }
             put("manifest.json", manifest.toString(2).toByteArray())
 
-            cats.forEach { cat ->
+            ordered.forEachIndexed { index, cat ->
                 when (cat) {
-                    Cat.KAKO_UI -> put(cat.id, exportPrefs(KakoTheme.prefs(context)) { key ->
+                    Cat.KAKO_UI -> put(cat.fileName, exportPrefs(KakoTheme.prefs(context)) { key ->
                         key !in FONT_KEYS && key !in KAKO_UI_EXCLUDE
                     })
                     Cat.FONTS -> {
-                        put(cat.id, exportPrefs(KakoTheme.prefs(context)) { it in FONT_KEYS })
+                        put(cat.fileName, exportPrefs(KakoTheme.prefs(context)) { it in FONT_KEYS })
                         KakoFonts.fontsDir(context).listFiles()?.filter { it.isFile }?.forEach { font ->
                             put("fonts/${font.name}", font.readBytes())
                         }
                     }
                     Cat.EXTENSIONS -> put(
-                        cat.id,
+                        cat.fileName,
                         JSONObject().apply {
                             // The pinned set/order and the custom AMO collection…
                             put("prefs", prefsJson(fenixPrefs(context)) { it in extensionKeys(context) })
@@ -177,15 +219,16 @@ object KakoExim {
                             put("installed", KakoAddons.installedJson(context))
                         }.toString(2).toByteArray(),
                     )
-                    Cat.APP_SETTINGS -> put(cat.id, exportPrefs(fenixPrefs(context)) { key ->
+                    Cat.APP_SETTINGS -> put(cat.fileName, exportPrefs(fenixPrefs(context)) { key ->
                         key !in extensionKeys(context) &&
                             APP_SETTINGS_EXCLUDE_FRAGMENTS.none { key.contains(it, ignoreCase = true) }
                     })
-                    Cat.BOOKMARKS -> put(cat.id, exportBookmarks(context))
-                    Cat.LOGINS -> put(cat.id, exportLogins(context))
-                    Cat.CARDS -> put(cat.id, exportCards(context))
-                    Cat.ADDRESSES -> put(cat.id, exportAddresses(context))
+                    Cat.BOOKMARKS -> put(cat.fileName, exportBookmarks(context))
+                    Cat.LOGINS -> put(cat.fileName, exportLogins(context))
+                    Cat.CARDS -> put(cat.fileName, exportCards(context))
+                    Cat.ADDRESSES -> put(cat.fileName, exportAddresses(context))
                 }
+                onProgress(index + 1, ordered.size, context.getString(cat.labelRes))
             }
         }
         return "${cats.size} categories"
@@ -196,7 +239,7 @@ object KakoExim {
     /** The categories present in [zip] — used to reject files that are not our exports. */
     fun categoriesIn(zip: ByteArray): Set<Cat> {
         val names = readZip(zip).keys
-        return Cat.entries.filter { it.id in names }.toSet()
+        return Cat.entries.filter { it.fileName in names }.toSet()
     }
 
     /**
@@ -209,7 +252,7 @@ object KakoExim {
         val lines = mutableListOf<String>()
 
         cats.forEach { cat ->
-            val bytes = entries[cat.id] ?: return@forEach
+            val bytes = entries[cat.fileName] ?: return@forEach
             val applied = runCatching {
                 when (cat) {
                     Cat.KAKO_UI -> importPrefs(KakoTheme.prefs(context), bytes) { key ->
