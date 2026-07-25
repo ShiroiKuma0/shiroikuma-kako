@@ -112,7 +112,8 @@ class KakoEximDialog(
             setTypeface(typeface, Typeface.BOLD)
             textSize = 15f
             buttonTintList = ColorStateList.valueOf(accent)
-            isChecked = true
+            // The sensitive categories start off, so "all" does not either.
+            isChecked = false
             setPadding(dp(8), dp(7), 0, dp(7))
         }
         root.addView(selectAll)
@@ -123,11 +124,21 @@ class KakoEximDialog(
                 setTextColor(text)
                 textSize = 15f
                 buttonTintList = ColorStateList.valueOf(accent)
-                isChecked = true
+                isChecked = !cat.sensitive
                 setPadding(dp(8), dp(7), 0, dp(7))
             }
             checks[cat] = box
             root.addView(box)
+            if (cat.sensitive) {
+                root.addView(
+                    TextView(context).apply {
+                        this.text = context.getString(R.string.kako_eim_plaintext_warning)
+                        setTextColor(KakoExim.WARN_COLOR)
+                        textSize = 12f
+                        setPadding(dp(38), 0, 0, dp(4))
+                    },
+                )
+            }
         }
         selectAll.setOnCheckedChangeListener { _, checked ->
             checks.values.forEach { it.isChecked = checked }
@@ -278,6 +289,8 @@ class KakoEximDialog(
 
     fun onImportPicked(uri: Uri) {
         val cats = selected()
+        // Restoring extensions re-downloads them from AMO — this is not instant.
+        toast(context.getString(R.string.kako_eim_importing))
         host.scope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatching {
