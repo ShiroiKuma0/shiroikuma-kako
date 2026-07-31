@@ -4,6 +4,75 @@ Everything built on top of stock Firefox for Android (Fenix, release channel).
 Tags are `<upstream-base>+<build>`; the fork commits live on `custom`, rebased
 onto each adopted `FIREFOX_*_RELEASE` tag.
 
+## 153.0+6 — 2026-07-31
+
+Two follow-ups to the automation contract: the browser now states which backup
+items start ticked instead of leaving the caller's picker to assume it, and a
+running export can be stopped from outside. Base: Firefox **153.0**
+(`FIREFOX_153_0_RELEASE`).
+
+### The picker's `on` / `off` column
+
+- **`LIST_CATEGORIES` answers a fourth field.** Each line is now
+  `id⇥label⇥parent⇥on|off`, the contract's optional positional field for whether
+  an item starts ticked in the caller's picker — which 自由作業盤's 保存復元
+  project redraws from this reply every time it is opened. The field is optional
+  and absent means `on`, so nothing that already read the old two-field reply
+  breaks; the ids, labels and their order are unchanged.
+- **Every category here is `on`.** The `off` flag is for something large,
+  derived and re-creatable — a regenerable thumbnail cache, downloaded map tiles
+  — and this browser exports none of that. Sending the field anyway is the
+  point: it is the app stating a default rather than the picker assuming one,
+  and any category added later inherits a field that is already there.
+- **Nothing here nests**, so the parent field goes out empty — the third field
+  is present but blank, as the positional format requires.
+- **The in-app Export / Import sheet seeds its checkboxes from the same flag**,
+  so the panel 白い熊 sees on the phone and a sister app's picker open on one
+  answer rather than two independently maintained ones.
+
+### Cancelling a running export
+
+- **`shiroikuma.kako.action.CANCEL_EXPORT`** is a third action on the same
+  exported receiver. It was added to the contract after a cancelled export in
+  another app carried on to the end and delivered a backup that had been
+  stopped: a 中止 button that only stops listening does not stop anything.
+- **It is on the receiver, not on a service, because a service cannot be
+  reached.** A stop path living on an app's own service is
+  `android:exported="false"` — correctly so — and a third-party caller cannot
+  start it, which is how an app ends up with working stop buttons that the
+  automation batch cannot press.
+- **Token-gated like the others, and fire-and-forget.** It answers nothing at
+  all — not `OK:`, and not even a bad-token error. Arriving when nothing is
+  running, or after the export has already finished, it is a silent no-op:
+  not an error, not a reply, not a crash. An optional correlation id selects
+  which run to stop; absent, it stops whatever is running.
+- **The export unwinds at the next category boundary.** The cancel flips a
+  `@Volatile` flag that the write loop reads between categories, so nothing is
+  killed, no thread is interrupted mid-`write()`, and no process exits.
+- **The cancelled run answers its own request with `ERROR:cancelled`**, through
+  the normal reply channel and under the same single-fire guard that prevents a
+  success and an error both firing. It is sent even though the canceller may
+  have stopped listening, because that reply is what proves the run ended
+  rather than carrying on unseen.
+
+### The archive is now written under a `.part` name
+
+- **Exports write `<name>.zip.part` and take the final name only once the ZIP is
+  whole.** A cancel — or any failure — deletes the partial in the same `finally`
+  that handles every other error, so a stopped export leaves the backup
+  directory **exactly as it found it**: no short archive that looks like a
+  backup, no stray `.part`. The "last export" query never matches a `.part`
+  either. A cancel landing in the closing moments still counts as a cancel:
+  the flag is checked once more before the file is put into place.
+- **The partial is created as `application/octet-stream`.** Given a display name
+  that does not end in `.zip`, a storage provider appends the MIME type's own
+  extension and hands back `<name>.zip.part.zip` — which is not the file
+  anybody asked for.
+- **A provider that refuses to rename falls back to a copy.** Renaming is
+  optional for a document provider, so rather than losing an export that ran all
+  the way to the end, the finished `.part` is copied to the final name and
+  removed.
+
 ## 153.0+5 — 2026-07-25
 
 The browser joins 白い熊's cross-app backup batch: a sister automation app can
