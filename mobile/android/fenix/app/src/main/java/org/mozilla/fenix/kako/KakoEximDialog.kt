@@ -112,18 +112,21 @@ class KakoEximDialog(
             setTypeface(typeface, Typeface.BOLD)
             textSize = 15f
             buttonTintList = ColorStateList.valueOf(accent)
-            isChecked = true
+            isChecked = KakoExim.Cat.entries.all { it.defaultOn }
             setPadding(dp(8), dp(7), 0, dp(7))
         }
         root.addView(selectAll)
 
+        // Seeded from the same [KakoExim.Cat.defaultOn] the automation contract's
+        // LIST_CATEGORIES reply sends, so this sheet and a sister app's picker open
+        // on the same answer.
         KakoExim.Cat.entries.forEach { cat ->
             val box = CheckBox(context).apply {
                 this.text = context.getString(cat.labelRes)
                 setTextColor(text)
                 textSize = 15f
                 buttonTintList = ColorStateList.valueOf(accent)
-                isChecked = true
+                isChecked = cat.defaultOn
                 setPadding(dp(8), dp(7), 0, dp(7))
             }
             checks[cat] = box
