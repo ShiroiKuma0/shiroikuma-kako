@@ -10,7 +10,7 @@ A fork of [Mozilla Firefox](https://github.com/mozilla-firefox/firefox) (Fenix, 
 
 Installs **side-by-side** with stock Firefox/Beta/Nightly (app id `shiroikuma.kako`).
 
-**📥 Latest release: [`153.0+5`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & APK downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
+**📥 Latest release: [`153.0+6`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & APK downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
 
 </div>
 
@@ -32,7 +32,7 @@ Pick a backup directory once; the page then shows the newest export in it every 
 ---
 
 ## 🤖 Backups that another app can trigger
-The same export answers a token-gated broadcast, so an automation app can back the browser up headlessly — no Activity, no tapping — and be told the exact path, byte count and category count of the ZIP it just wrote, with live progress reported as real counts (`区分 3/8 — Fonts`) rather than a percentage. Nothing is reachable until the switch inside Export / Import is turned on, and the shared secret behind it never travels inside a backup.
+The same export answers a token-gated broadcast, so an automation app can back the browser up headlessly — no Activity, no tapping — and be told the exact path, byte count and category count of the ZIP it just wrote, with live progress reported as real counts (`区分 3/8 — Fonts`) rather than a percentage. The enumeration it answers says which items start ticked, so the caller's picker opens on the browser's own answer instead of guessing one. A running export can be **stopped from outside**: the cancel unwinds it at the next category boundary and takes the half-written archive with it, leaving the backup directory exactly as it was found. Nothing is reachable until the switch inside Export / Import is turned on, and the shared secret behind it never travels inside a backup.
 
 ---
 
