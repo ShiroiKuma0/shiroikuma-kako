@@ -74,11 +74,18 @@ object KakoExim {
      * ZIP (passwords, card numbers, postal addresses); the panel prints a warning
      * under each. Every category is selected by default — the export is meant to be
      * a complete backup — so the resulting ZIP deserves the care its contents do.
+     *
+     * [defaultOn] is that default, stated rather than assumed: the Export/Import panel
+     * seeds its checkboxes from it and the automation contract's `LIST_CATEGORIES`
+     * reply sends it as the `on`/`off` column, so a caller's picker starts ticked the
+     * way this app says. It would be `false` only for something large, derived and
+     * re-creatable (a regenerable cache); nothing here is.
      */
     enum class Cat(
         val id: String,
         @param:StringRes val labelRes: Int,
         val sensitive: Boolean = false,
+        val defaultOn: Boolean = true,
     ) {
         KAKO_UI("kako_ui", R.string.kako_eim_cat_ui),
         FONTS("fonts", R.string.kako_eim_cat_fonts),
@@ -161,18 +168,28 @@ object KakoExim {
     // Export
 
     /**
+     * Thrown out of [export] when [isCancelled] goes true — deliberately *not* a
+     * [kotlinx.coroutines.CancellationException], which a coroutine would swallow as
+     * ordinary cancellation instead of letting the caller unwind and clean up.
+     */
+    class ExportCancelled : Exception("cancelled")
+
+    /**
      * Writes the selected categories to [out]; returns a short summary ("N categories").
      *
      * The single export core, callable headlessly: the Export/Import panel and the
      * automation receiver ([KakoStateExportReceiver]) are both thin callers of this.
      * [onProgress] (done, total, category label) fires after each written category —
      * the receiver forwards it as contract progress broadcasts; UI callers omit it.
+     * [isCancelled] is polled at each category boundary so a `CANCEL_EXPORT` unwinds
+     * promptly without ever interrupting a write in flight.
      */
     suspend fun export(
         context: Context,
         cats: Set<Cat>,
         out: OutputStream,
         onProgress: (done: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
+        isCancelled: () -> Boolean = { false },
     ): String {
         // Enum order, not selection order — the ZIP and its progress line read the same
         // however the caller assembled the set.
@@ -200,6 +217,7 @@ object KakoExim {
             put("manifest.json", manifest.toString(2).toByteArray())
 
             ordered.forEachIndexed { index, cat ->
+                if (isCancelled()) throw ExportCancelled()
                 when (cat) {
                     Cat.KAKO_UI -> put(cat.fileName, exportPrefs(KakoTheme.prefs(context)) { key ->
                         key !in FONT_KEYS && key !in KAKO_UI_EXCLUDE
@@ -301,7 +319,7 @@ object KakoExim {
     //
     // These leave the encrypted on-device stores and land as plaintext in the ZIP:
     // that is the only portable form, and it is why their categories are marked
-    // [Cat.sensitive] and start unchecked.
+    // [Cat.sensitive] and carry a warning wherever they are offered.
 
     private suspend fun exportLogins(context: Context): ByteArray {
         val logins = context.components.core.passwordsStorage.list()
