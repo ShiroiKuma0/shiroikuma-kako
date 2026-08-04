@@ -78,6 +78,23 @@ class AppLinksUseCases(
     }
 
     /**
+     * Whether [resolveInfo] is the platform's activity chooser rather than an app that can
+     * actually open the link.
+     *
+     * The chooser is not always AOSP's: EMUI answers with
+     * `com.huawei.android.internal.app/.HwResolverActivity`, whose package name matches nothing
+     * we could hard-code. It is identified instead by the absence of a real [IntentFilter]
+     * match, which every genuine handler has and no chooser does.
+     */
+    @VisibleForTesting
+    internal fun isResolverActivity(resolveInfo: ResolveInfo): Boolean {
+        val packageName = resolveInfo.activityInfo?.packageName
+        return packageName == null ||
+            packageName == ANDROID_RESOLVER_PACKAGE_NAME ||
+            (resolveInfo.match and IntentFilter.MATCH_CATEGORY_MASK) == 0
+    }
+
+    /**
      * Parse a URL and check if it can be handled by an app elsewhere on the Android device.
      * If that app is not available, then a market place intent is also provided.
      *
@@ -174,14 +191,21 @@ class AppLinksUseCases(
             val resolveInfo = appIntent?.let {
                 findDefaultActivity(it)
             }?.let { resolveInfo ->
-                when (resolveInfo.activityInfo?.packageName) {
+                when {
                     // don't self target when it is an app link
-                    context.packageName -> null
-                    // no default app found but Android resolver shows there are multiple applications
-                    // that can open this app link
-                    ANDROID_RESOLVER_PACKAGE_NAME, null -> {
+                    resolveInfo.activityInfo?.packageName == context.packageName -> null
+                    // No default app: the platform handed back its chooser instead of a handler,
+                    // so pick the best app that can really open the link and target it directly.
+                    // Leaving the component unset would launch the chooser, which lists this
+                    // browser as a destination for a link the browser is already showing — and
+                    // picking it there re-enters through the intent receiver and asks again.
+                    isResolverActivity(resolveInfo) -> {
                         findActivities(appIntent).firstOrNull {
-                            it.filter != null
+                            it.filter != null &&
+                                it.activityInfo?.packageName != context.packageName
+                        }?.also { bestMatch ->
+                            appIntent.component =
+                                ComponentName(bestMatch.activityInfo.packageName, bestMatch.activityInfo.name)
                         }
                     }
                     // use default app
