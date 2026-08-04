@@ -285,10 +285,13 @@ androidComponents {
             def versionName = buildType == 'nightly' ?
                     "${Config.nightlyVersionName(project)}" :
                     "${Config.releaseVersionName(project)}"
-            // Fork: report the kako version (e.g. 151.0.4+7) to the package manager instead
+            // Fork: report the kako version (e.g. 151.0.4+007) to the package manager instead
             // of upstream's channel-suffixed string; both keys live in root gradle.properties.
+            // The counter is zero-padded to three digits so that build lists — ~/tmp, the
+            // phone's file manager, the release page — sort in build order.
             if (project.hasProperty("customBaseVersionName") && project.hasProperty("customBuildNumber")) {
-                versionName = "${project.property('customBaseVersionName')}+${project.property('customBuildNumber')}"
+                def paddedBuildNumber = String.format('%03d', project.property('customBuildNumber') as Integer)
+                versionName = "${project.property('customBaseVersionName')}+${paddedBuildNumber}"
             }
             project.logger.debug("versionName override: $versionName")
 
