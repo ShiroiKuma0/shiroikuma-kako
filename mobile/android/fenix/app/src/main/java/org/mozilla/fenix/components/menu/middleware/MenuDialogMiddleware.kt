@@ -12,7 +12,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import mozilla.components.browser.state.ext.getUrl
+import mozilla.components.browser.state.selector.findCustomTab
 import mozilla.components.browser.state.state.SessionState
+import mozilla.components.browser.state.state.TabSessionState
+import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.webextension.InstallationMethod
 import mozilla.components.concept.storage.BookmarksStorage
 import mozilla.components.feature.addons.Addon
@@ -53,6 +57,7 @@ import org.mozilla.fenix.utils.Settings
  * [Middleware] implementation for handling [MenuAction] and managing the [MenuState] for the menu dialog.
  *
  * @param appStore The [AppStore] used to dispatch actions to update the global state.
+ * @param browserStore The [BrowserStore] used to resolve the custom tab the menu was opened from.
  * @param addonManager An instance of the [AddonManager] used to provide access to [Addon]s.
  * @param settings An instance of [Settings] to read and write to the [SharedPreferences] properties.
  * @param summarizeMenuSettings An instance of [SummarizationFeatureDiscoveryConfiguration] to manage the feature's
@@ -81,6 +86,7 @@ import org.mozilla.fenix.utils.Settings
 @Suppress("LongParameterList", "CyclomaticComplexMethod")
 class MenuDialogMiddleware(
     private val appStore: AppStore,
+    private val browserStore: BrowserStore,
     private val addonManager: AddonManager,
     private val settings: Settings,
     private val summarizeMenuSettings: SummarizationFeatureDiscoveryConfiguration,
@@ -316,7 +322,12 @@ class MenuDialogMiddleware(
     }
 
     private fun openInApp(store: Store<MenuState, MenuAction>) = scope.launch {
-        val url = store.state.browserMenuState?.selectedTab?.content?.url ?: return@launch
+        // In a custom tab the menu is opened on that tab, not on the browser's selected one,
+        // so the app link has to be resolved against the custom tab's own URL.
+        val url = store.state.customTabSessionId
+            ?.let { browserStore.state.findCustomTab(it)?.content?.url }
+            ?: store.state.browserMenuState?.selectedTab?.content?.url
+            ?: return@launch
         val redirect = appLinksUseCases.appLinkRedirect.invoke(url)
 
         if (!redirect.hasExternalApp()) {
