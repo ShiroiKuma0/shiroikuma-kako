@@ -21,6 +21,7 @@ import kotlinx.coroutines.test.runTest
 import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.browser.state.state.createCustomTab
 import mozilla.components.browser.state.state.createTab
+import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.webextension.InstallationMethod
 import mozilla.components.feature.addons.Addon
@@ -1151,6 +1152,7 @@ class MenuDialogMiddlewareTest {
         middleware = listOf(
             MenuDialogMiddleware(
                 appStore = appStore,
+                browserStore = BrowserStore(),
                 addonManager = addonManager,
                 settings = settings,
                 summarizeMenuSettings = summarizeFeatureSettings,
