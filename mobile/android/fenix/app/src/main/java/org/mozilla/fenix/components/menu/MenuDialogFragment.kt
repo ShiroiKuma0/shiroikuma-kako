@@ -318,6 +318,7 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                         middleware = listOf(
                             MenuDialogMiddleware(
                                 appStore = appStore,
+                                browserStore = browserStore,
                                 addonManager = components.addonManager,
                                 settings = settings,
                                 summarizeMenuSettings = components.core.summarizeFeatureSettings,
@@ -900,6 +901,12 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                 }.collectAsState(false)
                                 handlebarContentDescription = descCustom
 
+                                // The custom tab has its own URL, so its app link has to be
+                                // resolved separately from the browser's selected tab.
+                                val customTabAppLinksRedirect = customTab?.content?.url?.let {
+                                    appLinksUseCases.appLinkRedirect(it)
+                                }
+
                                 CustomTabMenu(
                                     canGoBack = customTab?.content?.canGoBack ?: true,
                                     canGoForward = customTab?.content?.canGoForward ?: true,
@@ -917,6 +924,8 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                     webExtensionMenuCount = webExtensionsCount,
                                     extensionsMenuDescription = extensionsMenuItemDescription,
                                     customTabMenuItems = customTab?.config?.menuItems,
+                                    hasExternalApp = customTabAppLinksRedirect?.hasExternalApp() ?: false,
+                                    externalAppName = customTabAppLinksRedirect?.appName ?: "",
                                     onCustomMenuItemClick = { intent: PendingIntent ->
                                         store.dispatch(
                                             MenuAction.CustomMenuItemAction(
@@ -937,6 +946,9 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                     },
                                     onOpenInFirefoxMenuClick = {
                                         store.dispatch(MenuAction.OpenInFirefox)
+                                    },
+                                    onOpenInAppMenuClick = {
+                                        store.dispatch(MenuAction.OpenInApp)
                                     },
                                     onBackButtonClick = { viewHistory: Boolean ->
                                         store.dispatch(MenuAction.Navigate.Back(viewHistory))
