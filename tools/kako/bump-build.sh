@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Bump customBuildNumber in the repo-root gradle.properties by 1.
-# Print the new full version "X.Y.Z+N".
+# Print the new full version "X.Y.Z+NNN" (counter zero-padded to three digits,
+# so that build lists sort in build order; the stored property stays a plain int).
 #
 # Family convention (same as the other shiroikuma-* forks): every dev build
 # gets a fresh build number, surfaced in the APK filename and app version
@@ -30,4 +31,4 @@ sed -i "s/^customBuildNumber=${current}\$/customBuildNumber=${new}/" "$GP"
 base=$(grep -oP '^customBaseVersionName=\K.+' "$GP" || true)
 [[ -n "$base" ]] || die "customBaseVersionName=<string> line not found in $GP"
 
-echo "${base}+${new}"
+printf '%s+%03d\n' "$base" "$new"
