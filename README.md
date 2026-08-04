@@ -10,7 +10,7 @@ A fork of [Mozilla Firefox](https://github.com/mozilla-firefox/firefox) (Fenix, 
 
 Installs **side-by-side** with stock Firefox/Beta/Nightly (app id `shiroikuma.kako`).
 
-**📥 Latest release: [`153.0+6`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & APK downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
+**📥 Latest release: [`153.0.1+004`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & APK downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
 
 </div>
 

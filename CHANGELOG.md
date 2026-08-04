@@ -4,6 +4,66 @@ Everything built on top of stock Firefox for Android (Fenix, release channel).
 Tags are `<upstream-base>+<build>`; the fork commits live on `custom`, rebased
 onto each adopted `FIREFOX_*_RELEASE` tag.
 
+## 153.0.1+004 — 2026-08-04
+
+First published build on the 153.0.1 base, and the one that fixes handing a link
+to another app. Base: Firefox **153.0.1** (`FIREFOX_153_0_1_RELEASE`), adopted
+from 153.0.
+
+### The system chooser no longer loops
+
+Following an `f-droid.org` link with Droid-ify installed raised the system's
+"choose an app" dialog two or three times in a row, and the page that finally
+arrived was blank. Freezing the other app was the only way through.
+
+Android Components identifies the platform's activity chooser by the literal
+package name `android`. EMUI answers with
+`com.huawei.android.internal.app/.HwResolverActivity` instead, which fails that
+comparison and is therefore taken for a real handler: its component is written
+into the intent, and its application label — **System Share** — is offered as
+the app to open the page in. Launching that component draws the chooser, which
+lists 白い熊 火狐 as a destination for a link the browser is already showing;
+picking it there re-enters through the intent receiver into a new tab, whose
+redirect hop resolves exactly the same way and asks again. The load cancelled
+for the handover is left with nothing to resume it, and that is the blank page.
+
+The chooser is now identified by the absence of an `IntentFilter` match — every
+genuine handler carries one and no chooser does — so any vendor's chooser is
+caught, not just AOSP's. The best real handler is then targeted directly, with
+our own package excluded from that choice; the existing self-exclusion only
+guarded the branch where a default app had already been set. A link with one
+external handler opens straight in it, and nothing offers the browser a page it
+is already displaying.
+
+### Open in app, from the custom tab menu
+
+A link followed from another app lands in a custom tab, whose menu could only
+pass the page onwards to the browser itself. The app that actually claims the
+link now appears there by name, so it is one tap either way instead of a detour
+through 白い熊 火狐 and the main menu.
+
+A custom tab carries its own URL, unrelated to the browser's selected tab, so
+the menu item and the middleware behind it both resolve the app link by custom
+tab session id rather than reading whichever tab the browser had selected.
+
+### Build counter padded to three digits
+
+Version names, and so APK filenames, now read `153.0.1+004` rather than
+`153.0.1+4`, so builds sort in build order in `~/tmp`, in the phone's file
+manager and on the releases page. The stored property stays a plain integer, and
+releases already published keep the names they went out under.
+
+### Upstream adoption
+
+- **All 38 fork commits replayed onto the new tag without a conflict**, so every
+  patch keeps the shape it had on 153.0 — nothing needed re-applying against an
+  upstream refactor this time.
+- **Upstream's fixes are engine-side**: screen handling reworked across every
+  platform widget backend (`ScreenHelperAndroid` among them), the vendored
+  `memmap2` crate updated, and app-provided search-engine configuration — plus a
+  broad localisation sweep through the Fenix strings. An artifact build takes
+  all of that as prebuilt GeckoView rather than compiling it.
+
 ## 153.0+6 — 2026-07-31
 
 Two follow-ups to the automation contract: the browser now states which backup
