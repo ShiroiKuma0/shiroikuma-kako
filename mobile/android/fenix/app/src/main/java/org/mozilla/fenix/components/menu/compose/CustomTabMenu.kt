@@ -64,6 +64,8 @@ import org.mozilla.fenix.theme.Theme
  * @param webExtensionMenuCount The number of web extensions.
  * @param extensionsMenuDescription The description to be shown below the extensions menu item.
  * @param customTabMenuItems Additional [CustomTabMenuItem]s to be displayed to the custom tab menu.
+ * @param hasExternalApp Whether or not an external app can open the current custom tab's URL.
+ * @param externalAppName The name of the external app that can open the current URL, if any.
  * @param onCustomMenuItemClick Invoked when the user clicks on [CustomTabMenuItem]s.
  * @param scrollState The [ScrollState] used for vertical scrolling.
  * @param onSwitchToDesktopSiteMenuClick Invoked when the user clicks on the switch to desktop site menu toggle.
@@ -71,6 +73,7 @@ import org.mozilla.fenix.theme.Theme
  * @param onEditBookmarkMenuClick Invoked when the user clicks on the edit bookmark menu item.
  * @param onFindInPageMenuClick Invoked when the user clicks on the find in page menu item.
  * @param onOpenInFirefoxMenuClick Invoked when the user clicks on the open in browser menu item.
+ * @param onOpenInAppMenuClick Invoked when the user clicks on the open in external app menu item.
  * @param onBackButtonClick Invoked when the user clicks on the back button.
  * @param onForwardButtonClick Invoked when the user clicks on the forward button.
  * @param onRefreshButtonClick Invoked when the user clicks on the refresh button.
@@ -102,6 +105,8 @@ internal fun CustomTabMenu(
     webExtensionMenuCount: Int,
     extensionsMenuDescription: String?,
     customTabMenuItems: List<CustomTabMenuItem>?,
+    hasExternalApp: Boolean,
+    externalAppName: String,
     onCustomMenuItemClick: (PendingIntent) -> Unit,
     scrollState: ScrollState,
     onSwitchToDesktopSiteMenuClick: () -> Unit,
@@ -109,6 +114,7 @@ internal fun CustomTabMenu(
     onEditBookmarkMenuClick: () -> Unit,
     onFindInPageMenuClick: () -> Unit,
     onOpenInFirefoxMenuClick: () -> Unit,
+    onOpenInAppMenuClick: () -> Unit,
     onBackButtonClick: (longPress: Boolean) -> Unit,
     onForwardButtonClick: (longPress: Boolean) -> Unit,
     onRefreshButtonClick: (longPress: Boolean) -> Unit,
@@ -203,6 +209,20 @@ internal fun CustomTabMenu(
                         MenuItemState.ENABLED
                     },
             )
+
+            // Only offered when something can actually take the link — a permanently greyed
+            // out row would be noise in a menu this short.
+            if (hasExternalApp) {
+                MenuItem(
+                    label = if (externalAppName.isNotEmpty()) {
+                        stringResource(id = R.string.browser_menu_open_in_fenix, externalAppName)
+                    } else {
+                        stringResource(id = R.string.browser_menu_open_app_link)
+                    },
+                    beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_more_grid_24),
+                    onClick = onOpenInAppMenuClick,
+                )
+            }
 
             if (isBookmarked) {
                 MenuItem(
@@ -367,6 +387,8 @@ private fun CustomTabMenuPreview(@PreviewParameter(PreviewThemeProvider::class) 
                 webExtensionMenuCount = 2,
                 extensionsMenuDescription = "Extension 1, Extension 2",
                 customTabMenuItems = null,
+                hasExternalApp = true,
+                externalAppName = "Droid-ify",
                 onCustomMenuItemClick = { _: PendingIntent -> },
                 scrollState = rememberScrollState(),
                 onSwitchToDesktopSiteMenuClick = {},
@@ -374,6 +396,7 @@ private fun CustomTabMenuPreview(@PreviewParameter(PreviewThemeProvider::class) 
                 onEditBookmarkMenuClick = {},
                 onFindInPageMenuClick = {},
                 onOpenInFirefoxMenuClick = {},
+                onOpenInAppMenuClick = {},
                 onBackButtonClick = {},
                 onForwardButtonClick = {},
                 onRefreshButtonClick = {},
@@ -416,6 +439,8 @@ private fun CustomTabMenuDisabledButtonsPreview(@PreviewParameter(PreviewThemePr
                 webExtensionMenuCount = 0,
                 extensionsMenuDescription = "Temporarily disabled",
                 customTabMenuItems = null,
+                hasExternalApp = true,
+                externalAppName = "Droid-ify",
                 onCustomMenuItemClick = { _: PendingIntent -> },
                 scrollState = rememberScrollState(),
                 onSwitchToDesktopSiteMenuClick = {},
@@ -423,6 +448,7 @@ private fun CustomTabMenuDisabledButtonsPreview(@PreviewParameter(PreviewThemePr
                 onEditBookmarkMenuClick = {},
                 onFindInPageMenuClick = {},
                 onOpenInFirefoxMenuClick = {},
+                onOpenInAppMenuClick = {},
                 onBackButtonClick = {},
                 onForwardButtonClick = {},
                 onRefreshButtonClick = {},
