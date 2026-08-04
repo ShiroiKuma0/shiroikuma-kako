@@ -7,6 +7,7 @@ package mozilla.components.feature.app.links
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageInfo
 import android.content.pm.ResolveInfo
@@ -93,6 +94,9 @@ class AppLinksUseCasesTest {
             val resolveInfo = ResolveInfo().apply {
                 labelRes = android.R.string.ok
                 activityInfo = info
+                // A real handler always resolves through an IntentFilter. Without a match the
+                // fake would be indistinguishable from the platform's activity chooser.
+                match = IntentFilter.MATCH_CATEGORY_HOST
             }
             @Suppress("DEPRECATION") // Deprecation will be handled in https://github.com/mozilla-mobile/android-components/issues/11832
             packageManager.addResolveInfoForIntent(intent, resolveInfo)
