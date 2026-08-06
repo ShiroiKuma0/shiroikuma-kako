@@ -4,6 +4,55 @@ Everything built on top of stock Firefox for Android (Fenix, release channel).
 Tags are `<upstream-base>+<build>`; the fork commits live on `custom`, rebased
 onto each adopted `FIREFOX_*_RELEASE` tag.
 
+## 153.0.3+001 — 2026-08-06
+
+A pure upstream adoption: nothing on the fork side changed, so everything here
+comes from Mozilla. Base: Firefox **153.0.3** (`FIREFOX_153_0_3_RELEASE`),
+adopted from 153.0.1 — 153.0.2 was never tagged on the release branch, so the
+jump is straight from `.1` to `.3`.
+
+### The address pill's domain highlighting stays in sync
+
+The toolbar emphasizes the domain and fades the rest of the URL, and it measured
+that text only when the field changed size. A URL whose text, text style or
+viewport width changed without a resize therefore had the new domain's character
+range applied to the previous layout, putting the emphasis and the fade in the
+wrong place. The layout is now remeasured whenever any of the three changes, and
+the scroll that brings the domain's end into view also re-runs when the
+highlighted range itself moves.
+
+This is the one upstream change that lands in the part of the toolbar the fork
+rewrites; it replayed against the two-row layout, the outlined address pill and
+the pinned extension buttons without a conflict.
+
+### What else upstream fixed
+
+- **Media from a Blob plays and seeks again** — same-process blob URL data is
+  fetched directly instead of being shipped over IPC, which fixes decoding and
+  seeking a Blob read from CacheStorage, and playing a video rebuilt from an
+  `ArrayBuffer`.
+- **The crash helper exits cleanly** when its Android rendezvous is missed,
+  instead of lingering after the process it was waiting for is gone.
+- **Google Lens** drops its `uploadByUrl` endpoint, so image search uploads take
+  a single path.
+- **The devtools inspector** no longer crashes when its listener lookup returns
+  dead wrappers.
+- **A broad localisation sweep** through the Fenix strings — around 60 locales
+  touched, with Uyghur and Tajik gaining substantial coverage — plus refreshed
+  add-on blocklist bloom filters and remote-settings dumps.
+
+The rest of the 37 upstream commits are desktop-only (the Smart Window
+assistant, Windows drag-and-drop and MAR update packaging) and never reach an
+Android build. Everything engine-side arrives as prebuilt GeckoView, so an
+artifact build takes it without compiling.
+
+### Upstream adoption
+
+- **All 43 fork commits replayed onto the new tag without a conflict**, so every
+  patch keeps the shape it had on 153.0.1 — nothing needed re-applying against an
+  upstream refactor.
+- The build counter resets on adoption, so this is `+001` on the new base.
+
 ## 153.0.1+004 — 2026-08-04
 
 First published build on the 153.0.1 base, and the one that fixes handing a link
