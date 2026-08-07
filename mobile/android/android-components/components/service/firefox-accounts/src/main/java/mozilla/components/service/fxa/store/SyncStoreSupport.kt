@@ -116,9 +116,17 @@ internal class FxaAccountObserver(
             )
         }
         scope.launch {
+            // The account is authenticated whether or not its profile can be fetched, so the
+            // state is published before that network call rather than behind it. Tying the two
+            // together meant one failed fetch left the store at its initial Unknown for the rest
+            // of the process: every consumer read that as signed out, the menu offered "Sign in",
+            // and tapping it landed on TurnOnSyncFragment, which pops straight back off because
+            // the account manager does hold an account. A failed fetch now costs the avatar and
+            // the email, not the session.
+            store.dispatch(SyncAction.UpdateAccountState(AccountState.Authenticated))
+
             val syncAccount = account.getProfile()?.toAccount() ?: return@launch
             store.dispatch(SyncAction.UpdateAccount(syncAccount))
-            store.dispatch(SyncAction.UpdateAccountState(AccountState.Authenticated))
         }
     }
 
@@ -138,13 +146,14 @@ internal class FxaAccountObserver(
     }
 
     override fun onProfileUpdated(profile: Profile) {
-        val currentAccount = store.state.account ?: return
-        val updatedAccount = currentAccount.copy(
+        // A later refresh is the only way back for a session whose sign-in profile fetch failed,
+        // so an absent account is built from the profile instead of dropping the update.
+        val updatedAccount = store.state.account?.copy(
             uid = profile.uid,
             email = profile.email,
             avatar = profile.avatar,
             displayName = profile.displayName,
-        )
+        ) ?: profile.toAccount()
         store.dispatch(SyncAction.UpdateAccount(updatedAccount))
     }
 }
