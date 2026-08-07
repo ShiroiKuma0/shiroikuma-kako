@@ -133,7 +133,7 @@ class SyncStoreSupportTest {
     }
 
     @Test
-    fun `GIVEN account observer WHEN onAuthenticated observed without profile THEN account and account state are not updated`() = runTest(testDispatcher) {
+    fun `GIVEN account observer WHEN onAuthenticated observed without profile THEN account state is still updated`() = runTest(testDispatcher) {
         val constellation = mock<DeviceConstellation>()
         val account = coMock<OAuthAccount> {
             whenever(deviceConstellation()).thenReturn(constellation)
@@ -141,9 +141,11 @@ class SyncStoreSupportTest {
         }
 
         accountObserver.onAuthenticated(account, AuthType.Existing)
+        testDispatcher.scheduler.advanceUntilIdle()
 
+        // A profile that cannot be fetched costs the avatar and the email, not the session.
         assertNull(store.state.account)
-        assertEquals(AccountState.Unknown, store.state.accountState)
+        assertEquals(AccountState.Authenticated, store.state.accountState)
     }
 
     @Test
@@ -185,6 +187,20 @@ class SyncStoreSupportTest {
     fun `GIVEN account observer WHEN onProfileUpdated then update the account state`() {
         // Prerequisite is having a non-null account already.
         store.dispatch(SyncAction.UpdateAccount(Account(null, null, null, null)))
+
+        val profile = generateProfile()
+        accountObserver.onProfileUpdated(profile)
+
+        assertEquals(profile.uid, store.state.account!!.uid)
+        assertEquals(profile.avatar, store.state.account!!.avatar)
+        assertEquals(profile.email, store.state.account!!.email)
+        assertEquals(profile.displayName, store.state.account!!.displayName)
+    }
+
+    @Test
+    fun `GIVEN no account in the store WHEN onProfileUpdated then the account is built from the profile`() {
+        // The state a failed sign-in profile fetch leaves behind: authenticated, no account.
+        assertNull(store.state.account)
 
         val profile = generateProfile()
         accountObserver.onProfileUpdated(profile)
