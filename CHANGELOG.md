@@ -4,6 +4,48 @@ Everything built on top of stock Firefox for Android (Fenix, release channel).
 Tags are `<upstream-base>+<build>`; the fork commits live on `custom`, rebased
 onto each adopted `FIREFOX_*_RELEASE` tag.
 
+## 153.0.3+002 — 2026-08-07
+
+A single fork-side fix; the upstream base is unchanged at Firefox **153.0.3**
+(`FIREFOX_153_0_3_RELEASE`).
+
+### Being signed in survives a failed profile fetch
+
+Firefox Accounts publishes its signed-in state through `SyncStore`, and the
+observer that fills that store dispatched the state only *after* fetching the
+account profile — behind the same early return, so a null profile skipped both.
+One failed fetch, and a cold start on a flaky network is enough, therefore left
+the store at its initial `Unknown` for the whole life of the process. Every
+consumer reads that as signed out.
+
+What it looked like: the menu offered **Sign in**, and tapping it closed the
+menu and did nothing else. That navigation goes to `TurnOnSyncFragment`, which
+pops itself straight back off when an account already exists — and one did, the
+whole time, in the account manager the menu never asked. Settings told the same
+story from the other side, showing the **Mozilla account** layout placeholder
+where the email belongs, next to the generic avatar. Nothing short of restarting
+the browser could clear it, and a restart on the same bad network reproduced it.
+
+The account is authenticated whether or not its profile can be fetched, so the
+state is now dispatched before that network call. A failed fetch costs the
+avatar and the email, not the session. A second change reopens the way back:
+the profile-updated observer used to drop its update whenever the store held no
+account yet — the exact state a failed fetch leaves behind — and now builds the
+account from the profile instead, so a later refresh repairs the display in
+place rather than needing the app restarted.
+
+Every consumer of the store was checked before the old "authenticated implies a
+known account" assumption was broken. The menu row and its avatar already fall
+back to a generic label and icon; recent synced tabs, the bookmarks sync gate
+and onboarding all key on the account object rather than the state, and are
+unchanged. IP Protection reads the state alone, and now reaches *authenticated*
+instead of sitting at *warming up*, which is the correct reading.
+
+The fix lives in Android Components (`SyncStoreSupport`), so it is Kotlin-only
+and stays inside artifact-build territory. Its unit tests move with it: the case
+that asserted the old behaviour now asserts the new one, and a new case covers a
+profile update against an empty store — 15 tests, no failures.
+
 ## 153.0.3+001 — 2026-08-06
 
 A pure upstream adoption: nothing on the fork side changed, so everything here
