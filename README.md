@@ -10,7 +10,7 @@ A fork of [Mozilla Firefox](https://github.com/mozilla-firefox/firefox) (Fenix, 
 
 Installs **side-by-side** with stock Firefox/Beta/Nightly (app id `shiroikuma.kako`).
 
-**📥 Latest release: [`153.0.3+002`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & APK downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
+**📥 Latest release: [`153.0.3+005`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & APK downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
 
 </div>
 
@@ -38,6 +38,11 @@ The same export answers a token-gated broadcast, so an automation app can back t
 
 ## 📌 Pinned extensions & the two-row toolbar
 Any extension with a browser action can be pinned to the toolbar from its settings screen, desktop-style — with its real multicolor icon, an icon-size slider, long-press reordering, and a drag-to-reorder dialog. A toggleable two-row layout keeps navigation and the address pill on top and moves new tab, pinned extensions, manage-extensions, tab counter and menu to their own row beneath.
+
+---
+
+## 📄 Local HTML files open in the browser
+Tap a saved page in a file manager and 火狐 is in the "open with" list — and actually renders it. Stock Fenix claims `text/html` only for `http(s)` URLs, and its engine reads `content://` for PDFs and nothing else, so a local `.html` file finds no handler at all. Both gates are opened here. The document still reaches the engine through the `content://` URI the file manager granted, so a caller has to hold the file rather than merely name a path.
 
 ---
 
