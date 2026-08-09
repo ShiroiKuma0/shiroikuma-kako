@@ -4,6 +4,51 @@ Everything built on top of stock Firefox for Android (Fenix, release channel).
 Tags are `<upstream-base>+<build>`; the fork commits live on `custom`, rebased
 onto each adopted `FIREFOX_*_RELEASE` tag.
 
+## 153.0.3+005 — 2026-08-09
+
+A single fork-side feature; the upstream base is unchanged at Firefox **153.0.3**
+(`FIREFOX_153_0_3_RELEASE`). Builds `+003` and `+004` were development steps on
+the way to this one and were never released.
+
+### Local HTML files open in the browser
+
+Tapping an `.html` file in a file manager never offered 火狐 as somewhere to open
+it. Two separate things stood in the way, at opposite ends of the browser.
+
+The first is the manifest. Fenix claims `text/html` only for `http`/`https`
+URLs, so the `ACTION_VIEW` intent a file manager sends — a `content://` URI from
+its FileProvider, with the type set — matched no filter at all and the browser
+never reached the chooser. Only `application/pdf` had a `content://` filter. The
+fork now claims `text/html` and `application/xhtml+xml` over `content://` too,
+written next to the PDF one it mirrors.
+
+The second is the engine, and it is why the manifest change alone would have
+produced an entry in the list that opens an empty tab. GeckoView's `content://`
+protocol handler is deliberately PDF-only: the channel asks for the stream with
+`Allow::PDFOnly`, and the Java side closes anything whose first bytes are not
+`%PDF-`. That check is what the fork widens — it now also accepts a document the
+provider declares as `text/html` or `application/xhtml+xml`. Everything else is
+untouched: the channel never states a content type for PDFs either, so Gecko
+sniffs the bytes exactly as before, and the caller's URI grant remains the only
+access check.
+
+The C++ that passes `Allow::PDFOnly` is out of reach — an artifact build ships a
+prebuilt engine, and changing it would force a multi-hour compile. The check it
+asks for, though, lives in the `geckoview` Java module, which compiles from
+source alongside Fenix, so the fix stays inside artifact-build territory.
+
+Routing the document through the `content://` URI rather than resolving it to a
+`file://` path is a deliberate choice, not a shortcut. A `file://` URL would
+have needed all-files access, and would have let any app on the phone name a
+path for the browser to read; Android Components blocks the scheme outright for
+that reason. Through `content://`, a caller has to hold the document and grant
+read access to it, which is the permission model the feature should have.
+
+Relative references inside the page — images, stylesheets, sibling pages —
+resolve against the `content://` URI, so a saved page that carries a `_files`
+directory beside it will show its text but not necessarily its images. A
+self-contained page renders whole.
+
 ## 153.0.3+002 — 2026-08-07
 
 A single fork-side fix; the upstream base is unchanged at Firefox **153.0.3**
