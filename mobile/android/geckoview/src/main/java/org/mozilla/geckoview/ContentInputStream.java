@@ -16,6 +16,7 @@ import android.util.Log;
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import java.io.IOException;
+import java.util.Locale;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.annotation.WrapForJNI;
 
@@ -27,6 +28,16 @@ import org.mozilla.gecko.annotation.WrapForJNI;
   private static final String LOGTAG = "ContentInputStream";
 
   private static final byte[][] HEADERS = {{'%', 'P', 'D', 'F', '-'}};
+
+  /**
+   * 白い熊 火狐: document types the fork reads over content:// besides PDF.
+   *
+   * <p>The caller asks for PDF only — GeckoViewContentChannel is compiled with Allow::PDFOnly and
+   * the fork cannot change that without building the engine. Widening the check here is what lets
+   * a local .html file handed over by a file manager open at all; the type comes from the
+   * provider, and the content is still sniffed by Gecko as it would be for a PDF.
+   */
+  private static final String[] ALLOWED_TYPES = {"text/html", "application/xhtml+xml"};
 
   private AssetFileDescriptor mFd;
 
@@ -44,7 +55,7 @@ import org.mozilla.gecko.annotation.WrapForJNI;
       }
       setInputStream(mFd.createInputStream());
 
-      if (aPDFOnly && !checkHeaders(HEADERS)) {
+      if (aPDFOnly && !checkHeaders(HEADERS) && !isAllowedType(cr, uri)) {
         Log.e(LOGTAG, "Cannot open the uri: " + aUri + " (invalid header)");
         close();
       }
@@ -52,6 +63,24 @@ import org.mozilla.gecko.annotation.WrapForJNI;
       Log.e(LOGTAG, "Cannot open the uri: " + aUri, e);
       close();
     }
+  }
+
+  /** 白い熊 火狐: whether the provider declares this document to be one of {@link #ALLOWED_TYPES}. */
+  private static boolean isAllowedType(
+      final @NonNull ContentResolver aCr, final @NonNull Uri aUri) {
+    final String type = aCr.getType(aUri);
+    if (type == null) {
+      return false;
+    }
+
+    // Providers may append parameters, e.g. "text/html; charset=utf-8".
+    final String bare = type.split(";")[0].trim().toLowerCase(Locale.ROOT);
+    for (final String allowed : ALLOWED_TYPES) {
+      if (allowed.equals(bare)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override
