@@ -4,6 +4,75 @@ Everything built on top of stock Firefox for Android (Fenix, release channel).
 Tags are `<upstream-base>+<build>`; the fork commits live on `custom`, rebased
 onto each adopted `FIREFOX_*_RELEASE` tag.
 
+## 153.0.4+001 — 2026-08-11
+
+A pure upstream adoption: nothing on the fork side changed, so everything here
+comes from Mozilla. Base: Firefox **153.0.4** (`FIREFOX_153_0_4_RELEASE`),
+adopted from 153.0.3 — the third point release on the same 153 branch.
+
+### The address pill stops crashing on a domain span that doesn't fit
+
+Two hardening fixes land in the toolbar's highlighted URL, both of them guards
+against an index that no longer matches the text it points into.
+
+The first is in the scroll measurement. `computeDomainEndScrollValue` handed the
+registrable domain's start and end straight to `getPathForRange`, which throws
+if either index is out of range or the start is past the end — so a caller
+supplying a domain span inconsistent with the URL actually on screen took the
+toolbar down rather than merely mispainting it. Both indices are now coerced so
+`0 ≤ start ≤ end ≤ length` always holds.
+
+The second is one layer down, in the shared `LinkText` composable. When a link's
+substring was blank or absent from the surrounding text, `buildUrlAnnotatedString`
+logged the problem and then added the annotation anyway, with the `-1` that
+`indexOf` had returned as its start; the crash arrived later, in the text layout
+pass, far from the cause. Such links are now skipped, so the text still renders —
+minus the broken clickable span. The realistic trigger is a localised string
+whose link substring has drifted out of the translated sentence, which makes this
+a fix that only ever fires in non-English builds.
+
+The URL-highlighting code is the one part of the toolbar the fork rewrites, and
+this is the second release running that upstream has touched it. It replayed
+against the two-row layout, the outlined address pill and the pinned extension
+buttons without a conflict.
+
+### Tab groups lose their placeholder labels
+
+The tab tray's group rows shipped with stand-in text on the overflow button and
+its menu. The four strings are real now — a content description for the three-dot
+button, and **Edit**, **Delete** and **Close** on the menu it opens — which also
+means they are translatable, where the placeholders were not.
+
+### What else upstream fixed
+
+- **Walking session history can no longer loop forever** — when the entry list
+  holds duplicates, the search for an adjacent entry could resolve back to the
+  entry it started from and hand callers a cycle. It now skips itself when
+  matching a parent's children by docshell ID.
+- **The Nintendo webcompat intervention** is widened from a single host to every
+  Nintendo domain.
+- **Remote settings v2** becomes the default sync version on desktop, and the
+  dropped v1 server URL is gone from `AppConstants`.
+- **The Sports Widget toggle grew a test seam** — the World Cup end check in
+  `HomeSettingsFragment` is now an injectable lambda, so the preference's
+  visibility can be tested without moving the clock. Behaviour is unchanged.
+- **A localisation sweep** across 48 locale string files in the Fenix app alone,
+  plus a translation import from beta and refreshed remote-settings, mobile
+  experiment and Merino manifest dumps.
+
+Of the 16 upstream commits in this range, the remainder are desktop-only
+(search-telemetry test coverage for single-page-app navigations) or CI
+housekeeping (a flaky DuckDuckGo search UI test disabled). Everything
+engine-side arrives as prebuilt GeckoView, so an artifact build takes it without
+compiling.
+
+### Upstream adoption
+
+- **All 49 fork commits replayed onto the new tag without a conflict**, so every
+  patch keeps the shape it had on 153.0.3 — nothing needed re-applying against an
+  upstream refactor.
+- The build counter resets on adoption, so this is `+001` on the new base.
+
 ## 153.0.3+005 — 2026-08-09
 
 A single fork-side feature; the upstream base is unchanged at Firefox **153.0.3**
