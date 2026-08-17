@@ -6,11 +6,11 @@
 
 **Firefox for Android in pure black & yellow, with extension freedom on the release channel.**
 
-A fork of [Mozilla Firefox](https://github.com/mozilla-firefox/firefox) (Fenix, release channel) with **major additions**: custom AMO extension collections unlocked on release, a fully settable black/yellow UI with external fonts, pinned extension buttons on a two-row toolbar, whole-profile export & import — scriptable from outside the app — about:config, and a line-traced launcher fox.
+A fork of [Mozilla Firefox](https://github.com/mozilla-firefox/firefox) (Fenix, release channel) with **major additions**: custom AMO extension collections unlocked on release, a fully settable black/yellow UI with external fonts, pinned extension buttons on a two-row toolbar, one-tap sync from that toolbar, whole-profile export & import — scriptable from outside the app — about:config, and a line-traced launcher fox.
 
 Installs **side-by-side** with stock Firefox/Beta/Nightly (app id `shiroikuma.kako`).
 
-**📥 Latest release: [`153.0.4+001`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & APK downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
+**📥 Latest release: [`153.0.4+002`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & APK downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
 
 </div>
 
@@ -37,7 +37,12 @@ The same export answers a token-gated broadcast, so an automation app can back t
 ---
 
 ## 📌 Pinned extensions & the two-row toolbar
-Any extension with a browser action can be pinned to the toolbar from its settings screen, desktop-style — with its real multicolor icon, an icon-size slider, long-press reordering, and a drag-to-reorder dialog. A toggleable two-row layout keeps navigation and the address pill on top and moves new tab, pinned extensions, manage-extensions, tab counter and menu to their own row beneath.
+Any extension with a browser action can be pinned to the toolbar from its settings screen, desktop-style — with its real multicolor icon, an icon-size slider, long-press reordering, and a drag-to-reorder dialog. A toggleable two-row layout keeps navigation and the address pill on top and moves new tab, pinned extensions, manage-extensions, tab counter, the account button and the menu to their own row beneath.
+
+---
+
+## 🔄 Sync now, one tap away
+Your Mozilla-account avatar sits on the toolbar, left of the menu, and a tap on it syncs — where stock buries the same action three taps deep in the menu. The button is also the receipt: it wears a sync glyph while the run is in flight, then flashes a checkmark and a snackbar when it lands, or a warning when it fails. Only syncs you started this way announce themselves; the ones the browser runs on its own stay quiet. Signed out, the button opens sign-in instead of doing nothing.
 
 ---
 
