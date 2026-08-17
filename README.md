@@ -10,7 +10,7 @@ A fork of [Mozilla Firefox](https://github.com/mozilla-firefox/firefox) (Fenix, 
 
 Installs **side-by-side** with stock Firefox/Beta/Nightly (app id `shiroikuma.kako`).
 
-**📥 Latest release: [`153.0.4+002`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & APK downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
+**📥 Latest release: [`153.0.4+003`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & APK downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
 
 </div>
 
@@ -42,7 +42,7 @@ Any extension with a browser action can be pinned to the toolbar from its settin
 ---
 
 ## 🔄 Sync now, one tap away
-Your Mozilla-account avatar sits on the toolbar, left of the menu, and a tap on it syncs — where stock buries the same action three taps deep in the menu. The button is also the receipt: it wears a sync glyph while the run is in flight, then flashes a checkmark and a snackbar when it lands, or a warning when it fails. Only syncs you started this way announce themselves; the ones the browser runs on its own stay quiet. Signed out, the button opens sign-in instead of doing nothing.
+Your Mozilla-account avatar sits on the toolbar, left of the menu, and a tap on it syncs — where stock buries the same action three taps deep in the menu. The button is also the receipt: it wears a sync glyph while the run is in flight, then flashes a checkmark and a snackbar when it lands, or a warning when it fails. Only syncs you started this way announce themselves; the ones the browser runs on its own stay quiet. Long-press the same button for the account itself — settings when signed in, re-authentication for a session that broke, sign-in when signed out — so the button is never a dead end.
 
 ---
 
