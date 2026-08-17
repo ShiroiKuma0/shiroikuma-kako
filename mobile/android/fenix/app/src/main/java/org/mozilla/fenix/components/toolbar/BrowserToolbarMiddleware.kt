@@ -16,6 +16,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChangedBy
@@ -81,6 +82,9 @@ import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
 import mozilla.components.lib.state.ext.flow
+import mozilla.components.service.fxa.manager.AccountState
+import mozilla.components.service.fxa.store.SyncStatus
+import mozilla.components.service.fxa.sync.SyncReason
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.kotlin.applyRegistrableDomainSpan
 import mozilla.components.support.ktx.kotlin.getOrigin
@@ -105,10 +109,12 @@ import org.mozilla.fenix.browser.store.BrowserScreenStore
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.NimbusComponents
 import org.mozilla.fenix.components.UseCases
+import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction.BookmarkAction
 import org.mozilla.fenix.components.appstate.AppAction.CurrentTabClosed
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchEnded
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchStarted
+import org.mozilla.fenix.components.appstate.AppAction.SnackbarAction.ShowSnackbar
 import org.mozilla.fenix.components.appstate.AppAction.SnackbarAction.SnackbarDismissed
 import org.mozilla.fenix.components.appstate.AppAction.URLCopiedToClipboard
 import org.mozilla.fenix.components.appstate.SupportedMenuNotifications.NotDefaultBrowser
@@ -145,10 +151,12 @@ import org.mozilla.fenix.components.toolbar.TabCounterInteractions.TabCounterCli
 import org.mozilla.fenix.components.toolbar.TabCounterInteractions.TabCounterLongClicked
 import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.canGoBackInHistoryOrToStories
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.navigateSafe
-import org.mozilla.fenix.nimbus.FxNimbus
+import org.mozilla.fenix.kako.KakoSyncAvatar
 import org.mozilla.fenix.kako.KakoTheme
+import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.summarization.SummarizationNavigator
 import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryConfiguration
@@ -163,6 +171,12 @@ import mozilla.components.feature.summarize.R as summariesR
 import mozilla.components.lib.state.Action as MVIAction
 import mozilla.components.ui.icons.R as iconsR
 import mozilla.components.ui.tabcounter.R as tabcounterR
+
+// Fork: how long the account button holds its sync verdict before going back to the avatar.
+private const val SYNC_FLASH_DURATION_MS = 1_500L
+
+// Fork: a sync that never reports back must not leave the button spinning forever.
+private const val SYNC_TIMEOUT_MS = 60_000L
 
 @VisibleForTesting
 internal sealed class DisplayActions(override val source: Source) : BrowserToolbarEvent {
@@ -192,6 +206,9 @@ internal sealed class DisplayActions(override val source: Source) : BrowserToolb
 
     // Fork: the manage-extensions button at the end of the pinned extension row.
     data object ManageExtensionsClicked : DisplayActions(Source.AddressBar.BrowserEnd)
+
+    // Fork: the Mozilla-account avatar left of the menu — a tap runs "Sync now".
+    data object SyncNowClicked : DisplayActions(Source.AddressBar.BrowserEnd)
 
     // Fork: long-pressing the menu button opens the 白い熊 火狐 UI page.
     data class MenuLongClicked(override val source: Source) : DisplayActions(source)
@@ -291,6 +308,19 @@ class BrowserToolbarMiddleware(
     private val scope: CoroutineScope,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : Middleware<BrowserToolbarState, BrowserToolbarAction> {
+    // Fork: the account plumbing behind the toolbar's Sync-now button. Resolved lazily
+    // because a middleware is built while the activity is still coming up.
+    private val syncStore by lazy { uiContext.components.backgroundServices.syncStore }
+    private val accountManager by lazy { uiContext.components.backgroundServices.accountManager }
+
+    // Fork: what that button is showing, and the flash/timeout job driving it back to rest.
+    private var syncButtonState = SyncButtonState.IDLE
+    private var syncFlashJob: Job? = null
+
+    // Fork: only a sync 白い熊 started from the toolbar gets a flash — background and
+    // startup syncs must stay silent.
+    private var isSyncRequestedFromToolbar = false
+
     @Suppress("LongMethod", "CyclomaticComplexMethod", "NestedBlockDepth", "ReturnCount", "CognitiveComplexMethod")
     override fun invoke(
         store: Store<BrowserToolbarState, BrowserToolbarAction>,
@@ -317,6 +347,7 @@ class BrowserToolbarMiddleware(
                 observeOrientationChanges(store)
                 observeTabsCountUpdates(store)
                 observeExtensionsUpdates(store)
+                observeSyncUpdates(store)
                 observeMenuHighlightChanges(store)
                 observeAcceptingCancellingPrivateDownloads(store)
                 observePageNavigationStatus(store)
@@ -733,6 +764,12 @@ class BrowserToolbarMiddleware(
                 next(action)
             }
 
+            // Fork: the account button — sync now, or sort the account out first.
+            is DisplayActions.SyncNowClicked -> {
+                onSyncNowClicked(store)
+                next(action)
+            }
+
             // Fork: unpin a pinned extension from its long-press menu.
             is DisplayActions.ExtensionUnpinClicked -> {
                 settings.toolbarPinnedExtensions = settings.toolbarPinnedExtensions
@@ -892,9 +929,10 @@ class BrowserToolbarMiddleware(
     /**
      * Fork: distributes the trailing toolbar actions over the address-bar row and
      * the 白い熊 火狐 second row. Single-row mode keeps upstream's order (shortcut,
-     * pinned extensions, tab counter, menu) inline; two-row mode keeps the shortcut
-     * (the new-tab plus) right of the address bar and moves the pinned extensions —
-     * followed by a manage-extensions button — tab counter and menu to the second row.
+     * pinned extensions, tab counter, account, menu) inline; two-row mode keeps the
+     * shortcut (the new-tab plus) right of the address bar and moves the pinned
+     * extensions — followed by a manage-extensions button — tab counter, account
+     * button and menu to the second row.
      */
     private suspend fun buildEndBrowserActionRows(): Pair<List<Action>, List<Action>> {
         val isWideWindow = isWideScreen()
@@ -911,18 +949,22 @@ class BrowserToolbarMiddleware(
                     isShortcut = true,
                 )
             }
-        val counterAndMenu = listOf(ToolbarAction.TabCounter, ToolbarAction.Menu)
-            .map { buildAction(it, Source.AddressBar.BrowserEnd) }
+        // The account button sits immediately left of the menu, closing the row.
+        val counterSyncAndMenu = listOf(
+            buildAction(ToolbarAction.TabCounter, Source.AddressBar.BrowserEnd),
+            buildSyncAction(),
+            buildAction(ToolbarAction.Menu, Source.AddressBar.BrowserEnd),
+        )
         val extensions = buildPinnedExtensionActions()
 
         val twoRows = KakoTheme.isEnabled(uiContext) && KakoTheme.toolbarTwoRows(uiContext)
         return if (twoRows) {
             Pair(
                 listOfNotNull(primary),
-                extensions + buildManageExtensionsAction() + counterAndMenu,
+                extensions + buildManageExtensionsAction() + counterSyncAndMenu,
             )
         } else {
-            Pair(listOfNotNull(primary) + extensions + counterAndMenu, emptyList())
+            Pair(listOfNotNull(primary) + extensions + counterSyncAndMenu, emptyList())
         }
     }
 
@@ -935,6 +977,179 @@ class BrowserToolbarMiddleware(
         contentDescription = R.string.browser_menu_extensions,
         onClick = DisplayActions.ManageExtensionsClicked,
     )
+
+    /**
+     * Fork: the account button — 白い熊's Mozilla-account avatar, the same picture the
+     * menu's account row wears, sitting immediately left of the menu. It doubles as the
+     * report on the sync a tap starts: the sync glyph while one is in flight, a
+     * checkmark flash once it lands, a warning when it fails. The avatar itself is
+     * whatever [KakoSyncAvatar] has already fetched; until then it is the generic glyph.
+     */
+    private fun buildSyncAction(): Action = when (syncButtonState) {
+        SyncButtonState.SYNCING -> ActionButtonRes(
+            drawableResId = iconsR.drawable.mozac_ic_sync_24,
+            contentDescription = R.string.kako_sync_running,
+            onClick = DisplayActions.SyncNowClicked,
+        )
+
+        SyncButtonState.SYNCED -> ActionButtonRes(
+            drawableResId = iconsR.drawable.mozac_ic_checkmark_24,
+            contentDescription = R.string.kako_sync_done,
+            state = ActionButton.State.ACTIVE,
+            onClick = DisplayActions.SyncNowClicked,
+        )
+
+        SyncButtonState.FAILED -> ActionButtonRes(
+            drawableResId = iconsR.drawable.mozac_ic_warning_24,
+            contentDescription = R.string.kako_sync_failed,
+            onClick = DisplayActions.SyncNowClicked,
+        )
+
+        SyncButtonState.IDLE -> {
+            val avatar = syncStore.state.account?.avatar?.url
+                ?.let { KakoSyncAvatar.drawable(uiContext, it, toolbarIconSizePx()) }
+            when (avatar) {
+                null -> ActionButtonRes(
+                    drawableResId = iconsR.drawable.mozac_ic_avatar_circle_24,
+                    contentDescription = R.string.kako_sync_now,
+                    onClick = DisplayActions.SyncNowClicked,
+                )
+
+                else -> ActionButton(
+                    drawable = avatar,
+                    // A photo must not be flooded by the theme tint.
+                    shouldTint = false,
+                    contentDescription = uiContext.getString(R.string.kako_sync_now),
+                    onClick = DisplayActions.SyncNowClicked,
+                )
+            }
+        }
+    }
+
+    // Fork: the pinned extension buttons and the account avatar share one settable size.
+    private fun toolbarIconSizePx(): Int =
+        (KakoTheme.extensionIconSizeDp(uiContext) * uiContext.resources.displayMetrics.density).toInt()
+
+    /**
+     * Fork: the account button's tap. Signed in it runs a user-triggered sync — the same
+     * "Sync now" the account settings page offers — with [observeSyncUpdates] reporting
+     * how it ends. Signed out, or with a session that needs re-authenticating, it opens
+     * the matching account screen instead so the button is never a dead end.
+     */
+    private fun onSyncNowClicked(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
+        when (syncStore.state.accountState) {
+            AccountState.Authenticated -> {
+                isSyncRequestedFromToolbar = true
+                setSyncButtonState(store, SyncButtonState.SYNCING)
+                armSyncTimeout(store)
+                scope.launch { accountManager.syncNow(SyncReason.User) }
+            }
+
+            AccountState.AuthenticationProblem -> navController.nav(
+                R.id.browserFragment,
+                NavGraphDirections.actionGlobalAccountProblemFragment(
+                    entrypoint = FenixFxAEntryPoint.BrowserToolbar,
+                ),
+            )
+
+            else -> navController.nav(
+                R.id.browserFragment,
+                NavGraphDirections.actionGlobalTurnOnSync(
+                    entrypoint = FenixFxAEntryPoint.BrowserToolbar,
+                ),
+            )
+        }
+    }
+
+    /**
+     * Fork: keeps the account button in step with the account — the avatar is fetched
+     * when the signed-in account or its picture changes — and with sync itself: a sync
+     * started from this button flashes its verdict, while background and startup syncs
+     * pass unannounced.
+     */
+    private fun observeSyncUpdates(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
+        syncStore.observeWhileActive {
+            distinctUntilChangedBy { it.accountState to it.account?.avatar?.url }
+                .collect { state ->
+                    updateEndBrowserActions(store)
+
+                    // Fetched off the collector: the toolbar must not wait on the network.
+                    val avatarUrl = state.account?.avatar?.url ?: return@collect
+                    scope.launch {
+                        if (KakoSyncAvatar.prefetch(uiContext, avatarUrl, toolbarIconSizePx())) {
+                            updateEndBrowserActions(store)
+                        }
+                    }
+                }
+        }
+
+        syncStore.observeWhileActive {
+            distinctUntilChangedBy { it.status }
+                .collect { state ->
+                    if (!isSyncRequestedFromToolbar) return@collect
+                    when (state.status) {
+                        SyncStatus.Started -> setSyncButtonState(store, SyncButtonState.SYNCING)
+                        SyncStatus.Idle -> flashSyncResult(store, SyncButtonState.SYNCED)
+                        SyncStatus.Error -> flashSyncResult(store, SyncButtonState.FAILED)
+                        SyncStatus.NotInitialized, SyncStatus.LoggedOut -> Unit
+                    }
+                }
+        }
+    }
+
+    /**
+     * Fork: the flash — the verdict of a toolbar-started sync, held briefly on the button
+     * and shown as a snackbar, after which the button goes back to wearing the avatar.
+     */
+    private fun flashSyncResult(
+        store: Store<BrowserToolbarState, BrowserToolbarAction>,
+        result: SyncButtonState,
+    ) {
+        isSyncRequestedFromToolbar = false
+        syncFlashJob?.cancel()
+        syncFlashJob = scope.launch {
+            appStore.dispatch(
+                ShowSnackbar(
+                    uiContext.getString(
+                        when (result) {
+                            SyncButtonState.FAILED -> R.string.kako_sync_failed
+                            else -> R.string.kako_sync_done
+                        },
+                    ),
+                ),
+            )
+
+            syncButtonState = result
+            updateEndBrowserActions(store)
+            delay(SYNC_FLASH_DURATION_MS)
+            syncButtonState = SyncButtonState.IDLE
+            updateEndBrowserActions(store)
+        }
+    }
+
+    /**
+     * Fork: a sync can end without ever reporting back — it is debounced away, or the
+     * observer is paused — so the sync glyph is given a deadline instead of staying up
+     * until the next tap.
+     */
+    private fun armSyncTimeout(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
+        syncFlashJob?.cancel()
+        syncFlashJob = scope.launch {
+            delay(SYNC_TIMEOUT_MS)
+            isSyncRequestedFromToolbar = false
+            syncButtonState = SyncButtonState.IDLE
+            updateEndBrowserActions(store)
+        }
+    }
+
+    private fun setSyncButtonState(
+        store: Store<BrowserToolbarState, BrowserToolbarAction>,
+        state: SyncButtonState,
+    ) {
+        if (syncButtonState == state) return
+        syncButtonState = state
+        scope.launch { updateEndBrowserActions(store) }
+    }
 
     /**
      * Fork: one toolbar button per pinned extension (Settings of the extension →
@@ -1334,6 +1549,17 @@ class BrowserToolbarMiddleware(
     private inline fun <S : State, A : MVIAction> Store<S, A>.observeWhileActive(
         crossinline observe: suspend (Flow<S>.() -> Unit),
     ): Job = scope.launch { flow().observe() }
+
+    /**
+     * Fork: what the toolbar's account button is showing — the avatar at rest, the sync
+     * a tap started, and the flash reporting how that sync ended.
+     */
+    private enum class SyncButtonState {
+        IDLE,
+        SYNCING,
+        SYNCED,
+        FAILED,
+    }
 
     @VisibleForTesting
     internal enum class ToolbarAction {
