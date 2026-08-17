@@ -4,6 +4,26 @@ Everything built on top of stock Firefox for Android (Fenix, release channel).
 Tags are `<upstream-base>+<build>`; the fork commits live on `custom`, rebased
 onto each adopted `FIREFOX_*_RELEASE` tag.
 
+## 153.0.4+003 — 2026-08-17
+
+Fork work only; the base is unchanged at Firefox **153.0.4**
+(`FIREFOX_153_0_4_RELEASE`).
+
+### The account button's long press opens the account screen
+
+The toolbar account button added in `+002` ran a sync and nothing else, so the
+account itself — settings, device name, which engines sync, sign out — stayed
+three taps deep in the menu even though its avatar now sat on the toolbar. A long
+press goes there, to the same screen the menu's account row opens for the state
+we are in: the account settings when signed in, the re-authentication screen for
+a session that broke, sign-in when signed out.
+
+That routing was already needed for the tap — which has nothing to sync with
+until an account exists — so tap and long press now share one function instead of
+repeating the branches. Every look of the button carries the long press: the
+avatar, the generic glyph, and the sync, checkmark and warning states, so it
+answers mid-sync and during the flash too.
+
 ## 153.0.4+002 — 2026-08-17
 
 Fork work only; the base is unchanged at Firefox **153.0.4**
