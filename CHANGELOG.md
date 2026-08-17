@@ -4,6 +4,43 @@ Everything built on top of stock Firefox for Android (Fenix, release channel).
 Tags are `<upstream-base>+<build>`; the fork commits live on `custom`, rebased
 onto each adopted `FIREFOX_*_RELEASE` tag.
 
+## 153.0.4+002 — 2026-08-17
+
+Fork work only; the base is unchanged at Firefox **153.0.4**
+(`FIREFOX_153_0_4_RELEASE`).
+
+### Sync now from an account button on the toolbar
+
+The Mozilla-account avatar — the same picture the menu's account row wears —
+takes a seat on the second toolbar row, immediately left of the menu, and a tap
+on it runs the same user-triggered sync the account settings page offers. Stock
+puts that three taps away (menu → account row → Sync now) for something wanted
+several times a day.
+
+The button is also the report on the sync it starts, since a sync otherwise
+gives no sign of itself:
+
+- **while it runs** — the avatar becomes a sync glyph;
+- **when it lands** — a checkmark held for 1.5 s on the button, plus the
+  fork's snackbar flash, 「同期しました」;
+- **when it fails** — a warning glyph and 「同期に失敗しました」.
+
+Only a sync started from this button is announced: background and startup syncs
+pass unremarked, so the flash always means *the tap you just made finished*. A
+sync that never reports an outcome — debounced away, or its observer paused —
+gives up after 60 s rather than leaving the glyph up until the next tap. Signed
+out, or holding a session that needs re-authenticating, the button opens the
+matching account screen instead of being a no-op.
+
+The avatar is a network image, while the trailing toolbar actions are rebuilt on
+every extension, tab and sync change, so it is fetched once per URL and display
+size and every rebuild is then served from memory — a rebuild never waits on the
+network. It is scaled to the same settable size as the pinned extension icons and
+stamped with the device density (the toolbar takes an action's size from its
+drawable's intrinsic size), then circle-cropped like the menu's avatar. Until the
+picture arrives — or if the profile fetch failed — the button wears the generic
+avatar glyph.
+
 ## 153.0.4+001 — 2026-08-11
 
 A pure upstream adoption: nothing on the fork side changed, so everything here
