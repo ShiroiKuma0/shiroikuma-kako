@@ -76,6 +76,12 @@
     <string name="kako_extension_order_title" translatable="false">拡張機能の並び順（ドラッグで並べ替え）</string>
     <string name="kako_extension_order_empty" translatable="false">ツールバーに追加された拡張機能はありません</string>
 
+    <!-- The account avatar left of the toolbar menu — tap runs "Sync now". -->
+    <string name="kako_sync_now" translatable="false">今すぐ同期</string>
+    <string name="kako_sync_running" translatable="false">同期中…</string>
+    <string name="kako_sync_done" translatable="false">同期しました</string>
+    <string name="kako_sync_failed" translatable="false">同期に失敗しました</string>
+
     <string name="kako_color_inherit" translatable="false">解除（継承に戻す）</string>
     <string name="kako_reset" translatable="false">既定値に戻す</string>
     <string name="kako_reset_message" translatable="false">全ての設定を既定の黒黄に戻しますか？</string>
