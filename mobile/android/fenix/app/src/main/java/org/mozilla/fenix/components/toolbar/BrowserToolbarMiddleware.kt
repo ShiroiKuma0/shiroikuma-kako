@@ -202,8 +202,10 @@ internal sealed class DisplayActions(override val source: Source) : BrowserToolb
     // Fork: the manage-extensions button at the end of the pinned extension row.
     data object ManageExtensionsClicked : DisplayActions(Source.AddressBar.BrowserEnd)
 
-    // Fork: the Mozilla-account avatar left of the menu — a tap runs "Sync now".
+    // Fork: the Mozilla-account avatar left of the menu — a tap runs "Sync now",
+    // a long press opens the account screen.
     data object SyncNowClicked : DisplayActions(Source.AddressBar.BrowserEnd)
+    data object AccountSettingsClicked : DisplayActions(Source.AddressBar.BrowserEnd)
 
     // Fork: long-pressing the menu button opens the 白い熊 火狐 UI page.
     data class MenuLongClicked(override val source: Source) : DisplayActions(source)
@@ -751,6 +753,12 @@ class BrowserToolbarMiddleware(
                 next(action)
             }
 
+            // Fork: long-pressing it opens the account screen instead of syncing.
+            is DisplayActions.AccountSettingsClicked -> {
+                navigateToAccountScreen()
+                next(action)
+            }
+
             // Fork: unpin a pinned extension from its long-press menu.
             is DisplayActions.ExtensionUnpinClicked -> {
                 settings.toolbarPinnedExtensions = settings.toolbarPinnedExtensions
@@ -957,14 +965,16 @@ class BrowserToolbarMiddleware(
      * Fork: the account button — 白い熊's Mozilla-account avatar, the same picture the
      * menu's account row wears, sitting immediately left of the menu. It doubles as the
      * report on the sync a tap starts: the sync glyph while one is in flight, a
-     * checkmark flash once it lands, a warning when it fails. The avatar itself is
-     * whatever [KakoSyncAvatar] has already fetched; until then it is the generic glyph.
+     * checkmark flash once it lands, a warning when it fails. A long press opens the
+     * account screen instead. The avatar itself is whatever [KakoSyncAvatar] has already
+     * fetched; until then it is the generic glyph.
      */
     private fun buildSyncAction(): Action = when (syncButtonState) {
         SyncButtonState.SYNCING -> ActionButtonRes(
             drawableResId = iconsR.drawable.mozac_ic_sync_24,
             contentDescription = R.string.kako_sync_running,
             onClick = DisplayActions.SyncNowClicked,
+            onLongClick = DisplayActions.AccountSettingsClicked,
         )
 
         SyncButtonState.SYNCED -> ActionButtonRes(
@@ -972,12 +982,14 @@ class BrowserToolbarMiddleware(
             contentDescription = R.string.kako_sync_done,
             state = ActionButton.State.ACTIVE,
             onClick = DisplayActions.SyncNowClicked,
+            onLongClick = DisplayActions.AccountSettingsClicked,
         )
 
         SyncButtonState.FAILED -> ActionButtonRes(
             drawableResId = iconsR.drawable.mozac_ic_warning_24,
             contentDescription = R.string.kako_sync_failed,
             onClick = DisplayActions.SyncNowClicked,
+            onLongClick = DisplayActions.AccountSettingsClicked,
         )
 
         SyncButtonState.IDLE -> {
@@ -988,6 +1000,7 @@ class BrowserToolbarMiddleware(
                     drawableResId = iconsR.drawable.mozac_ic_avatar_circle_24,
                     contentDescription = R.string.kako_sync_now,
                     onClick = DisplayActions.SyncNowClicked,
+                    onLongClick = DisplayActions.AccountSettingsClicked,
                 )
 
                 else -> ActionButton(
@@ -996,6 +1009,7 @@ class BrowserToolbarMiddleware(
                     shouldTint = false,
                     contentDescription = uiContext.getString(R.string.kako_sync_now),
                     onClick = DisplayActions.SyncNowClicked,
+                    onLongClick = DisplayActions.AccountSettingsClicked,
                 )
             }
         }
@@ -1008,32 +1022,46 @@ class BrowserToolbarMiddleware(
     /**
      * Fork: the account button's tap. Signed in it runs a user-triggered sync — the same
      * "Sync now" the account settings page offers — with [observeSyncUpdates] reporting
-     * how it ends. Signed out, or with a session that needs re-authenticating, it opens
-     * the matching account screen instead so the button is never a dead end.
+     * how it ends. Signed out, or with a session that needs re-authenticating, there is
+     * nothing to sync with yet, so it falls through to the account screen and the button
+     * is never a dead end.
      */
     private fun onSyncNowClicked(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
-        when (syncStore.state.accountState) {
-            AccountState.Authenticated -> {
-                isSyncRequestedFromToolbar = true
-                setSyncButtonState(store, SyncButtonState.SYNCING)
-                armSyncTimeout(store)
-                scope.launch { accountManager.syncNow(SyncReason.User) }
-            }
-
-            AccountState.AuthenticationProblem -> navController.nav(
-                R.id.browserFragment,
-                NavGraphDirections.actionGlobalAccountProblemFragment(
-                    entrypoint = FenixFxAEntryPoint.BrowserToolbar,
-                ),
-            )
-
-            else -> navController.nav(
-                R.id.browserFragment,
-                NavGraphDirections.actionGlobalTurnOnSync(
-                    entrypoint = FenixFxAEntryPoint.BrowserToolbar,
-                ),
-            )
+        if (syncStore.state.accountState != AccountState.Authenticated) {
+            navigateToAccountScreen()
+            return
         }
+
+        isSyncRequestedFromToolbar = true
+        setSyncButtonState(store, SyncButtonState.SYNCING)
+        armSyncTimeout(store)
+        scope.launch { accountManager.syncNow(SyncReason.User) }
+    }
+
+    /**
+     * Fork: where the account button's long press goes — the same screen the menu's
+     * account row opens for the state we are in: the account settings when signed in,
+     * the re-authentication screen for a session that broke, sign-in when signed out.
+     */
+    private fun navigateToAccountScreen() = when (syncStore.state.accountState) {
+        AccountState.Authenticated -> navController.nav(
+            R.id.browserFragment,
+            NavGraphDirections.actionGlobalAccountSettingsFragment(),
+        )
+
+        AccountState.AuthenticationProblem -> navController.nav(
+            R.id.browserFragment,
+            NavGraphDirections.actionGlobalAccountProblemFragment(
+                entrypoint = FenixFxAEntryPoint.BrowserToolbar,
+            ),
+        )
+
+        else -> navController.nav(
+            R.id.browserFragment,
+            NavGraphDirections.actionGlobalTurnOnSync(
+                entrypoint = FenixFxAEntryPoint.BrowserToolbar,
+            ),
+        )
     }
 
     /**
