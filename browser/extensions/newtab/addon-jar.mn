@@ -21,6 +21,7 @@ browser.jar:
   builtin-addons/newtab/data/content/bundled-renderer-index.js (./data/content/bundled-renderer-index.js)
   builtin-addons/newtab/data/content/bundled-renderer.css (./data/content/bundled-renderer.css)
   builtin-addons/newtab/data/css/activity-stream.css (./css/activity-stream.css)
+  builtin-addons/newtab/data/css/kako-newtab.css (./css/kako-newtab.css)
   builtin-addons/newtab/data/css/nova/activity-stream.css (./css/nova/activity-stream.css)
   builtin-addons/newtab/prerendered/activity-stream.html (./prerendered/activity-stream.html)
 #ifndef RELEASE_OR_BETA
