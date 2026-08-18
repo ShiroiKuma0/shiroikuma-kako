@@ -1,8 +1,67 @@
 # Changelog — 白い熊 火狐 (`shiroikuma.kako`)
 
-Everything built on top of stock Firefox for Android (Fenix, release channel).
-Tags are `<upstream-base>+<build>`; the fork commits live on `custom`, rebased
-onto each adopted `FIREFOX_*_RELEASE` tag.
+Everything built on top of stock Firefox (release channel) — the Android browser
+(Fenix) and, since 153.0.4+019, the GNU/Linux desktop build. Tags are
+`<upstream-base>+<build>`; the fork commits live on `custom`, rebased onto each
+adopted `FIREFOX_*_RELEASE` tag, and one tag covers both products.
+
+## 154.0+001 — 2026-08-18
+
+The base moves to Firefox **154.0** (`FIREFOX_154_0_RELEASE`) — the first major
+bump since 153, where the three releases before this one were point releases on
+the same branch. Both products are rebuilt on it: the Android APK and the
+`amd64` `.deb` carry the same version, as they will from now on.
+
+### The fork announces itself in full
+
+The branding files still carried the bare "火狐" in the two short-name slots, and
+Firefox reaches for those wherever space is tight — the about dialog, update
+banners, the default-browser prompt. The fork was introducing itself under the
+upstream nickname in exactly the places a user looks to find out which browser
+this is. All the name slots now read 白い熊 火狐.
+
+### What the major bump moved under us
+
+Sixty-one fork commits replayed onto the new tag; six needed re-shaping, because
+upstream's redesign work landed on the same surfaces this fork rebuilds.
+
+The summarize feature grew a toolbar button, adding its case exactly where the
+fork adds the two of its own — the pinned-extension action and the long-press
+that opens the 白い熊 UI page — so the three now sit side by side. Homepage
+wallpapers extend edge-to-edge behind the chrome, which wraps the trailing
+toolbar actions in a colour-scheme override; the fork's second toolbar row is
+wrapped in it too, so both rows tint alike instead of the lower one drifting. The
+tab strip gained its own customisable shortcut, replacing direct reads of the
+simple-toolbar shortcut key with a strip-aware one that the fork's row builder
+now reads through as well.
+
+Three upstream removals took fork code with them. The menu dialog moved its store
+construction out of the composable, so the custom tab's open-in-app dispatch
+follows it. The Quick Settings sheet was deleted outright, and with it the fork's
+yellow frame on its clear-site-data dialog — that dialog is a Compose one in the
+trust panel now, which the fork's theming already covers. And the Acorn palette
+dropped its two "on colour" slots, whose last upstream call sites hardcode white,
+leaving the fork's two mappings nothing to tint.
+
+One fork patch shrinks outright, which is the happier kind of churn. Custom tabs
+and regular tabs are now unified behind a single session state, so the menu's
+selected tab already *is* the custom tab it was opened on — and the fork's own
+custom-tab URL resolution, written because that used not to hold, is redundant
+and gone. The external-app entry it fed is untouched: a link followed from
+another app still offers that app in the custom tab menu.
+
+### Both products, every adoption
+
+Adopting an upstream version now means rebuilding **both** the APK and the deb,
+written into the repository's own instructions rather than left to memory. The
+build counter is burned once and reused, so a version number identifies one
+commit of this tree regardless of which artifact it produced.
+
+Recorded alongside it: `./mach build` exits successfully while refusing to build
+on a merge-day clobber, so the log has to be read rather than the exit status;
+upstream raises toolchain floors between majors, 154 wanting Android
+cmdline-tools 21.0 over 20.0; and a rebase can replay without a single conflict
+and still fail to compile, where fork code calls something upstream deleted.
 
 ## 153.0.4+019 — 2026-08-18
 

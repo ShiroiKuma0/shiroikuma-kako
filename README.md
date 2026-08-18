@@ -10,7 +10,7 @@ A fork of [Mozilla Firefox](https://github.com/mozilla-firefox/firefox) (release
 
 Installs **side-by-side** with stock Firefox/Beta/Nightly: app id `shiroikuma.kako` on Android, package `shiroikuma-kako` with its own `~/.mozilla/kako` profile on the desktop.
 
-**📥 Latest release: [`153.0.4+019`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
+**📥 Latest release: [`154.0+001`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
 
 </div>
 
