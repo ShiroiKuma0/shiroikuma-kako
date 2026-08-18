@@ -948,7 +948,6 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
 
         return MenuDialogMiddleware(
             appStore = appStore,
-            browserStore = browserStore,
             addonManager = components.addonManager,
             settings = settings,
             summarizeMenuSettings = components.core.summarizeFeatureSettings,
