@@ -52,7 +52,7 @@ dialogs and preferences, through a globally registered user sheet, since the
 default-browser prompt is its own document and nothing linked from the browser
 window reaches it. The New Tab page, delivered the same way because the page
 redefines every property involved and outranks a linked sheet. And the window
-frame: 火狐 draws its own titlebar, so no window manager will frame it, and the
+frame: 白い熊 火狐 draws its own titlebar, so no window manager will frame it, and the
 frame is traced here instead — dimming when the window loses focus, matching what
 the desktop's colour scheme does for every other application.
 
@@ -225,7 +225,7 @@ the way to this one and were never released.
 
 ### Local HTML files open in the browser
 
-Tapping an `.html` file in a file manager never offered 火狐 as somewhere to open
+Tapping an `.html` file in a file manager never offered 白い熊 火狐 as somewhere to open
 it. Two separate things stood in the way, at opposite ends of the browser.
 
 The first is the manifest. Fenix claims `text/html` only for `http`/`https`

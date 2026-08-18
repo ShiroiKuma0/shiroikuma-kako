@@ -4,7 +4,7 @@
 
 /* 白い熊 火狐 -- the window frame.
  *
- * 火狐 uses client-side decorations (customtitlebar="true"), so KWin never draws
+ * 白い熊 火狐 uses client-side decorations (customtitlebar="true"), so KWin never draws
  * a decoration for it and the yellow frame configured in the KDE colour scheme
  * cannot apply. The frame is drawn here instead, and it encloses the whole
  * window -- tab strip and window buttons included, not just the content area.
