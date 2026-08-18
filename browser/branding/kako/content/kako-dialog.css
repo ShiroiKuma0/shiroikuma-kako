@@ -1,0 +1,98 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* 白い熊 火狐 -- chrome dialogs and in-content surfaces.
+ *
+ * Registered globally as a USER_SHEET by BrowserGlue (see the fork block in
+ * _beforeUIStartup), because these documents are NOT browser.xhtml: the default
+ * browser prompt is chrome://global/content/commonDialog.xhtml rendered inside a
+ * tab dialog, so kako-chrome.css -- linked from browser.xhtml -- can never reach
+ * it. A USER_SHEET applies to every chrome document at once, which also covers
+ * preferences, panels and permission prompts.
+ *
+ * Two things this file got wrong the first time, both worth keeping written
+ * down:
+ *
+ * 1. NO @namespace declaration. Declaring the XHTML namespace makes every type
+ *    selector match XHTML elements only -- and chrome dialogs are XUL, so
+ *    `dialog`, `window` and friends silently matched nothing.
+ *
+ * 2. There are TWO token families and the dialogs use the newer one.
+ *    browser/themes/shared/preferences/dialog.css paints itself with
+ *    var(--background-color-box) and var(--text-color), not the --in-content-*
+ *    set. Overriding only --in-content-* left every dialog grey while the
+ *    variables themselves reported as correctly overridden. Both families are
+ *    set below.
+ *
+ * User sheets beat author !important in the cascade, so !important here wins
+ * over the stylesheets these documents ship with.
+ */
+
+:root {
+  /* --- design-system tokens (the ones dialogs actually use) --- */
+  --background-color-canvas: #000000 !important;
+  --background-color-box: #000000 !important;
+  --background-color-box-info: #000000 !important;
+  --background-color-list-item-hover: #333300 !important;
+
+  --text-color: #FFFF00 !important;
+  --text-color-deemphasized: #FFFF00 !important;
+
+  --border-color: #FFFF00 !important;
+  --border-color-deemphasized: #FFFF00 !important;
+  --border-color-interactive: #FFFF00 !important;
+  --border-color-interactive-hover: #FFFF00 !important;
+
+  --button-background-color: #000000 !important;
+  --button-background-color-hover: #333300 !important;
+  --button-background-color-active: #4D4D00 !important;
+  --button-background-color-ghost: transparent !important;
+  --button-background-color-primary: #FFFF00 !important;
+  --button-background-color-primary-hover: #CCCC00 !important;
+  --button-background-color-primary-active: #999900 !important;
+  --button-text-color: #FFFF00 !important;
+  --button-text-color-ghost: #FFFF00 !important;
+  --button-text-color-primary: #000000 !important;
+  --button-border-color: #FFFF00 !important;
+
+  --link-color: #FFFF00 !important;
+  --link-color-hover: #CCCC00 !important;
+  --link-color-active: #999900 !important;
+
+  --color-accent-primary: #FFFF00 !important;
+  --color-accent-primary-hover: #CCCC00 !important;
+  --color-accent-primary-active: #999900 !important;
+  --focus-outline-color: #FFFF00 !important;
+
+  /* --- older in-content family, still used by some surfaces --- */
+  --in-content-page-background: #000000 !important;
+  --in-content-page-color: #FFFF00 !important;
+  --in-content-box-background: #000000 !important;
+  --in-content-box-border-color: #FFFF00 !important;
+  --in-content-text-color: #FFFF00 !important;
+  --in-content-deemphasized-text: #FFFF00 !important;
+  --dialog-background-color: #000000 !important;
+  --box-background-color: #000000 !important;
+}
+
+/* No @namespace above, so these match XUL elements too. */
+dialog,
+window,
+.dialogBox,
+#commonDialog {
+  background-color: #000000 !important;
+  color: #FFFF00 !important;
+}
+
+.dialogBox,
+#commonDialog {
+  border: 1px solid #FFFF00 !important;
+}
+
+#commonDialog #infoTitle,
+#commonDialog #infoBody,
+#commonDialog description,
+#commonDialog label {
+  color: #FFFF00 !important;
+}

@@ -1,0 +1,118 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* 白い熊 火狐 -- New Tab overrides, delivered as a USER SHEET.
+ *
+ * The same rules also ship as a linked author stylesheet inside the newtab
+ * package. That link kept losing: the page defines every one of these
+ * properties itself, and which document about:newtab even loads is decided at
+ * runtime (AboutNewTabRedirector#defaultURL). A user sheet sidesteps both --
+ * it applies to the document whatever HTML backs it, and user !important
+ * outranks author !important in the cascade, so nothing the page ships can
+ * take it back.
+ *
+ * @-moz-document is honoured in user sheets (and only there), and confines
+ * these rules to the New Tab so the custom properties do not leak into web
+ * content. Registered by BrowserGlue alongside kako-dialog.css.
+ */
+
+@-moz-document url-prefix("about:newtab"), url-prefix("about:home") {
+  :root {
+    /* Was light-dark(#20123A, #fbfbfe) -- i.e. white on our black page. */
+    --newtab-wordmark-color: #FFFF00 !important;
+    --icon-color: #FFFF00 !important;
+    --newtab-text-primary-color: #FFFF00 !important;
+    --newtab-text-secondary-text: #FFFF00 !important;
+    --newtab-background-color-secondary: #000000 !important;
+    --newtab-background-card: #000000 !important;
+  }
+
+  /* The 白い熊 火狐 wordmark beside the logo. It is firefox-wordmark.svg drawn
+   * with -moz-context-properties, so the fill is what colours the glyphs. */
+  .logo-and-wordmark .wordmark {
+    fill: #FFFF00 !important;
+  }
+
+  /* The customize pencil, bottom right.
+   *
+   * Two variants exist in CustomizeMenu.jsx: with novaEnabled it is a
+   * <moz-button class="open-customization-button">, otherwise a plain
+   * <button class="personalize-button">. The moz-button keeps its icon in a shadow
+   * root that no descendant selector can reach -- but custom properties inherit
+   * through the shadow boundary, and moz-button.css paints from --button-*.
+   * Note --button-border is the WHOLE shorthand there; setting only
+   * --button-border-color does nothing outside the hover/active overrides. */
+  .open-customization-button,
+  .personalize-button {
+    --button-text-color: #FFFF00 !important;
+    --button-text-color-hover: #FFFF00 !important;
+    --button-text-color-active: #FFFF00 !important;
+    --button-background-color: #000000 !important;
+    --button-background-color-hover: #333300 !important;
+    --button-background-color-active: #4D4D00 !important;
+    --button-border: 1px solid #FFFF00 !important;
+    --button-border-color: #FFFF00 !important;
+    --button-border-color-hover: #FFFF00 !important;
+    --icon-color: #FFFF00 !important;
+    color: #FFFF00 !important;
+    fill: #FFFF00 !important;
+  }
+
+  .personalize-button {
+    background-color: #000000 !important;
+    border: 1px solid #FFFF00 !important;
+    box-shadow: none !important;
+  }
+
+  .personalize-button > div > img {
+    color: #FFFF00 !important;
+    fill: #FFFF00 !important;
+  }
+
+  /* Search box: black field inside a yellow outline, as on the phone. */
+  .search-wrapper .search-inner-wrapper {
+    background-color: #000000 !important;
+    border: 1px solid #FFFF00 !important;
+    border-radius: 8px !important;
+  }
+
+  /* Shortcut tiles: a yellow box around each, so they read as separate items
+   * instead of floating on the black. */
+  .top-site-outer .tile {
+    background-color: #000000 !important;
+    border: 1px solid #FFFF00 !important;
+  }
+
+  .top-site-outer .title,
+  .top-site-outer .title span {
+    color: #FFFF00 !important;
+  }
+
+  /* The "+" on the Add Shortcut tile -- an icon drawn with context-fill, so both
+   * colour and fill have to be set for it to follow. */
+  .top-site-outer.add-button .tile,
+  .top-site-outer.add-button .icon-wrapper,
+  .top-site-outer.add-button .icon-wrapper::before,
+  .top-site-outer.add-button .tile .icon-wrapper {
+    color: #FFFF00 !important;
+    fill: #FFFF00 !important;
+    --icon-color: #FFFF00 !important;
+    background-color: #000000 !important;
+  }
+
+  /* Story/section cards get the same treatment. */
+  .ds-card,
+  .card-outer {
+    background-color: #000000 !important;
+    border: 1px solid #FFFF00 !important;
+    border-radius: 8px !important;
+  }
+
+  /* Section headings and their "Show all"-style links. */
+  .section-title,
+  .section-title span,
+  .ds-header {
+    color: #FFFF00 !important;
+  }
+}
