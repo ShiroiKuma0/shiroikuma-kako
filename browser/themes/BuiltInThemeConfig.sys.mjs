@@ -21,6 +21,13 @@
  *   (-moz-native-theme) media query.
  */
 export const BuiltInThemeConfig = new Map([
+  // Fork note: 白い熊 火狐's own theme is deliberately NOT listed here. Entries in
+  // this map are installed only at idle-startup by BuiltInThemes.ensureBuiltInThemes,
+  // which runs after the AddonManager has resolved extensions.activeThemeID -- so a
+  // default pointing at one of them loses a race on a fresh profile and the fallback
+  // to default-theme@mozilla.org gets persisted as a user pref. It ships instead as a
+  // built-in add-on under browser/extensions/kako-theme/, installed during
+  // AddonManager startup. See that directory's jar.mn.
   [
     "firefox-compact-light@mozilla.org",
     {
