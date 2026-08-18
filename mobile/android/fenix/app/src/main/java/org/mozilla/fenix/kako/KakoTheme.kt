@@ -303,10 +303,10 @@ object KakoTheme {
         fun c(slot: KakoSlot) = Color(color(context, slot))
         // Upstream 153 slimmed AcornColors: layer3/ripple/tabActive/tabInactive moved
         // to the Material scheme (driven by materialColorScheme) and TabStripColors.
+        // 154 dropped textOnColorPrimary/iconOnColor entirely (Bug 2053992); their last
+        // call sites now hardcode white, so there is nothing left to tint here.
         return darkColorPalette.copy(
             formDefault = c(KakoSlot.TEXT_SECONDARY),
-            textOnColorPrimary = c(KakoSlot.TEXT_ON_ACCENT),
-            iconOnColor = c(KakoSlot.TEXT_ON_ACCENT),
             // The "slightly dimmer surface" grey behind menu items, library tiles
             // and banners — readability comes from traced borders instead.
             surfaceDimVariant = c(KakoSlot.MENU_BACKGROUND),
