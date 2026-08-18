@@ -176,7 +176,15 @@ import mozilla.components.ui.tabcounter.R as tabcounterR
 private const val SYNC_FLASH_DURATION_MS = 1_500L
 
 // Fork: a sync that never reports back must not leave the button spinning forever.
-private const val SYNC_TIMEOUT_MS = 60_000L
+private const val SYNC_TIMEOUT_MS = 30_000L
+
+// Fork: how long to let a requested sync actually get going before calling it a
+// no-show. FxaAccountManager.syncNow drops the request with nothing but an info log
+// when the manager is not FxaState.Connected or no sync manager is configured, and
+// its `state` is private so we cannot ask beforehand -- so we ask afterwards, via
+// the public isSyncActive(). That flag is only raised once the dispatcher really
+// starts, hence the grace period rather than an immediate check.
+private const val SYNC_START_GRACE_MS = 8_000L
 
 @VisibleForTesting
 internal sealed class DisplayActions(override val source: Source) : BrowserToolbarEvent {
@@ -318,6 +326,11 @@ class BrowserToolbarMiddleware(
     // Fork: what that button is showing, and the flash/timeout job driving it back to rest.
     private var syncButtonState = SyncButtonState.IDLE
     private var syncFlashJob: Job? = null
+
+    // Fork: the deadline is its own job. Sharing one with the flash meant the timeout
+    // could cancel itself while running, and made "which job is this?" depend on
+    // whichever ran last.
+    private var syncTimeoutJob: Job? = null
 
     // Fork: only a sync 白い熊 started from the toolbar gets a flash — background and
     // startup syncs must stay silent.
@@ -1060,7 +1073,20 @@ class BrowserToolbarMiddleware(
         isSyncRequestedFromToolbar = true
         setSyncButtonState(store, SyncButtonState.SYNCING)
         armSyncTimeout(store)
-        scope.launch { accountManager.syncNow(SyncReason.User) }
+        scope.launch {
+            accountManager.syncNow(SyncReason.User)
+
+            // Fork: a dropped request is indistinguishable from a slow one until we
+            // look. syncNow returns just as happily when it ignored us, and nothing
+            // then moves SyncStatus, so observeSyncUpdates would never report and the
+            // button would sit on the sync glyph until the deadline -- looking busy
+            // while nothing whatsoever is happening. If the sync is still wanted and
+            // the dispatcher never picked it up, say so now instead of in 30 seconds.
+            delay(SYNC_START_GRACE_MS)
+            if (isSyncRequestedFromToolbar && !accountManager.isSyncActive()) {
+                flashSyncResult(store, SyncButtonState.FAILED, R.string.kako_sync_not_started)
+            }
+        }
     }
 
     /**
@@ -1132,20 +1158,18 @@ class BrowserToolbarMiddleware(
     private fun flashSyncResult(
         store: Store<BrowserToolbarState, BrowserToolbarAction>,
         result: SyncButtonState,
+        messageRes: Int = when (result) {
+            SyncButtonState.FAILED -> R.string.kako_sync_failed
+            else -> R.string.kako_sync_done
+        },
     ) {
         isSyncRequestedFromToolbar = false
+        // The verdict is in, so the deadline has nothing left to guard.
+        syncTimeoutJob?.cancel()
+        syncTimeoutJob = null
         syncFlashJob?.cancel()
         syncFlashJob = scope.launch {
-            appStore.dispatch(
-                ShowSnackbar(
-                    uiContext.getString(
-                        when (result) {
-                            SyncButtonState.FAILED -> R.string.kako_sync_failed
-                            else -> R.string.kako_sync_done
-                        },
-                    ),
-                ),
-            )
+            appStore.dispatch(ShowSnackbar(uiContext.getString(messageRes)))
 
             syncButtonState = result
             updateEndBrowserActions(store)
@@ -1161,12 +1185,16 @@ class BrowserToolbarMiddleware(
      * until the next tap.
      */
     private fun armSyncTimeout(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
-        syncFlashJob?.cancel()
-        syncFlashJob = scope.launch {
+        syncTimeoutJob?.cancel()
+        syncTimeoutJob = scope.launch {
             delay(SYNC_TIMEOUT_MS)
-            isSyncRequestedFromToolbar = false
-            syncButtonState = SyncButtonState.IDLE
-            updateEndBrowserActions(store)
+            // We are the deadline; clear the handle first so flashSyncResult does not
+            // cancel the very coroutine calling it.
+            syncTimeoutJob = null
+            // Fork: a lapsed deadline used to drop the button back to the avatar in
+            // silence, which reads exactly like a sync that worked. It did not work --
+            // say so.
+            flashSyncResult(store, SyncButtonState.FAILED, R.string.kako_sync_timeout)
         }
     }
 
