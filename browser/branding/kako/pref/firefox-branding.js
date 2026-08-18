@@ -50,3 +50,20 @@ pref("browser.newtabpage.activity-stream.feeds.section.topstories", false);
 // No weather widget -- it asks for location on first run and is not part of the
 // fork's home screen.
 pref("browser.newtabpage.activity-stream.showWeather", false);
+
+// Install unsigned extensions. Unsetting MOZ_REQUIRE_SIGNING in the mozconfig
+// only moves the decision from a compile-time constant to this pref -- see
+// AddonSettings.sys.mjs, which reads it precisely when the constant is off --
+// and browser/app/profile/firefox.js defaults it to true, so enforcement stayed
+// on. Flipping it here is what actually makes a self-modified add-on
+// installable, the desktop counterpart of the Nightly gates opened on Fenix.
+//
+// This file wins over firefox.js on purpose: pref_LoadPrefsInDir sorts the
+// default pref directory REVERSE-alphabetically (Preferences.cpp), and
+// "firefox-branding.js" sorts before "firefox.js", so branding is read last.
+//
+// An unsigned xpi must still declare its own id in manifest.json
+// (browser_specific_settings.gecko.id): with no signature there is no
+// certificate common name for XPIInstall to fall back to, and only the
+// temporary-install location generates one.
+pref("xpinstall.signatures.required", false);
