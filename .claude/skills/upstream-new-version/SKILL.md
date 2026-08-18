@@ -59,13 +59,47 @@ the new upstream version and reset `customBuildNumber=0` (family convention:
 base mirrors upstream, bumped manually on adoption; the build counter restarts
 each adoption, so the new version's first build is `<newbase>+1`).
 
-## 4. Rebuild & verify
+## 4. Rebuild BOTH products & verify (hard rule)
 
-Run the full **kako-build** pipeline (bump, `./mach build`, gradle assemble,
-sign, copy to `~/tmp/`). First build after a major bump re-downloads matching
-GeckoView artifacts — slower, expected. Then deliver automatically via the
-global `/after-build` skill (adb-push if the phone is connected, else scp to
-skhw — no prompt), per kako-build's standing rule.
+An adoption is **not** done until **both** the Android APK and the desktop deb
+have been rebuilt on the new tag. Never ship the APK alone and call the version
+adopted — the two products are one fork, and a desktop left on the previous base
+is a silently stale browser 白い熊 goes on using. Both artifacts carry the *same*
+`<base>+<nnn>`, so bump once and reuse the number.
+
+```bash
+export MOZBUILD_STATE_PATH=$HOME/.mozbuild
+
+# --- Android -------------------------------------------------------------
+export MOZCONFIG=$PWD/tools/kako/mozconfig
+FULLVER=$(tools/kako/bump-build.sh)        # e.g. 154.0+001 — burn the number ONCE
+./mach build && ./mach gradle fenix:assembleRelease
+# …zipalign + apksigner + copy to ~/tmp/ per the kako-build skill…
+
+# --- Desktop -------------------------------------------------------------
+export MOZCONFIG=$PWD/tools/kako/mozconfig-desktop
+./mach build && ./mach package
+tools/kako/deb/build-deb.sh --version "$FULLVER"   # --version REUSES the number
+```
+
+Watch-points on a major bump — both hit on the 154 adoption:
+
+- **Merge-day clobber.** `./mach build` refuses with "The CLOBBER file has been
+  updated" and does nothing (it still exits 0 — read the log, not the status).
+  Run `./mach clobber` and rebuild. This applies to **each objdir separately**.
+- **Toolchain floor.** Upstream raises requirements between majors; 154 wanted
+  Android cmdline-tools 21.0 over 20.0. Install just the SDK with
+  `./mach python python/mozboot/mozboot/android.py --artifact-mode
+  --no-interactive` — full `mach bootstrap` is not needed and touches more.
+- **Fork code against removed APIs.** The rebase can replay cleanly and still
+  fail to compile, because a conflict-free hunk may call something upstream
+  deleted. Read the `e:` lines and migrate to the replacement rather than
+  reverting the fork patch — sometimes the fork's workaround has become
+  redundant and correctly shrinks.
+
+Then deliver via the global `/after-build` skill (adb-push if the phone is
+reachable, else scp to skhw — no prompt), per kako-build's standing rule. The
+deb is not pushed to the phone; it stays in `~/tmp/`.
 
 ## 5. Push (only with explicit go-ahead)
 
