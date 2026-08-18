@@ -661,7 +661,7 @@
 
             <!-- 白い熊 火狐: upstream only claims text/html for http(s) URLs, so a local
                  .html file handed over by a file manager (a content:// URI from its
-                 FileProvider) finds no handler here and 火狐 never appears in the
+                 FileProvider) finds no handler here and 白い熊 火狐 never appears in the
                  "open with" list. Claim the same document types over content://, the
                  way the PDF filter above already does. -->
             <intent-filter>
