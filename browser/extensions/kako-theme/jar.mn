@@ -1,0 +1,16 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# Fork: shipped as a built-in ADD-ON rather than a built-in THEME on purpose.
+# Built-in themes (browser/themes/addons/) are only installed at idle-startup by
+# BuiltInThemes.ensureBuiltInThemes, which is after the AddonManager has already
+# resolved extensions.activeThemeID -- so on a fresh profile our theme did not
+# exist yet, selection fell back to default-theme@mozilla.org, and that fallback
+# was persisted as a USER pref that then outranked our default forever.
+# builtin-addons/* is picked up by gen_built_in_addons.py into
+# built_in_addons.json and installed during AddonManager startup, before theme
+# selection, which removes the race entirely.
+
+browser.jar:
+    builtin-addons/kako-theme/ (extension/**)
