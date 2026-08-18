@@ -1,0 +1,123 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* 白い熊 火狐 -- New Tab overrides.
+ *
+ * ntp_background / ntp_text from the theme cover the page background and the
+ * primary text colour. Everything else on this page takes its colour from its
+ * own variable or a design token that no theme key can reach, and is corrected
+ * here.
+ *
+ * Two hard-won details govern how this file is written and where it lives:
+ *
+ * 1. It ships INSIDE the newtab package (builtin-addons/newtab/data/css/, i.e.
+ *    chrome://newtab/content/css/) rather than the branding jar. about:newtab
+ *    runs in the "privilegedabout" content process, and keeping the sheet in the
+ *    same chrome package as activity-stream.css -- which demonstrably loads --
+ *    removes any question of cross-package reachability.
+ *
+ * 2. Every declaration is !important, custom properties included. There is a
+ *    second, larger stylesheet (css/nova/activity-stream.css) that defines every
+ *    single thing overridden here -- the wordmark colour, the tiles, both pencil
+ *    variants, the search wrapper -- and it can win on cascade order. !important
+ *    settles it regardless of which sheet loads last.
+ */
+
+:root {
+  /* Was light-dark(#20123A, #fbfbfe) -- i.e. white on our black page. */
+  --newtab-wordmark-color: #FFFF00 !important;
+  --icon-color: #FFFF00 !important;
+  --newtab-text-primary-color: #FFFF00 !important;
+  --newtab-text-secondary-text: #FFFF00 !important;
+  --newtab-background-color-secondary: #000000 !important;
+  --newtab-background-card: #000000 !important;
+}
+
+/* The 白い熊 火狐 wordmark beside the logo. It is firefox-wordmark.svg drawn
+ * with -moz-context-properties, so the fill is what colours the glyphs. */
+.logo-and-wordmark .wordmark {
+  fill: #FFFF00 !important;
+}
+
+/* The customize pencil, bottom right.
+ *
+ * Two variants exist in CustomizeMenu.jsx: with novaEnabled it is a
+ * <moz-button class="open-customization-button">, otherwise a plain
+ * <button class="personalize-button">. The moz-button keeps its icon in a shadow
+ * root that no descendant selector can reach -- but custom properties inherit
+ * through the shadow boundary, and moz-button.css paints from --button-*.
+ * Note --button-border is the WHOLE shorthand there; setting only
+ * --button-border-color does nothing outside the hover/active overrides. */
+.open-customization-button,
+.personalize-button {
+  --button-text-color: #FFFF00 !important;
+  --button-text-color-hover: #FFFF00 !important;
+  --button-text-color-active: #FFFF00 !important;
+  --button-background-color: #000000 !important;
+  --button-background-color-hover: #333300 !important;
+  --button-background-color-active: #4D4D00 !important;
+  --button-border: 1px solid #FFFF00 !important;
+  --button-border-color: #FFFF00 !important;
+  --button-border-color-hover: #FFFF00 !important;
+  --icon-color: #FFFF00 !important;
+  color: #FFFF00 !important;
+  fill: #FFFF00 !important;
+}
+
+.personalize-button {
+  background-color: #000000 !important;
+  border: 1px solid #FFFF00 !important;
+  box-shadow: none !important;
+}
+
+.personalize-button > div > img {
+  color: #FFFF00 !important;
+  fill: #FFFF00 !important;
+}
+
+/* Search box: black field inside a yellow outline, as on the phone. */
+.search-wrapper .search-inner-wrapper {
+  background-color: #000000 !important;
+  border: 1px solid #FFFF00 !important;
+  border-radius: 8px !important;
+}
+
+/* Shortcut tiles: a yellow box around each, so they read as separate items
+ * instead of floating on the black. */
+.top-site-outer .tile {
+  background-color: #000000 !important;
+  border: 1px solid #FFFF00 !important;
+}
+
+.top-site-outer .title,
+.top-site-outer .title span {
+  color: #FFFF00 !important;
+}
+
+/* The "+" on the Add Shortcut tile -- an icon drawn with context-fill, so both
+ * colour and fill have to be set for it to follow. */
+.top-site-outer.add-button .tile,
+.top-site-outer.add-button .icon-wrapper,
+.top-site-outer.add-button .icon-wrapper::before,
+.top-site-outer.add-button .tile .icon-wrapper {
+  color: #FFFF00 !important;
+  fill: #FFFF00 !important;
+  --icon-color: #FFFF00 !important;
+  background-color: #000000 !important;
+}
+
+/* Story/section cards get the same treatment. */
+.ds-card,
+.card-outer {
+  background-color: #000000 !important;
+  border: 1px solid #FFFF00 !important;
+  border-radius: 8px !important;
+}
+
+/* Section headings and their "Show all"-style links. */
+.section-title,
+.section-title span,
+.ds-header {
+  color: #FFFF00 !important;
+}
