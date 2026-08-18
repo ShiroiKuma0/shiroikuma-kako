@@ -5,6 +5,33 @@ Everything built on top of stock Firefox (release channel) — the Android brows
 `<upstream-base>+<build>`; the fork commits live on `custom`, rebased onto each
 adopted `FIREFOX_*_RELEASE` tag, and one tag covers both products.
 
+## 154.0+002 — 2026-08-18
+
+A desktop-only release on the same Firefox **154.0** base. The Android build is
+unchanged and stays at `154.0+001`; the APK attached here is that same one.
+
+### Unsigned extensions actually install now
+
+Unsetting `MOZ_REQUIRE_SIGNING` in the mozconfig, which 154.0+001 shipped, turns
+out to be half a change. It moves the decision from a compile-time constant to
+the `xpinstall.signatures.required` preference — the add-on settings module reads
+that preference precisely when the constant is off — but Firefox's own default
+for it is `true`, so enforcement simply stayed on and the browser went on
+refusing unsigned xpis exactly as stock does. The preference is now set to
+`false` in the fork's branding defaults, which is what makes a self-modified
+add-on installable without a round trip through AMO. The desktop counterpart of
+the Nightly gates opened on Fenix is finally what it claimed to be.
+
+The branding file wins over Firefox's own defaults on purpose, and by a rule
+worth writing down: both the loose-directory loader and the one that reads
+`omni.ja` sort the default-preference filenames and then walk them **backwards**,
+so `firefox.js` is parsed before `firefox-branding.js` and the branding value is
+the one left standing.
+
+An unsigned xpi must still declare its own id in `manifest.json`
+(`browser_specific_settings.gecko.id`): with no signature there is no certificate
+common name to fall back to, and only a temporary install generates one.
+
 ## 154.0+001 — 2026-08-18
 
 The base moves to Firefox **154.0** (`FIREFOX_154_0_RELEASE`) — the first major
