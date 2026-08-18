@@ -1,22 +1,37 @@
 ---
 name: kako-build
-description: Build, sign, and deploy 白い熊 火狐 (shiroikuma.kako) — the Firefox for Android fork. Use for any build, signing, versioning, APK output, or adb-push task in this repo.
+description: Build, sign, and deploy 白い熊 火狐 (shiroikuma.kako) — the Firefox fork, both the Android APK and the desktop deb. Use for any build, signing, versioning, APK/deb output, or adb-push task in this repo.
 ---
 
 # kako-build — 白い熊 火狐 build pipeline
+
+## Two products (hard rule)
+
+This tree builds **both** Firefox for Android and Firefox for Desktop. They share
+one upstream tag, one version literal and one build counter, and differ only in
+mozconfig and objdir:
+
+| Product | mozconfig | objdir | Output in `~/tmp/` |
+|---|---|---|---|
+| Android (Fenix) | `tools/kako/mozconfig` | `objdir-kako` | `shiroikuma-kako_<ver>_arm64-v8a.apk` |
+| Desktop (Linux amd64) | `tools/kako/mozconfig-desktop` | `objdir-kako-desktop` | `shiroikuma-kako_<ver>_amd64.deb` |
+
+Build the product(s) the change touches — and on an **upstream adoption, always
+build BOTH**, never the APK alone. Burn the counter once and pass the same
+`<ver>` to the deb script with `--version`.
 
 ## Identity
 
 | Fact | Value |
 |---|---|
-| Upstream | `mozilla-firefox/firefox` (monorepo; Fenix at `mobile/android/fenix`) |
+| Upstream | `mozilla-firefox/firefox` (monorepo; Fenix at `mobile/android/fenix`, desktop at `browser/`) |
 | Channel tracked | **release** (tags `FIREFOX_<v>_RELEASE`, 4-week cadence) |
 | `applicationId` | `shiroikuma.kako` |
 | Label | 白い熊 火狐 |
-| ABI | `arm64-v8a` only |
+| ABI | `arm64-v8a` only (Android); `amd64` (desktop) |
 | Branches | `release` = upstream mirror; `custom` = all fork commits |
 | Keystore | `~/.android-keystores/kako-custom.jks`, alias `kako`, pass `kako123` |
-| Output | `shiroikuma-kako_<upstreamver>+<n>_arm64-v8a.apk` → `~/tmp/` |
+| Desktop profile | `~/.mozilla/kako` (via `MOZ_APP_BASENAME`), WM class `kako` |
 
 ## The customization commits on `custom`
 
@@ -102,11 +117,42 @@ ls -la "$OUT"
 # connected, otherwise /scp to skhw — announcing what landed. Never ask first.
 ```
 
+## Desktop pipeline (full compile — NOT artifact mode)
+
+```bash
+export MOZBUILD_STATE_PATH=$HOME/.mozbuild
+export MOZCONFIG=$PWD/tools/kako/mozconfig-desktop   # own objdir: objdir-kako-desktop
+
+./mach build          # full compile against the DISTRO toolchain (clang-20)
+./mach package        # → objdir-kako-desktop/dist/kako-*.linux-x86_64.tar.xz
+
+# Reuse the number the APK already burned; omit --version to take a fresh one.
+tools/kako/deb/build-deb.sh --version "$FULLVER"
+# → ~/tmp/shiroikuma-kako_<ver>_amd64.deb
+```
+
+Why it is not an artifact build: `mach bootstrap` cannot help here — every real
+toolchain comes from a taskcluster index lookup that will not resolve from a
+release-tag checkout carrying our own commits. Hence `--disable-bootstrap` and an
+explicit `clang-20` (Tuxedo's default clang is 18; Firefox wants ≥ 19). Engine
+changes are therefore **in** scope for desktop, unlike Android.
+
+The deb is a desktop artifact: 白い熊 installs it with `dpkg -i` / `apt install`.
+It is **never** pushed to the phone — `/after-build` delivery covers the APK only.
+
 ## Standing rules
 
 - **Always build after changes** — bump, assemble, sign, verify, copy to
-  `~/tmp/` — without being asked. A task is unfinished until the signed APK
-  is on disk. Build failure → stop, surface the error verbatim.
+  `~/tmp/` — without being asked. A task is unfinished until the artifact is
+  on disk. Build failure → stop, surface the error verbatim.
+- **An upstream adoption builds BOTH products.** Never rebuild only the APK
+  and report the version adopted; the desktop must not be left on an older
+  base than the Android one.
+- **Read the log, not the exit status, after `./mach build`.** A merge-day
+  clobber requirement prints "The CLOBBER file has been updated", builds
+  nothing, and still exits 0. Fix with `./mach clobber`, per objdir.
+- **Run `./mach` with `env -u CLAUDECODE`** — under Claude Code mach suppresses
+  the real compiler errors, so a failure reads as an empty success.
 - **Deliver automatically via `/after-build`** — after every successful build,
   invoke the global `/after-build` skill without asking. It runs `/adb-check`
   UNSANDBOXED, then `/adb-push` to `/sdcard/tmp/` if the phone is connected,

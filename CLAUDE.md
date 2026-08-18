@@ -11,6 +11,23 @@ authoritative guidance is the skills under `.claude/skills/`:
 - **`upstream-new-version`** — check for a newer upstream release tag,
   fast-forward `release`, rebase `custom` onto it, and rebuild.
 
+## Two products, one tree (hard rule)
+
+This fork ships **both** Firefox for Android and Firefox for Desktop from the
+same tree, the same upstream tag and the same build counter:
+
+| Product | mozconfig | objdir | Artifact in `~/tmp/` |
+|---|---|---|---|
+| **Android** (Fenix) | `tools/kako/mozconfig` | `objdir-kako` | `shiroikuma-kako_<ver>_arm64-v8a.apk` |
+| **Desktop** (GNU/Linux amd64) | `tools/kako/mozconfig-desktop` | `objdir-kako-desktop` | `shiroikuma-kako_<ver>_amd64.deb` |
+
+**Adopting a new upstream version means updating and building BOTH.** Never
+rebuild only the APK and call the adoption done, and never leave the desktop
+product on an older base than the Android one — they are one fork, and a version
+number identifies one commit of this tree regardless of which artifact it
+produced. Both therefore carry the *same* `<ver>` (`--version` on the deb script
+reuses the number the APK already burned).
+
 ## Project
 
 - Fork of [mozilla-firefox/firefox](https://github.com/mozilla-firefox/firefox)
@@ -20,6 +37,9 @@ authoritative guidance is the skills under `.claude/skills/`:
   `mobile/android/android-components` and GeckoView. We track the **release
   channel** (not Beta/Nightly): one upstream cycle every 4 weeks, tags like
   `FIREFOX_151_0_RELEASE`.
+- **Firefox for Desktop lives in `browser/`**, branded from
+  `browser/branding/kako` with the palette shipped as the built-in add-on
+  `browser/extensions/kako-theme`. Same upstream tag as Android.
 - `applicationId`: `shiroikuma.kako` (installs side-by-side with stock
   Firefox/Beta/Nightly).
 - Display label: **白い熊 火狐**.
@@ -39,9 +59,10 @@ Extensions from a collection are AMO-signed, so the signing enforcement baked
 into the prebuilt release GeckoView never bites — which is what lets us use
 fast **artifact builds** (prebuilt engine; only Kotlin/Java compiles locally).
 
-**Artifact-build constraint:** Fenix/Android-Components-side (Kotlin/Java/
-resources) changes only. An engine (C++/Rust/Gecko) patch would force a full
-multi-hour compile — avoid; none planned.
+**Artifact-build constraint (Android only):** Fenix/Android-Components-side
+(Kotlin/Java/resources) changes only. An engine (C++/Rust/Gecko) patch would
+force a full multi-hour compile — avoid; none planned. The desktop product has
+no such constraint: it is a full compile from source either way.
 
 ## Target device & environment
 
@@ -71,16 +92,24 @@ Never use material yellow `#FFEB3B` for fork UI defaults.
 
 ## Build & deploy pipeline (summary — see `kako-build` skill)
 
-Output APK: `shiroikuma-kako_<upstreamver>+<n>_arm64-v8a.apk` → always copied
-to `~/tmp/`.
+Outputs, both always copied to `~/tmp/`:
+
+- Android: `shiroikuma-kako_<upstreamver>+<nnn>_arm64-v8a.apk`
+- Desktop: `shiroikuma-kako_<upstreamver>+<nnn>_amd64.deb`
 
 **Always build after changes** — finish every set of working-tree edits by
 running the full pipeline (bump, assemble, sign, verify, copy to `~/tmp/`)
-without waiting to be asked. A task is unfinished until a fresh signed APK is
-on disk; if the build fails, stop and surface the error.
+without waiting to be asked. Build **the product(s) the changes touch**; a
+change under `mobile/android/` needs the APK, one under `browser/` needs the
+deb, and anything shared — an upstream adoption above all — needs **both**. A
+task is unfinished until the fresh artifact(s) are on disk; if a build fails,
+stop and surface the error.
 
-**Always ask before `adb push`.** Never push to the device without 白い熊's
-explicit confirmation; end every successful build report with that question.
+**Deliver automatically via `/after-build`** — do not ask "shall I push?".
+The skill walks the reachability chain and ships once. (This supersedes the old
+"always ask before `adb push`" rule, dropped 2026-07-09.) The deb is a desktop
+artifact: it stays in `~/tmp/` for 白い熊 to install, it is not pushed to the
+phone.
 
 **Never `git push` without 白い熊's explicit go-ahead.**
 
