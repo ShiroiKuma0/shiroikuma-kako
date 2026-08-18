@@ -8,12 +8,12 @@
 ## The fork name is written verbatim and is never transliterated or
 ## translated.
 
--brand-shorter-name = 火狐
+-brand-shorter-name = 白い熊 火狐
 -brand-short-name = 白い熊 火狐
 -brand-shortcut-name = 白い熊 火狐
 -brand-full-name = 白い熊 火狐
 # This brand name can be used in messages where the product name needs to
 # remain unchanged across different versions (Nightly, Beta, etc.).
--brand-product-name = 火狐
+-brand-product-name = 白い熊 火狐
 -vendor-short-name = 白い熊
 trademarkInfo = { " " }
