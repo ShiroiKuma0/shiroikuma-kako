@@ -4,13 +4,13 @@
 
 # 白い熊 火狐
 
-**Firefox for Android in pure black & yellow, with extension freedom on the release channel.**
+**Firefox in pure black & yellow — on the phone and on the desktop — with extension freedom on the release channel.**
 
-A fork of [Mozilla Firefox](https://github.com/mozilla-firefox/firefox) (Fenix, release channel) with **major additions**: custom AMO extension collections unlocked on release, a fully settable black/yellow UI with external fonts, pinned extension buttons on a two-row toolbar, one-tap sync from that toolbar, whole-profile export & import — scriptable from outside the app — about:config, and a line-traced launcher fox.
+A fork of [Mozilla Firefox](https://github.com/mozilla-firefox/firefox) (release channel) with **major additions**: custom AMO extension collections unlocked on release, add-ons installable straight from a file, a fully settable black/yellow UI with external fonts, pinned extension buttons on a two-row toolbar, one-tap sync from that toolbar, whole-profile export & import — scriptable from outside the app — about:config, a line-traced fox, and a **GNU/Linux desktop build** in the same palette.
 
-Installs **side-by-side** with stock Firefox/Beta/Nightly (app id `shiroikuma.kako`).
+Installs **side-by-side** with stock Firefox/Beta/Nightly: app id `shiroikuma.kako` on Android, package `shiroikuma-kako` with its own `~/.mozilla/kako` profile on the desktop.
 
-**📥 Latest release: [`153.0.4+003`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & APK downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
+**📥 Latest release: [`153.0.4+019`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
 
 </div>
 
@@ -18,6 +18,13 @@ Installs **side-by-side** with stock Firefox/Beta/Nightly (app id `shiroikuma.ka
 
 ## 🧩 Extension freedom on the release channel
 Stock Fenix locks custom AMO add-on collections behind Nightly. This fork opens those channel gates on release: point the browser at any AMO collection and install everything in it — collection extensions are AMO-signed, so release signing enforcement never objects. `about:config` and the full secret-settings menu (five taps on the About logo) are unlocked too.
+
+Extensions also install **straight from a file**. A collection can only hold add-ons published and reviewed on AMO, which locks out anything personal; the add-ons screen here takes an `.xpi` off the device instead, so an extension signed for self-distribution — private, unlisted, unreviewed — installs on the phone like any other. The desktop build goes further and needs no signature at all, so a modified add-on can be tested unsigned and only signed when it ships.
+
+---
+
+## 🖥 The same browser on the desktop
+A GNU/Linux `amd64` build, packaged as a `.deb` and wearing the same pure black and `#FFFF00`. Chrome, popups, sidebar and the New Tab page are themed by a built-in theme, in-content dialogs and preferences by a globally registered stylesheet, and the window itself is traced with a yellow frame that dims when it loses focus — 火狐 draws its own titlebar, so no window manager will do it for you. Add-on signature enforcement is switched off in the build, which is what makes a self-modified extension installable without a round trip through AMO. It installs alongside stock Firefox with its own package name, its own `/opt` prefix and its own profile, and shares this repository, this version number and this icon with the phone.
 
 ---
 
@@ -52,7 +59,7 @@ Tap a saved page in a file manager and 火狐 is in the "open with" list — and
 ---
 
 ## 🦊 The line-traced fox
-The launcher icon is the Nightly fox redrawn as yellow line art on black — adaptive and legacy mipmaps rendered from the master SVGs in `tools/kako/icon/`.
+The icon is the Nightly fox redrawn as yellow line art on black, from one master SVG in `tools/kako/icon/` — rendered into Android's adaptive and legacy mipmaps, and into the desktop branding and hicolor icon set. The two geometries differ on purpose: Android masks and crops adaptive icons, so the phone keeps its safe-zone padding, while the desktop icon is full-bleed and transparent so the panel shows through exactly as it does for stock.
 
 ---
 
@@ -62,7 +69,29 @@ A fork of [mozilla-firefox/firefox](https://github.com/mozilla-firefox/firefox) 
 Branch model: `release` is a byte-identical upstream mirror; **`custom`** carries every fork commit, rebased onto each adopted `FIREFOX_*_RELEASE` tag.
 
 ## Building
-Artifact build (prebuilt GeckoView engine; only Kotlin/Java compiles locally), arm64-v8a:
+
+Both products build from this one tree; the mozconfig picks which, and each keeps its own objdir.
+
+### Desktop (GNU/Linux amd64 → `.deb`)
+
+A full build, not an artifact one. `mach bootstrap` cannot help here — on Linux it installs almost nothing and every real toolchain comes from a taskcluster index lookup that will not resolve from a release-tag checkout carrying its own commits — so it builds against the distro toolchain:
+
+```bash
+sudo apt install clang-20 libclang-20-dev lld-20 libstdc++-14-dev \
+  libdbus-glib-1-dev libx11-xcb-dev libfontconfig1-dev libfreetype6-dev \
+  wasi-libc libclang-rt-20-dev-wasm32 libc++-20-dev-wasm32 libc++abi-20-dev-wasm32
+cargo install cbindgen
+
+export MOZCONFIG=$PWD/tools/kako/mozconfig-desktop
+./mach build && ./mach package
+tools/kako/deb/build-deb.sh          # → ~/tmp/shiroikuma-kako_<version>_amd64.deb
+```
+
+`libstdc++-14-dev` is not a typo: clang-20 selects the highest GCC it finds, so without it every C++ header lookup fails even though g++ 13 is the system compiler. The four wasm packages exist solely to keep RLBox sandboxing of graphite/ogg/hunspell/expat enabled.
+
+### Android (arm64-v8a → `.apk`)
+
+Artifact build (prebuilt GeckoView engine; only Kotlin/Java compiles locally):
 
 ```bash
 git clone --branch custom git@github.com:ShiroiKuma0/shiroikuma-kako.git
