@@ -7,25 +7,35 @@ package org.mozilla.fenix.addons
 import android.content.Context
 import android.graphics.Typeface
 import android.graphics.fonts.FontStyle.FONT_WEIGHT_MEDIUM
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.accessibility.AccessibilityNodeInfo
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.VisibleForTesting
 import androidx.core.content.ContextCompat
+import androidx.core.view.MenuProvider
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import mozilla.components.concept.engine.webextension.InstallationMethod
 import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.addons.AddonManager
 import mozilla.components.feature.addons.AddonManagerException
 import mozilla.components.feature.addons.ui.AddonsManagerAdapter
+import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.FragmentAddOnsManagementBinding
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
@@ -36,8 +46,15 @@ import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.SupportUtils.AMO_HOMEPAGE_FOR_ANDROID
 import org.mozilla.fenix.theme.ThemeManager
+import java.io.File
+import java.io.IOException
 import com.google.android.material.R as materialR
 import mozilla.components.feature.addons.R as addonsR
+
+// Fork: identifiers for the "install add-on from file" entry.
+private const val KAKO_INSTALL_FROM_FILE_ITEM_ID = 0x4B41_4B4F
+private const val KAKO_XPI_STAGING_DIR = "kako-xpi"
+private const val KAKO_XPI_STAGING_NAME = "install.xpi"
 
 /**
  * Fragment use for managing add-ons.
@@ -51,10 +68,18 @@ class AddonsManagementFragment : Fragment(R.layout.fragment_add_ons_management),
 
     private var adapter: AddonsManagerAdapter? = null
 
+    // Fork: the file picker for "install from file". Registered as a field because
+    // registerForActivityResult must be called before the fragment reaches STARTED.
+    private val kakoXpiPicker =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            uri?.let { kakoInstallAddonFromFile(it) }
+        }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding = FragmentAddOnsManagementBinding.bind(view)
         bindRecyclerView()
+        kakoAddInstallFromFileMenu()
     }
 
     override fun onResume() {
@@ -165,6 +190,111 @@ class AddonsManagementFragment : Fragment(R.layout.fragment_add_ons_management),
     @VisibleForTesting
     internal fun provideAddonManager(): AddonManager {
         return requireContext().components.addonManager
+    }
+
+    /**
+     * Fork: a toolbar entry for installing an .xpi that is already on the device.
+     *
+     * Stock Fenix can only install what the configured AMO collection offers, which
+     * means an add-on has to be publicly listed on AMO to be installable at all. Our
+     * own extensions are signed but unlisted, so this is how they get on the phone:
+     * adb push the .xpi to /sdcard/tmp/, then pick it here.
+     *
+     * The menu item is added in code rather than through a menu resource, to keep the
+     * fork's footprint to one file.
+     */
+    private fun kakoAddInstallFromFileMenu() {
+        requireActivity().addMenuProvider(
+            object : MenuProvider {
+                override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                    menu.add(
+                        Menu.NONE,
+                        KAKO_INSTALL_FROM_FILE_ITEM_ID,
+                        Menu.NONE,
+                        getString(R.string.kako_install_addon_from_file),
+                    ).setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
+                }
+
+                override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+                    if (menuItem.itemId != KAKO_INSTALL_FROM_FILE_ITEM_ID) return false
+                    // Some file providers do not tag .xpi as x-xpinstall, so */* is
+                    // offered alongside it rather than hiding the file 白い熊 wants.
+                    kakoXpiPicker.launch(arrayOf("application/x-xpinstall", "*/*"))
+                    return true
+                }
+            },
+            viewLifecycleOwner,
+            Lifecycle.State.RESUMED,
+        )
+    }
+
+    /**
+     * Fork: installs the .xpi behind [uri].
+     *
+     * The engine accepts a local file: URI -- GeckoView's WebExtensionController.install
+     * documents "a remote https: URI or a local file: or resource: URI" -- but it cannot
+     * read the content: URI the picker hands back, and it needs read access. Copying into
+     * the app's own cache directory satisfies both without any storage permission, and the
+     * copy is deleted once the install settles.
+     *
+     * Signing still applies: the release GeckoView requires add-ons signed by Mozilla, so
+     * an unlisted-but-AMO-signed .xpi installs and a wholly unsigned one does not.
+     */
+    private fun kakoInstallAddonFromFile(uri: Uri) {
+        binding?.addonProgressOverlay?.overlayCardView?.visibility = View.VISIBLE
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val staged = withContext(IO) { kakoStageXpi(uri) }
+
+            if (staged == null) {
+                binding?.addonProgressOverlay?.overlayCardView?.visibility = View.GONE
+                kakoShowInstallError(getString(R.string.kako_install_addon_from_file_read_failed))
+                return@launch
+            }
+
+            provideAddonManager().installAddon(
+                url = Uri.fromFile(staged).toString(),
+                installationMethod = InstallationMethod.FROM_FILE,
+                onSuccess = { addon ->
+                    staged.delete()
+                    runIfFragmentIsAttached {
+                        adapter?.updateAddon(addon)
+                        binding?.addonProgressOverlay?.overlayCardView?.visibility = View.GONE
+                    }
+                },
+                onError = { error ->
+                    staged.delete()
+                    runIfFragmentIsAttached {
+                        binding?.addonProgressOverlay?.overlayCardView?.visibility = View.GONE
+                        kakoShowInstallError(
+                            error.message
+                                ?: getString(R.string.kako_install_addon_from_file_failed),
+                        )
+                    }
+                },
+            )
+        }
+    }
+
+    /** Fork: copies the picked document into cache so the engine can read it. */
+    private fun kakoStageXpi(uri: Uri): File? = try {
+        val dir = File(requireContext().cacheDir, KAKO_XPI_STAGING_DIR).apply { mkdirs() }
+        // Stale copies from an install that never reported back must not accumulate.
+        dir.listFiles()?.forEach { it.delete() }
+        val target = File(dir, KAKO_XPI_STAGING_NAME)
+        requireContext().contentResolver.openInputStream(uri)?.use { input ->
+            target.outputStream().use { output -> input.copyTo(output) }
+        }
+        if (target.length() > 0) target else null
+    } catch (e: IOException) {
+        Logger("AddonsManagementFragment").error("kako: staging the .xpi failed", e)
+        null
+    }
+
+    private fun kakoShowInstallError(message: String) {
+        binding?.root?.let {
+            Snackbar.make(it, message, Snackbar.LENGTH_LONG).show()
+        }
     }
 
     internal fun installAddon(addon: Addon) {
