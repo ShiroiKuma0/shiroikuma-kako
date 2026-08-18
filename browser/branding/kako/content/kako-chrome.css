@@ -1,0 +1,44 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* 白い熊 火狐 -- the window frame.
+ *
+ * 火狐 uses client-side decorations (customtitlebar="true"), so KWin never draws
+ * a decoration for it and the yellow frame configured in the KDE colour scheme
+ * cannot apply. The frame is drawn here instead, and it encloses the whole
+ * window -- tab strip and window buttons included, not just the content area.
+ *
+ * It is an overlay ring, NOT `border` on :root. A border on the chrome root
+ * computes correctly (getComputedStyle reports it) but never paints: the root's
+ * box decoration is taken over by the canvas/widget, so the edge stays bare. A
+ * fixed-position pseudo-element spans the viewport, paints above every toolbar,
+ * and cannot be covered by a child's background.
+ */
+
+:root#main-window::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  border: 2px solid #FFFF00;
+  border-radius: 9px; /* trace the GTK CSD corner rounding */
+  pointer-events: none; /* never eat a click meant for the tab strip */
+  z-index: 2147483647;
+}
+
+/* An unfocused window dims its frame, matching what the KDE colour scheme does
+ * for every other application ([WM] inactiveBackground).
+ *
+ * This MUST use :-moz-window-inactive. There is no [active] attribute on the
+ * chrome root -- :not([active]) matches always, which pinned the frame at the
+ * dim colour in every state. */
+:root#main-window:-moz-window-inactive::after {
+  border-color: #404000;
+}
+
+/* Fullscreen has no window edge to trace and a ring there is just a distraction
+ * over video. Maximised and tiled windows keep theirs, so the window is still
+ * outlined against its neighbours. */
+:root#main-window[sizemode="fullscreen"]::after {
+  display: none;
+}
