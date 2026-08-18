@@ -1,0 +1,46 @@
+# 白い熊 火狐 — full build of Firefox for Desktop (GNU/Linux amd64).
+# Sibling of tools/kako/mozconfig (the Android artifact build); the two keep
+# separate objdirs so both products stay buildable from one tree.
+# Use via: export MOZCONFIG=$PWD/tools/kako/mozconfig-desktop
+ac_add_options --enable-project=browser
+ac_add_options --enable-optimize
+
+# Taskcluster toolchain artifacts cannot be resolved from a release-tag
+# checkout carrying our own commits (the index lookup for toolchain-linux64-clang
+# fails), so bootstrap is off and we build against the distro toolchain instead.
+# Tuxedo OS ships clang 18.1.3 as the default and Firefox requires >= 19, hence
+# the explicit clang-20 from noble-updates.
+ac_add_options --disable-bootstrap
+export CC=clang-20
+export CXX=clang++-20
+
+# Keep RLBox sandboxing of graphite/ogg/hunspell/expat. The distro wasi-libc
+# lays its headers out as /usr/include/wasm32-wasi and its libraries as
+# /usr/lib/wasm32-wasi, which is precisely sysroot=/usr for the wasm32-wasi
+# target; without this configure finds the headers but cannot link libc.a.
+ac_add_options --with-wasi-sysroot=/usr
+
+ac_add_options --with-branding=browser/branding/kako
+
+# Allow unsigned/self-modified extensions: unset here, AddonSettings falls back
+# to the xpinstall.signatures.required pref instead of a hard constant.
+export MOZ_REQUIRE_SIGNING=
+
+# Side-by-side operation with stock Firefox.
+#
+# MOZ_APP_REMOTINGNAME only sets g_set_prgname and the remote service (WM class,
+# DBus, single-instance) -- despite its configure help claiming it affects the
+# profile name, it does NOT: nsXREDirProvider builds the profile path from
+# gAppData->vendor and gAppData->name (nsXREDirProvider.cpp:1341 and :1556).
+# Left at the Firefox basename we would share stock Firefox's
+# ~/.mozilla/firefox profile, so the basename is overridden:
+#   profile      -> ~/.mozilla/kako   (distinct from stock ~/.mozilla/firefox)
+#   binary/dir   -> kako   (MOZ_APP_NAME defaults to MOZ_APP_BASENAME.lower())
+# MOZ_APP_VENDOR is deliberately left alone: it is a project_flag settable only
+# via imply_option in browser/moz.configure, so changing it would mean carrying
+# a patch on an upstream file through every rebase, and the basename alone
+# already separates the profiles.
+export MOZ_APP_REMOTINGNAME=kako
+export MOZ_APP_BASENAME=kako
+
+mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/objdir-kako-desktop

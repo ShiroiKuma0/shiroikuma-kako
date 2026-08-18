@@ -1,0 +1,57 @@
+{
+  "manifest_version": 2,
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "kako-theme@shiroikuma"
+    }
+  },
+
+  "name": "白い熊 火狐",
+  "description": "Black and pure yellow, matching the Android fork's KakoTheme.",
+  "author": "白い熊",
+  "version": "1.0.0",
+
+  "icons": { "32": "icon.svg" },
+  "theme": {
+    "properties": {
+      "color_scheme": "dark",
+      "content_color_scheme": "dark"
+    },
+    "colors": {
+      "frame": "#000000",
+      "frame_inactive": "#000000",
+      "toolbar": "#000000",
+      "toolbar_text": "#FFFF00",
+      "toolbar_field": "#000000",
+      "toolbar_field_text": "#FFFF00",
+      "toolbar_field_border": "#FFFF00",
+      "toolbar_field_focus": "#000000",
+      "toolbar_field_text_focus": "#FFFF00",
+      "toolbar_field_border_focus": "#FFFF00",
+      "toolbar_top_separator": "#FFFF00",
+      "toolbar_bottom_separator": "#FFFF00",
+      "toolbar_vertical_separator": "#FFFF00",
+      "tab_background_text": "#FFFF00",
+      "tab_selected": "#000000",
+      "tab_text": "#FFFF00",
+      "tab_line": "#FFFF00",
+      "tab_loading": "#FFFF00",
+      "icons": "#FFFF00",
+      "icons_attention": "#FFFF00",
+      "button_background_hover": "#333300",
+      "button_background_active": "#4D4D00",
+      "popup": "#000000",
+      "popup_text": "#FFFF00",
+      "popup_border": "#FFFF00",
+      "popup_highlight": "#333300",
+      "popup_highlight_text": "#FFFF00",
+      "sidebar": "#000000",
+      "sidebar_text": "#FFFF00",
+      "sidebar_border": "#FFFF00",
+      "ntp_background": "#000000",
+      "ntp_text": "#FFFF00",
+      "ntp_card_background": "#000000"
+    }
+  }
+}
