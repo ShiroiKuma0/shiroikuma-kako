@@ -4,6 +4,93 @@ Everything built on top of stock Firefox for Android (Fenix, release channel).
 Tags are `<upstream-base>+<build>`; the fork commits live on `custom`, rebased
 onto each adopted `FIREFOX_*_RELEASE` tag.
 
+## 153.0.4+019 — 2026-08-18
+
+The fork gains a second product. The base is unchanged at Firefox **153.0.4**
+(`FIREFOX_153_0_4_RELEASE`), and this release carries both an Android APK and a
+GNU/Linux `amd64` `.deb`.
+
+### A desktop browser, built from this same tree
+
+Firefox desktop and Fenix share one upstream, one version literal and one set of
+identity assets, so they now share this repository: `tools/kako/mozconfig-desktop`
+selects `browser/` into its own objdir, and the two products never meet except in
+the icon they are both drawn from. One `git fetch`, one rebase per upstream cycle,
+one build counter, one release.
+
+It is a full build rather than an artifact one, and it builds against the distro
+toolchain. `mach bootstrap` is of no use here — on Linux it installs almost
+nothing and every real toolchain comes from a taskcluster index lookup that will
+not resolve from a release-tag checkout carrying its own commits — so bootstrap
+is off and clang-20 is named explicitly. RLBox sandboxing of graphite, ogg,
+hunspell and expat stays switched on rather than being disabled for convenience.
+
+Add-on signature enforcement is off in the build, the desktop counterpart of the
+Nightly gates opened on Fenix: every enforcement site is JavaScript inside
+`omni.ja`, so self-modified extensions install without the engine being touched.
+The browser installs beside stock Firefox with its own package name, its own
+`/opt` prefix, its own WM class and — the part that took finding — its own
+profile. `MOZ_APP_REMOTINGNAME` claims in its configure help to affect the profile
+name and does not; the path comes from the vendor and basename, so without
+`MOZ_APP_BASENAME` the fork would have quietly shared stock Firefox's
+`~/.mozilla/firefox`.
+
+The `.deb` is assembled with `dpkg-deb` from the `mach package` tarball, its
+dependencies computed by `dpkg-shlibdeps` rather than a hand-written list that
+would rot.
+
+### The desktop wears the fork palette
+
+Pure black and `#FFFF00` across the chrome, popups, sidebar and New Tab page,
+from a theme that ships as a built-in add-on rather than a built-in theme —
+built-in themes install at idle-startup, after the browser has already resolved
+which theme is active, so a default pointing at one loses the race on a fresh
+profile and the fallback is written as a user preference that wins from then on.
+
+Three surfaces the theme API cannot reach get their own stylesheets. In-content
+dialogs and preferences, through a globally registered user sheet, since the
+default-browser prompt is its own document and nothing linked from the browser
+window reaches it. The New Tab page, delivered the same way because the page
+redefines every property involved and outranks a linked sheet. And the window
+frame: 火狐 draws its own titlebar, so no window manager will frame it, and the
+frame is traced here instead — dimming when the window loses focus, matching what
+the desktop's colour scheme does for every other application.
+
+Sponsored shortcuts, sponsored stories and the weather widget are off by default.
+
+### Add-ons install from a file
+
+Fenix installs only what a configured AMO collection offers, and a collection can
+only hold add-ons published and reviewed on AMO. Personal extensions were
+therefore unreachable on the phone. The add-ons screen now takes an `.xpi` off the
+device: push one to `/sdcard/tmp/`, pick it, done.
+
+Nothing in the engine needed changing. GeckoView has always documented its
+installer as accepting a local `file:` URI, and android-components already exposed
+the call with a from-file installation method; Fenix simply never asked. The
+picked document is staged into the app's own cache first, since the engine cannot
+read the `content:` URI a picker returns, and the copy is removed once the install
+settles.
+
+This removes the requirement to be *listed*, not the requirement to be *signed* —
+the release engine still demands a Mozilla signature, and an unlisted one
+satisfies it. Extensions can now be private and unreviewed and still run on both
+products.
+
+### A sync that never starts says so
+
+The toolbar account button could spin for a full minute with several tabs open and
+then return to the avatar in silence, having synced nothing — which reads exactly
+like a sync that worked.
+
+The account manager drops a sync request with nothing but a log line when it is
+not in a connected state, and its state cannot be inspected beforehand. Nothing
+then moves the sync status, so the button had no way of knowing. It now checks
+shortly afterwards whether a sync actually started, which catches every cause of a
+dropped request rather than one guessed at, and a lapsed deadline reports a
+failure with a message instead of pretending success. The deadline also stopped
+sharing a job with the flash it was supposed to outlive.
+
 ## 153.0.4+003 — 2026-08-17
 
 Fork work only; the base is unchanged at Firefox **153.0.4**
