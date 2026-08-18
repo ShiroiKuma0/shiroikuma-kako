@@ -387,6 +387,34 @@ BrowserGlue.prototype = {
   // runs on startup, before the first command line handler is invoked
   // (i.e. before the first window is opened)
   _beforeUIStartup: function BG__beforeUIStartup() {
+    // Fork: 白い熊 火狐 -- register the dialog/in-content palette globally.
+    //
+    // Chrome dialogs are their own documents (the default browser prompt is
+    // chrome://global/content/commonDialog.xhtml in a tab dialog), so the
+    // stylesheet linked from browser.xhtml cannot reach them. A USER_SHEET
+    // applies to every chrome document at once. Registered here rather than in
+    // a window hook so dialogs opened before the first browser window are
+    // styled too.
+    try {
+      const sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(
+        Ci.nsIStyleSheetService
+      );
+      for (const sheet of [
+        "chrome://branding/content/kako-dialog.css",
+        // New Tab. Also linked from the newtab package, but the link loses to
+        // the page's own rules; a user sheet outranks author !important and does
+        // not depend on which document about:newtab happens to load.
+        "chrome://branding/content/kako-newtab-user.css",
+      ]) {
+        const uri = Services.io.newURI(sheet);
+        if (!sss.sheetRegistered(uri, sss.USER_SHEET)) {
+          sss.loadAndRegisterSheet(uri, sss.USER_SHEET);
+        }
+      }
+    } catch (e) {
+      console.error("kako: failed to register kako-dialog.css", e);
+    }
+
     lazy.SessionStartup.init();
 
     // check if we're in safe mode
