@@ -32,6 +32,13 @@
       rel="stylesheet"
       href="chrome://newtab/content/css/activity-stream.css"
     />
+    <!-- Fork: 白い熊 火狐 New Tab overrides. Last so it wins on cascade order,
+         and in the newtab package so it is reachable from the privilegedabout
+         content process. -->
+    <link
+      rel="stylesheet"
+      href="chrome://newtab/content/css/kako-newtab.css"
+    />
   </head>
   <body class="activity-stream">
     <div id="root"></div>
