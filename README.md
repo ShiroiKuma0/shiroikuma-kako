@@ -24,7 +24,7 @@ Extensions also install **straight from a file**. A collection can only hold add
 ---
 
 ## 🖥 The same browser on the desktop
-A GNU/Linux `amd64` build, packaged as a `.deb` and wearing the same pure black and `#FFFF00`. Chrome, popups, sidebar and the New Tab page are themed by a built-in theme, in-content dialogs and preferences by a globally registered stylesheet, and the window itself is traced with a yellow frame that dims when it loses focus — 火狐 draws its own titlebar, so no window manager will do it for you. Add-on signature enforcement is switched off in the build, which is what makes a self-modified extension installable without a round trip through AMO. It installs alongside stock Firefox with its own package name, its own `/opt` prefix and its own profile, and shares this repository, this version number and this icon with the phone.
+A GNU/Linux `amd64` build, packaged as a `.deb` and wearing the same pure black and `#FFFF00`. Chrome, popups, sidebar and the New Tab page are themed by a built-in theme, in-content dialogs and preferences by a globally registered stylesheet, and the window itself is traced with a yellow frame that dims when it loses focus — 白い熊 火狐 draws its own titlebar, so no window manager will do it for you. Add-on signature enforcement is switched off in the build, which is what makes a self-modified extension installable without a round trip through AMO. It installs alongside stock Firefox with its own package name, its own `/opt` prefix and its own profile, and shares this repository, this version number and this icon with the phone.
 
 ---
 
@@ -54,7 +54,7 @@ Your Mozilla-account avatar sits on the toolbar, left of the menu, and a tap on 
 ---
 
 ## 📄 Local HTML files open in the browser
-Tap a saved page in a file manager and 火狐 is in the "open with" list — and actually renders it. Stock Fenix claims `text/html` only for `http(s)` URLs, and its engine reads `content://` for PDFs and nothing else, so a local `.html` file finds no handler at all. Both gates are opened here. The document still reaches the engine through the `content://` URI the file manager granted, so a caller has to hold the file rather than merely name a path.
+Tap a saved page in a file manager and 白い熊 火狐 is in the "open with" list — and actually renders it. Stock Fenix claims `text/html` only for `http(s)` URLs, and its engine reads `content://` for PDFs and nothing else, so a local `.html` file finds no handler at all. Both gates are opened here. The document still reaches the engine through the `content://` URI the file manager granted, so a caller has to hold the file rather than merely name a path.
 
 ---
 
