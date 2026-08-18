@@ -20,6 +20,18 @@
     <link rel="localization" href="branding/brand.ftl" />
     <link rel="localization" href="toolkit/branding/brandings.ftl" />
     <link rel="localization" href="browser/newtab/newtab.ftl" />
+    <!-- Fork: 白い熊 火狐 New Tab overrides.
+         about:newtab picks its document at runtime in
+         AboutNewTabRedirector.sys.mjs#defaultURL: this host document when
+         browser.newtabpage.activity-stream.remote-renderer.enabled is true, and
+         prerendered/activity-stream.html otherwise. That pref can be flipped
+         remotely, so BOTH documents must carry the link or the theming appears
+         to come and go on its own. The renderer injects its own stylesheet at
+         runtime, after this one -- hence the !important throughout the file. -->
+    <link
+      rel="stylesheet"
+      href="chrome://newtab/content/css/kako-newtab.css"
+    />
   </head>
   <body>
     <div id="root"></div>
