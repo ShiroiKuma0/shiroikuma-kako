@@ -81,6 +81,11 @@
     <string name="kako_sync_running" translatable="false">同期中…</string>
     <string name="kako_sync_done" translatable="false">同期しました</string>
     <string name="kako_sync_failed" translatable="false">同期に失敗しました</string>
+    <string name="kako_sync_not_started" translatable="false">同期を開始できませんでした</string>
+    <string name="kako_sync_timeout" translatable="false">同期が応答しませんでした</string>
+    <string name="kako_install_addon_from_file" translatable="false">ファイルから拡張機能をインストール</string>
+    <string name="kako_install_addon_from_file_read_failed" translatable="false">ファイルを読み込めませんでした</string>
+    <string name="kako_install_addon_from_file_failed" translatable="false">拡張機能をインストールできませんでした</string>
 
     <string name="kako_color_inherit" translatable="false">解除（継承に戻す）</string>
     <string name="kako_reset" translatable="false">既定値に戻す</string>
