@@ -98,7 +98,8 @@ window,
 }
 
 /* ---------------------------------------------------------------------------
- * Checkboxes: an undecided box is dim yellow, and its whole row is a pill.
+ * Checkboxes and radio buttons: an undecided control is dim yellow, and its
+ * whole row is a pill.
  *
  * A checkbox in a doorhanger -- "Allow extension to run in private windows",
  * "Pin extension to toolbar" -- is a decision still to be made, and it used to
@@ -109,21 +110,29 @@ window,
  * fills the box with solid yellow and brings the pill's ring to full yellow:
  * decision made.
  *
- * TWO widget families, both used side by side by the extension prompts:
+ * A radio group is the same kind of open question, so it gets the identical
+ * row. Only the control differs: a circle, and choosing it fills the circle
+ * yellow around a black centre -- the same "solid yellow, black mark" as the
+ * ticked checkbox, so the two states read alike across a dialog.
+ *
+ * TWO widget families each, both used side by side by the extension prompts:
  *
  *   moz-checkbox   -- the design-system element (Lit + shadow DOM). Its
- *                     `checked` property is reflected, so the host matches
+ *   moz-radio         `checked` property is reflected, so the host matches
  *                     [checked]; the inner control is a plain
- *                     input[type=checkbox] inside the shadow root, which a USER
- *                     sheet reaches (user and UA rules apply inside shadow
- *                     trees; author rules of the outer document do not).
- *   checkbox       -- the XUL element, whose box is an <image class=
- *                     "checkbox-check"> that inherits the checked attribute
- *                     from its parent, hence .checkbox-check[checked].
+ *                     input[type=checkbox|radio] inside the shadow root, which
+ *                     a USER sheet reaches (user and UA rules apply inside
+ *                     shadow trees; author rules of the outer document do not).
+ *   checkbox       -- the XUL elements, whose box is an <image class=
+ *   radio             "checkbox-check"/"radio-check"> inheriting the state
+ *                     attribute from its parent -- `checked` for a checkbox,
+ *                     `selected` for a radio (radiogroup sets it, see
+ *                     toolkit/content/widgets/radio.js).
  *
- * Both boxes theme themselves (`appearance: auto; -moz-theme: non-native`),
- * which paints a grey/white square no palette variable can reach --
- * `appearance: none` is what hands the painting back to us.
+ * All four controls theme themselves (`appearance: auto` with
+ * `-moz-default-appearance: checkbox|radio`), which paints a grey/white square
+ * no palette variable can reach -- `appearance: none` is what hands the
+ * painting back to us.
  *
  * `width: fit-content` keeps the pill hugging its label instead of stretching
  * across the panel: doorhanger content is a flex column, whose items would
@@ -144,9 +153,11 @@ window,
     --kako-hover-fill: rgba(255, 255, 0, 0.16);
   }
 
-  /* The row: box and label enclosed in one pill. */
+  /* The row: control and label enclosed in one pill. */
   checkbox,
-  moz-checkbox {
+  moz-checkbox,
+  radio,
+  moz-radio {
     box-sizing: border-box !important;
     width: fit-content !important;
     padding-block: 4px !important;
@@ -158,24 +169,32 @@ window,
   }
 
   checkbox:hover,
-  moz-checkbox:hover {
+  moz-checkbox:hover,
+  radio:hover,
+  moz-radio:hover {
     border-color: var(--kako-decided-stroke) !important;
     background-color: var(--kako-hover-fill) !important;
   }
 
   checkbox:focus-visible,
-  moz-checkbox:focus-within {
+  moz-checkbox:focus-within,
+  radio[focused],
+  moz-radio:focus-within {
     border-color: var(--kako-decided-stroke) !important;
   }
 
   checkbox[checked],
-  moz-checkbox[checked] {
+  moz-checkbox[checked],
+  radio[selected],
+  moz-radio[checked] {
     border-color: var(--kako-decided-stroke) !important;
     background-color: var(--kako-decided-fill) !important;
   }
 
   checkbox[disabled],
-  moz-checkbox:state(disabled) {
+  moz-checkbox:state(disabled),
+  radio[disabled],
+  moz-radio[disabled] {
     opacity: 0.55 !important;
   }
 
@@ -186,9 +205,11 @@ window,
     opacity: 1 !important;
   }
 
-  /* The box itself. */
+  /* The control itself. */
   .checkbox-check,
-  input[type="checkbox"] {
+  .radio-check,
+  input[type="checkbox"],
+  input[type="radio"] {
     appearance: none !important;
     box-sizing: border-box !important;
     width: 16px !important;
@@ -219,5 +240,67 @@ window,
     border-color: var(--kako-decided-stroke) !important;
     background-color: var(--kako-decided-stroke) !important;
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1.5 4.5h8" stroke="%23000000" stroke-width="2" stroke-linecap="round"/></svg>') !important;
+  }
+
+  /* A radio is round, and its chosen state is the same solid yellow with a
+   * black mark -- here a punched-out centre rather than a checkmark. */
+  .radio-check,
+  input[type="radio"] {
+    border-radius: 50% !important;
+  }
+
+  /* The XUL radio's box has no inline margin of its own (radio.css sets only
+   * `margin: 1px 0`, where the checkbox has --checkbox-margin-inline), so
+   * without this the label butts straight against the circle. */
+  .radio-check {
+    margin-inline-end: var(--checkbox-margin-inline, 8px) !important;
+  }
+
+  .radio-check[selected],
+  input[type="radio"]:checked {
+    border-color: var(--kako-decided-stroke) !important;
+    background-color: var(--kako-decided-stroke) !important;
+    background-image: radial-gradient(circle at 50%, #000000 3.5px, transparent 3.5px) !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Message bars: black with a yellow ring, never the design system's blue.
+ *
+ * The "<extension> has been removed. [Undo]" bars on about:addons arrived as
+ * solid information-blue slabs, because moz-message-bar paints itself from
+ * --background-color-information and its per-type variants -- tokens declared
+ * on :host inside its own shadow tree, which the palette set at the top of this
+ * file never reaches.
+ *
+ * Overriding them on the HOST element works where a shadow-piercing selector
+ * would not: custom properties inherit into the shadow tree, and a user sheet's
+ * !important outranks author !important whatever @layer the token file uses
+ * (layers order rules within an origin, never across origins).
+ *
+ * Every severity is flattened to the same black-and-yellow, including the
+ * -warning/-critical/-success variants that :host([type=...]) swaps in. The
+ * icon still says which kind of message it is.
+ *
+ * notification-message is the same widget under another name: notificationbox
+ * subclasses MozMessageBar for the bars that slide down from the toolbar, and a
+ * tag selector has to name both.
+ * ------------------------------------------------------------------------ */
+
+@-moz-document url-prefix("chrome://"), url-prefix("about:") {
+  moz-message-bar,
+  notification-message {
+    --message-bar-background-color: #000000 !important;
+    --message-bar-background-color-critical: #000000 !important;
+    --message-bar-background-color-success: #000000 !important;
+    --message-bar-background-color-warning: #000000 !important;
+    --message-bar-icon-background-color: #000000 !important;
+    --message-bar-icon-background-color-critical: #000000 !important;
+    --message-bar-icon-background-color-success: #000000 !important;
+    --message-bar-icon-background-color-warning: #000000 !important;
+    --message-bar-border-color: #FFFF00 !important;
+    --message-bar-border-width: 1px !important;
+    --message-bar-text-color: #FFFF00 !important;
+    --message-bar-icon-color: #FFFF00 !important;
   }
 }
