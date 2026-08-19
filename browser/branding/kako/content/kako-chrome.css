@@ -43,6 +43,19 @@
   display: none;
 }
 
+/* The folder-with-plus on "Install Add-on From File…", first entry of the
+ * extensions button's context menu.
+ *
+ * kako-folder-add.svg paints itself with context-fill, and nothing in the shared
+ * menu stylesheet hands a menuitem icon its context properties -- .menu-icon
+ * gets a size and a margin and no fill at all, so the icon arrived invisible.
+ * The about:addons copy of the same icon works because moz-button sets these
+ * two for it. */
+#toolbar-context-kako-install-addon-from-file > .menu-icon {
+  -moz-context-properties: fill, fill-opacity;
+  fill: currentColor;
+}
+
 /* The fork's full version, last line of the app menu (appmenu-viewcache.inc.xhtml,
  * filled in by PanelUI._onMainViewShow). Indented to the same start as the menu
  * items above it and dimmed, so it reads as a stamp rather than a command. */
