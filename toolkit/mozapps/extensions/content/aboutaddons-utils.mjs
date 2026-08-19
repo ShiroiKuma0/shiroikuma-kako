@@ -327,6 +327,27 @@ export function isPending(addon, action) {
   return !!(addon.pendingOperations & amAction);
 }
 
+/**
+ * Fork (白い熊 火狐): was this add-on installed from a file on disk?
+ *
+ * Every add-on 白い熊 runs is unlisted and arrives as an .xpi, so the ones that
+ * came from a file are the ones being worked on -- they are listed first (see
+ * AddonList.sortByFn).
+ *
+ * `sourceURI` is the signal because it is the same one on both products: it is
+ * persisted with the add-on (PROP_JSON_FIELDS in XPIDatabase), so it survives a
+ * restart, and Android reads the very same value back as `Addon.downloadUrl`
+ * (GeckoViewWebExtension exports `downloadUrl: sourceURI?.displaySpec`). The
+ * install path does not matter -- file picker, drag and drop or a temporary
+ * install all leave a file: URI behind, and all three are "from a file".
+ *
+ * @param {AddonWrapper} addon The add-on to test.
+ * @returns {boolean} true when the add-on came from a local file.
+ */
+export function isInstalledFromFile(addon) {
+  return addon.sourceURI?.scheme === "file";
+}
+
 export async function installAddonsFromFilePicker() {
   let [dialogTitle, filterName] = await document.l10n.formatMessages([
     { id: "addon-install-from-file-dialog-title" },

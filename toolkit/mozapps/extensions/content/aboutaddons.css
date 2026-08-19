@@ -360,6 +360,23 @@ theme-preview {
   font-weight: normal;
 }
 
+/* Fork (白い熊 火狐): the installed version, under the name and above the
+ * description. Smaller than the description so it reads as a stamp on the name
+ * rather than a second sentence about the add-on. */
+.addon-version {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-color-deemphasized);
+  font-weight: normal;
+}
+
+/* The expanded card carries addon-details, which has a Version row of its own
+ * -- the line above exists to spare the click that opens it, so it goes away
+ * once the click has happened. */
+addon-card[expanded] .addon-version {
+  display: none;
+}
+
 /* Prevent the content from wrapping unless expanded. */
 addon-card:not([expanded]) .card-contents {
   /* We're hiding the content when it's too long, so we need to define the
@@ -370,6 +387,7 @@ addon-card:not([expanded]) .card-contents {
 
 /* Ellipsize if the content is too long. */
 addon-card:not([expanded]) .addon-name,
+addon-card:not([expanded]) .addon-version,
 addon-card:not([expanded]) .addon-description {
   text-overflow: ellipsis;
   overflow-x: hidden;
