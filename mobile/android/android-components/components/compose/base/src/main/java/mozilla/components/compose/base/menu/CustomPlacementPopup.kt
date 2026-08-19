@@ -9,6 +9,7 @@ import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.rememberTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.LayoutScopeMarker
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -43,6 +44,9 @@ import kotlin.math.max
 import kotlin.math.min
 
 private const val ELEVATION = 6
+
+// Fork (白い熊 火狐): width of the ring drawn around every toolbar popup.
+private const val BORDER_WIDTH = 1
 private const val ANIMATION_DURATION_MS = 200
 private const val ANIMATION_ORIGIN_START_EDGE = 0f
 private const val ANIMATION_ORIGIN_END_EDGE = 1f
@@ -205,6 +209,19 @@ private fun CustomPlacementPopupContent(
         shape = MaterialTheme.shapes.small,
         modifier = Modifier.graphicsLayer { graphicsLayerAnim() },
         elevation = CardDefaults.cardElevation(defaultElevation = ELEVATION.dp),
+        // Fork (白い熊 火狐): trace the popup, the way every other surface in this
+        // fork is traced rather than filled.
+        //
+        // On a black theme elevation says nothing -- the card's surface tint is
+        // invisible against the page behind it, so a toolbar menu arrived as
+        // floating text with no edge at all. onSurface is the colour its own
+        // labels and icons already use, so the ring is the fork's yellow here and
+        // whatever the theme says anywhere else.
+        //
+        // This is the one popup every Compose toolbar menu is built from (the
+        // long-press extension menu, the tab counter, the search selector, the
+        // page-origin menu), so they all get the same edge from this one line.
+        border = BorderStroke(BORDER_WIDTH.dp, MaterialTheme.colorScheme.onSurface),
     ) {
         CustomPlacementPopup.content()
     }
