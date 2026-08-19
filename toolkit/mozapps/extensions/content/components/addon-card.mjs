@@ -171,6 +171,12 @@ export class AddonCard extends AboutAddonsHTMLElement {
                 ></moz-button>
               </div>
               <mlmodel-card-list-additions></mlmodel-card-list-additions>
+              <!-- Fork (白い熊 火狐): the installed version, on its own line
+                   under the name. Upstream shows it only after the card is
+                   expanded, which is a click away for every add-on; 白い熊
+                   sideloads unlisted .xpi files and needs to read off which
+                   build is actually installed at a glance. -->
+              <span class="addon-version"></span>
               <span class="addon-description" tabindex="-1"></span>
             </div>
           </div>
@@ -613,6 +619,17 @@ export class AddonCard extends AboutAddonsHTMLElement {
       if (badge) {
         badge.hidden = false;
       }
+    }
+
+    // Fork (白い熊 火狐): update the installed version shown under the name.
+    // Hidden rather than emptied when an add-on carries no version, so the line
+    // does not leave a gap on the types that have none.
+    let versionEl = card.querySelector(".addon-version");
+    versionEl.hidden = !addon.version;
+    if (addon.version) {
+      document.l10n.setAttributes(versionEl, "kako-addon-card-version", {
+        version: addon.version,
+      });
     }
 
     // Update description.
