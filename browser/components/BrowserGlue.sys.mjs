@@ -107,6 +107,23 @@ if (AppConstants.ENABLE_WEBDRIVER) {
 
 const PREF_PDFJS_ISDEFAULT_CACHE_STATE = "pdfjs.enabledCache.state";
 
+// Fork: the 白い熊 火狐 switch that decides whether extensions are fenced off
+// Mozilla's own hosts, and the upstream list it empties. See
+// browser/branding/kako/pref/firefox-branding.js.
+const KAKO_IGNORE_RESTRICTED_DOMAINS_PREF =
+  "kako.extensions.ignoreRestrictedDomains";
+const KAKO_RESTRICTED_DOMAINS_PREF =
+  "extensions.webextensions.restrictedDomains";
+// addons.mozilla.org is fenced a SECOND time, and not by that list:
+// WebExtensionPolicy::IsRestrictedURI also returns true for any host where
+// AddonManagerWebAPI::IsValidSite does, and MOZ_AMO_HOSTNAME is compiled in.
+// The only lever over that check from outside the engine is this pref, which
+// Tor Browser uses to hide mozAddonManager -- and which, by making IsValidSite
+// return false, lifts the AMO restriction as a side effect. Emptying the domain
+// list alone leaves AMO blocked, which is exactly what it did.
+const KAKO_BLOCK_ADDON_MANAGER_PREF =
+  "privacy.resistFingerprinting.block_mozAddonManager";
+
 ChromeUtils.defineLazyGetter(
   lazy,
   "WeaveService",
@@ -384,6 +401,31 @@ BrowserGlue.prototype = {
     lazy.ContentBlockingPrefs.uninit();
   },
 
+  /**
+   * Fork: mirror the 白い熊 火狐 switch onto the Gecko list ExtensionPolicyService
+   * actually reads.
+   *
+   * On, the list is emptied on the USER branch, which is what lets extensions run on
+   * AMO, SUMO and the rest. Off clears that user value instead of writing a copy of
+   * the stock list back, so the DEFAULT branch stays upstream's -- the list can grow
+   * or shrink on a rebase without this fork holding a stale duplicate.
+   */
+  _kakoApplyRestrictedDomains() {
+    try {
+      if (
+        Services.prefs.getBoolPref(KAKO_IGNORE_RESTRICTED_DOMAINS_PREF, true)
+      ) {
+        Services.prefs.setStringPref(KAKO_RESTRICTED_DOMAINS_PREF, "");
+        Services.prefs.setBoolPref(KAKO_BLOCK_ADDON_MANAGER_PREF, true);
+      } else {
+        Services.prefs.clearUserPref(KAKO_RESTRICTED_DOMAINS_PREF);
+        Services.prefs.clearUserPref(KAKO_BLOCK_ADDON_MANAGER_PREF);
+      }
+    } catch (e) {
+      console.error("kako: failed to apply restrictedDomains", e);
+    }
+  },
+
   // runs on startup, before the first command line handler is invoked
   // (i.e. before the first window is opened)
   _beforeUIStartup: function BG__beforeUIStartup() {
@@ -414,6 +456,14 @@ BrowserGlue.prototype = {
     } catch (e) {
       console.error("kako: failed to register kako-dialog.css", e);
     }
+
+    // Fork: apply the restricted-domains switch, and keep applying it whenever the
+    // about:preferences checkbox is flipped. ExtensionPolicyService observes
+    // restrictedDomains itself, so a write lands on the next navigation.
+    this._kakoApplyRestrictedDomains();
+    Services.prefs.addObserver(KAKO_IGNORE_RESTRICTED_DOMAINS_PREF, {
+      observe: () => this._kakoApplyRestrictedDomains(),
+    });
 
     lazy.SessionStartup.init();
 

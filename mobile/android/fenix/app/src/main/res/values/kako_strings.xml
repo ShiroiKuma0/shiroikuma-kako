@@ -135,4 +135,8 @@
     <string name="kako_automation_files_title" translatable="false">All files access</string>
     <string name="kako_automation_files_body" translatable="false">Without All-files access this app cannot write a backup to the directory an automation task asks for, and falls back to the export directory set above.\n\nGrant it now?</string>
     <string name="kako_automation_files_grant" translatable="false">Open settings</string>
+
+    <!-- Extensions on Mozilla's own sites — the restrictedDomains fence, opened by default. -->
+    <string name="preferences_kako_ignore_restricted_domains" translatable="false">Run extensions on restricted sites</string>
+    <string name="preferences_kako_ignore_restricted_domains_summary" translatable="false">Lets extensions work on addons.mozilla.org, support.mozilla.org and the account and sync servers as they do on any other site.</string>
 </resources>

@@ -204,6 +204,16 @@
             app:iconSpaceReserved="false"
             android:title="@string/preferences_customize_extension_collection" />
 
+        <!-- Fork: extensions are fenced off Mozilla's own hosts by the Gecko pref
+             extensions.webextensions.restrictedDomains. On by default here, which
+             empties that list. See KakoRestrictedDomains. -->
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="@string/pref_key_kako_ignore_restricted_domains"
+            app:iconSpaceReserved="false"
+            android:title="@string/preferences_kako_ignore_restricted_domains"
+            android:summary="@string/preferences_kako_ignore_restricted_domains_summary" />
+
         <androidx.preference.Preference
             android:key="@string/pref_key_link_sharing"
             app:iconSpaceReserved="false"
