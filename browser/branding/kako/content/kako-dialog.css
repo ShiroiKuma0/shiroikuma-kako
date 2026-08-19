@@ -96,3 +96,128 @@ window,
 #commonDialog label {
   color: #FFFF00 !important;
 }
+
+/* ---------------------------------------------------------------------------
+ * Checkboxes: an undecided box is dim yellow, and its whole row is a pill.
+ *
+ * A checkbox in a doorhanger -- "Allow extension to run in private windows",
+ * "Pin extension to toolbar" -- is a decision still to be made, and it used to
+ * read as a stray white square below the prose. The unticked box is now drawn
+ * in yellow at low alpha (visible, but plainly not chosen yet) and the row that
+ * carries it -- box AND label together -- is enclosed in a pill, so the eye
+ * catches "there is something to decide here" before it reads a word. Ticking
+ * fills the box with solid yellow and brings the pill's ring to full yellow:
+ * decision made.
+ *
+ * TWO widget families, both used side by side by the extension prompts:
+ *
+ *   moz-checkbox   -- the design-system element (Lit + shadow DOM). Its
+ *                     `checked` property is reflected, so the host matches
+ *                     [checked]; the inner control is a plain
+ *                     input[type=checkbox] inside the shadow root, which a USER
+ *                     sheet reaches (user and UA rules apply inside shadow
+ *                     trees; author rules of the outer document do not).
+ *   checkbox       -- the XUL element, whose box is an <image class=
+ *                     "checkbox-check"> that inherits the checked attribute
+ *                     from its parent, hence .checkbox-check[checked].
+ *
+ * Both boxes theme themselves (`appearance: auto; -moz-theme: non-native`),
+ * which paints a grey/white square no palette variable can reach --
+ * `appearance: none` is what hands the painting back to us.
+ *
+ * `width: fit-content` keeps the pill hugging its label instead of stretching
+ * across the panel: doorhanger content is a flex column, whose items would
+ * otherwise be stretched by `align-items: stretch`. A definite cross size opts
+ * out of that stretching, and still lets a long label wrap inside the pill.
+ *
+ * Scoped with @-moz-document because this file is registered as a user sheet,
+ * which applies to EVERY document -- web pages included. Unscoped, these rules
+ * would restyle the checkboxes of every site 白い熊 visits.
+ * ------------------------------------------------------------------------ */
+
+@-moz-document url-prefix("chrome://"), url-prefix("about:") {
+  :root {
+    --kako-undecided-stroke: rgba(255, 255, 0, 0.45);
+    --kako-undecided-fill: rgba(255, 255, 0, 0.06);
+    --kako-decided-stroke: #FFFF00;
+    --kako-decided-fill: rgba(255, 255, 0, 0.12);
+    --kako-hover-fill: rgba(255, 255, 0, 0.16);
+  }
+
+  /* The row: box and label enclosed in one pill. */
+  checkbox,
+  moz-checkbox {
+    box-sizing: border-box !important;
+    width: fit-content !important;
+    padding-block: 4px !important;
+    padding-inline: 10px 14px !important;
+    border: 1px solid var(--kako-undecided-stroke) !important;
+    border-radius: 999px !important;
+    background-color: var(--kako-undecided-fill) !important;
+    color: #FFFF00 !important;
+  }
+
+  checkbox:hover,
+  moz-checkbox:hover {
+    border-color: var(--kako-decided-stroke) !important;
+    background-color: var(--kako-hover-fill) !important;
+  }
+
+  checkbox:focus-visible,
+  moz-checkbox:focus-within {
+    border-color: var(--kako-decided-stroke) !important;
+  }
+
+  checkbox[checked],
+  moz-checkbox[checked] {
+    border-color: var(--kako-decided-stroke) !important;
+    background-color: var(--kako-decided-fill) !important;
+  }
+
+  checkbox[disabled],
+  moz-checkbox:state(disabled) {
+    opacity: 0.55 !important;
+  }
+
+  /* Doorhanger checkboxes deemphasize their label to 80% opacity
+   * (toolkit/themes/shared/popupnotification.css). Inside a pill that reads as
+   * "already dealt with", which is the opposite of the point. */
+  .popup-notification-checkbox > .checkbox-label-box > .checkbox-label {
+    opacity: 1 !important;
+  }
+
+  /* The box itself. */
+  .checkbox-check,
+  input[type="checkbox"] {
+    appearance: none !important;
+    box-sizing: border-box !important;
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    min-height: 16px !important;
+    border: 1.5px solid var(--kako-undecided-stroke) !important;
+    border-radius: 4px !important;
+    background-color: var(--kako-undecided-fill) !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    background-size: 11px 9px !important;
+  }
+
+  /* Ticked: solid yellow, black checkmark. The glyph is moz-checkbox-icon.svg
+   * inlined as a data: URI with the stroke already black, rather than the
+   * chrome:// file plus -moz-context-properties, so it cannot depend on which
+   * package a given chrome document may load. */
+  .checkbox-check[checked],
+  input[type="checkbox"]:checked {
+    border-color: var(--kako-decided-stroke) !important;
+    background-color: var(--kako-decided-stroke) !important;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M9.5 1 4 7.5l-3-3" stroke="%23000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>') !important;
+  }
+
+  /* Partially ticked (a "select all" over a half-chosen list): a dash. */
+  input[type="checkbox"]:indeterminate {
+    border-color: var(--kako-decided-stroke) !important;
+    background-color: var(--kako-decided-stroke) !important;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1.5 4.5h8" stroke="%23000000" stroke-width="2" stroke-linecap="round"/></svg>') !important;
+  }
+}
