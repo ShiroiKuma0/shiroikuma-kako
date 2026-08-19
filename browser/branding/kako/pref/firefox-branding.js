@@ -68,6 +68,23 @@ pref("browser.newtabpage.activity-stream.showWeather", false);
 // temporary-install location generates one.
 pref("xpinstall.signatures.required", false);
 
+// ...and stop about:addons scolding us about it afterwards.
+//
+// With enforcement off the add-on installs, but isCorrectlySigned() is still
+// false, so every card carried a warning bar -- "<name> could not be verified
+// for use in 白い熊 火狐. Proceed with caution." That warning is aimed at someone
+// who did not choose this; here it fires on exactly the add-ons 白い熊 built and
+// installed on purpose, on every single one of them, permanently.
+//
+// This is upstream's own escape hatch rather than a patch: getAddonMessageInfo
+// skips the bar when isUnsignedWarningMessageDisabled() is true, which needs
+// this pref AND a non-official build -- and MOZILLA_OFFICIAL is unset here,
+// since the fork does not build with Mozilla's official branding. Nothing else
+// changes: an add-on that fails signature checks is still reported everywhere
+// it matters (about:support, the install prompt), it just stops being announced
+// on the manage page forever.
+pref("extensions.ui.disableUnsignedWarnings", true);
+
 // Let extensions run on Mozilla's own hosts. Stock Firefox fences AMO, its CDN,
 // the discovery pane, SUMO and the Firefox Accounts and Sync servers off from
 // every extension at once through extensions.webextensions.restrictedDomains
