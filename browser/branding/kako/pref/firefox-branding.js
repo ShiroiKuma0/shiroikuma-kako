@@ -81,3 +81,12 @@ pref("xpinstall.signatures.required", false);
 // about:preferences exposes it under Privacy & Security. The Android product
 // carries the same switch in Settings -> Advanced.
 pref("kako.extensions.ignoreRestrictedDomains", true);
+
+// The fork's own full version -- upstream base plus this tree's build counter,
+// the exact string the APK and deb filenames carry. Gecko's own version stops at
+// the upstream base ("154.0"), which cannot tell two builds of this fork apart,
+// so the About dialog and the app menu read this instead.
+//
+// STAMPED BY tools/kako/bump-build.sh on every build, from gradle.properties.
+// Do not edit by hand -- the next bump overwrites it.
+pref("kako.version.full", "154.0+014");

@@ -23,3 +23,11 @@
 #bottomBox {
   padding: 15px 10px;
 }
+
+/* The full fork version, in the palette accent so it reads as the one fact on
+   this dialog worth checking. Both #version labels are declared in
+   aboutDialog.xhtml (MOZ_UPDATER on and off); only one is ever compiled in. */
+#version {
+  color: #ffff00;
+  font-weight: bold;
+}
