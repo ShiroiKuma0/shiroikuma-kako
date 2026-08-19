@@ -10,7 +10,7 @@ A fork of [Mozilla Firefox](https://github.com/mozilla-firefox/firefox) (release
 
 Installs **side-by-side** with stock Firefox/Beta/Nightly: app id `shiroikuma.kako` on Android, package `shiroikuma-kako` with its own `~/.mozilla/kako` profile on the desktop.
 
-**📥 Latest release: [`154.0+002`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
+**📥 Latest release: [`154.0+010`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
 
 </div>
 
@@ -19,12 +19,14 @@ Installs **side-by-side** with stock Firefox/Beta/Nightly: app id `shiroikuma.ka
 ## 🧩 Extension freedom on the release channel
 Stock Fenix locks custom AMO add-on collections behind Nightly. This fork opens those channel gates on release: point the browser at any AMO collection and install everything in it — collection extensions are AMO-signed, so release signing enforcement never objects. `about:config` and the full secret-settings menu (five taps on the About logo) are unlocked too.
 
-Extensions also install **straight from a file**. A collection can only hold add-ons published and reviewed on AMO, which locks out anything personal; the add-ons screen here takes an `.xpi` off the device instead, so an extension signed for self-distribution — private, unlisted, unreviewed — installs on the phone like any other. The desktop build goes further and requires no signature at all — signature enforcement is off in the build *and* in the fork's branding defaults — so a modified add-on can be tested unsigned and only signed when it ships. Such an xpi still has to declare its own add-on id, there being no certificate to take one from.
+Extensions also install **straight from a file, in one click**. A collection can only hold add-ons published and reviewed on AMO, which locks out anything personal; the add-ons screen here takes an `.xpi` off the device instead, so an extension signed for self-distribution — private, unlisted, unreviewed — installs on the phone like any other. Both products put it on the extensions page itself, behind a folder-with-plus button — left of the cog on the desktop, left of the overflow on the phone — rather than three clicks down a menu. The desktop build goes further and requires no signature at all — signature enforcement is off in the build *and* in the fork's branding defaults — so a modified add-on can be tested unsigned and only signed when it ships. Such an xpi still has to declare its own add-on id, there being no certificate to take one from.
 
 ---
 
 ## 🖥 The same browser on the desktop
 A GNU/Linux `amd64` build, packaged as a `.deb` and wearing the same pure black and `#FFFF00`. Chrome, popups, sidebar and the New Tab page are themed by a built-in theme, in-content dialogs and preferences by a globally registered stylesheet, and the window itself is traced with a yellow frame that dims when it loses focus — 白い熊 火狐 draws its own titlebar, so no window manager will do it for you. Add-on signature enforcement is switched off in the build, which is what makes a self-modified extension installable without a round trip through AMO. It installs alongside stock Firefox with its own package name, its own `/opt` prefix and its own profile, and shares this repository, this version number and this icon with the phone.
+
+Every control the browser draws is repainted along one rule: **a control at rest wears a dim yellow ring, and goes to full yellow the moment it is engaged.** A checkbox or radio carries its whole row — box and label together — inside a pill, so an open question is legible as one before a word of it is read; ticking fills the box solid yellow with a black mark. Dropdowns, text fields and buttons take the same pill and the same two states, with the button that commits filled solid yellow. Nothing keeps a colour from outside the palette: message bars lose their information-blue, destructive buttons their red, badges their green, promo cards their violet, and sliders, scrollbars, selection and tooltips their platform grey.
 
 ---
 
