@@ -4,6 +4,7 @@
 
 import {
   AddonManagerListenerHandler,
+  isInstalledFromFile,
   isPending,
   openAmoInTab,
   shouldSkipAnimations,
@@ -115,7 +116,24 @@ export class AddonList extends HTMLElement {
     return this.querySelector(`moz-message-bar[addon-id="${addon.id}"]`);
   }
 
+  /**
+   * Fork (白い熊 火狐): add-ons installed from a file come first, and the rest
+   * keep upstream's alphabetical order underneath them.
+   *
+   * Everything 白い熊 installs by hand is unlisted and arrives as an .xpi, so a
+   * file-installed add-on is one being worked on, while the collection fills the
+   * list with add-ons that are simply there. Sorting by name alone buried the
+   * former among the latter.
+   *
+   * This is the list's only sort, so it also orders the disabled section and the
+   * live insertion done by insertCardInto -- a card added while the page is open
+   * lands in the same place a reload would put it.
+   */
   sortByFn(aAddon, bAddon) {
+    let aFromFile = isInstalledFromFile(aAddon);
+    if (aFromFile != isInstalledFromFile(bAddon)) {
+      return aFromFile ? -1 : 1;
+    }
     return aAddon.name.localeCompare(bAddon.name);
   }
 
