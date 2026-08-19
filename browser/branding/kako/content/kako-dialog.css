@@ -415,6 +415,33 @@ window,
     --button-text-color-destructive-active: #FFFF00 !important;
   }
 
+  /* --- The address bar is not a button -------------------------------------
+   *
+   * --button-border-radius above is not read by buttons alone. The urlbar
+   * derives its own two radii from it:
+   *
+   *   --urlbar-border-radius: var(--button-border-radius)                  (urlbar.tokens.css)
+   *   --urlbarview-border-radius: calc(var(--button-border-radius) + 2px)  (urlbarview.tokens.css)
+   *
+   * At 999px that passes unnoticed while the bar is one line -- it reads as a
+   * pill, like everything else. Click it and the results list drops out of the
+   * SAME box: .urlbar-background is `inset: 0` over the whole open bar and
+   * paints both the yellow ring and the black fill, so at ~400px tall the
+   * radius clamps to half the height and the bar becomes an oval, with the page
+   * showing through where the fill is clipped away at the corners.
+   *
+   * Both are pinned back to the design system's medium radius -- the value
+   * upstream computes them from -- so the open bar is a rounded rectangle
+   * filled black to its edges. This is deliberately NOT a pill: the input rule
+   * further up already excludes the address bar by naming its input types, so
+   * the toolbar was never meant to take the pill grammar in the first place.
+   * ---------------------------------------------------------------------- */
+
+  :root {
+    --urlbar-border-radius: var(--border-radius-medium) !important;
+    --urlbarview-border-radius: calc(var(--border-radius-medium) + 2px) !important;
+  }
+
   button:not(.text-link, .toggle-button, [id="main-button"], [id="chevron-button"]) {
     appearance: none !important;
     border: 1px solid var(--kako-undecided-stroke) !important;
