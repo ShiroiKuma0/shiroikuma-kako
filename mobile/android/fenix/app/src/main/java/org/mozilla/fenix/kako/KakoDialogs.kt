@@ -29,6 +29,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import org.mozilla.fenix.R
 import java.util.Locale
+import com.google.android.material.R as materialR
 
 /**
  * Plain programmatic dialogs for the 白い熊 火狐 UI page — kept free of Fenix's
@@ -94,6 +95,46 @@ internal fun <T : Dialog> T.applyKakoBorder(): T = apply {
     stamp()
     setOnShowListener { stamp() }
     decor.post { stamp() }
+}
+
+/**
+ * The same frame for a bottom sheet: a ring on the top and the two sides, with the
+ * sheet's own rounded top corners.
+ *
+ * A sheet cannot use [applyKakoBorder]. That one hangs the ring off the decor inset to
+ * `parentPanel`, which a sheet has no equivalent of, and the ring would then be frozen
+ * where the sheet happened to be when it was stamped -- a sheet slides in, is dragged,
+ * and settles at half or full height. Here the ring is the sheet view's own foreground
+ * instead: a FrameLayout paints its foreground over every child, so it beats both the
+ * Material shape underneath and the Compose Surface that most of these sheets fill
+ * themselves with, and it follows the view for free through the slide and every drag.
+ *
+ * The bottom edge is pushed outside the sheet's bounds (and so clipped away): a sheet
+ * sits on the bottom of the screen, where a line is either invisible or a stray rule
+ * across the navigation bar.
+ *
+ * Unlike [applyKakoBorder] this does NOT take the show listener -- bottom sheet call
+ * sites do claim it (FenixDialogFragment expands the sheet from there), and taking it
+ * would leave those sheets collapsed.
+ */
+internal fun <T : Dialog> T.applyKakoSheetBorder(): T = apply {
+    val w = window ?: return@apply
+    fun stamp() {
+        val sheet = w.findViewById<View>(materialR.id.design_bottom_sheet) as? FrameLayout ?: return
+        val stroke = context.dp(2)
+        val radius = context.dp(MATERIAL_SHEET_CORNER_DP).toFloat()
+        val ring = GradientDrawable().apply {
+            // Top corners only; the bottom two are square and off-screen anyway.
+            cornerRadii = floatArrayOf(radius, radius, radius, radius, 0f, 0f, 0f, 0f)
+            setStroke(stroke, KakoTheme.color(context, KakoSlot.BORDER))
+        }
+        sheet.foregroundGravity = Gravity.FILL
+        sheet.foreground = InsetDrawable(ring, 0, 0, 0, -stroke)
+    }
+    stamp()
+    // The sheet view exists only once the dialog has built its container; if the stamp
+    // above ran too early, this one catches it. Re-stamping is idempotent.
+    w.decorView.post { stamp() }
 }
 
 /** [MaterialAlertDialogBuilder.create] plus the kako border. */
@@ -443,3 +484,9 @@ private const val TITLE_TEXT_SIZE_SP = 18f
 
 /** Material's own alert-dialog corner radius (@dimen/material_dialog_corner_radius). */
 private const val MATERIAL_DIALOG_CORNER_DP = 28
+
+/**
+ * Material's own bottom-sheet corner radius -- the shape both Widget.Material3.BottomSheet
+ * and the Compose sheets' MaterialTheme.shapes.extraLarge round their top corners with.
+ */
+private const val MATERIAL_SHEET_CORNER_DP = 28
