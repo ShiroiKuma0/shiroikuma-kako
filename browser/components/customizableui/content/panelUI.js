@@ -751,6 +751,17 @@ const PanelUI = {
       ASRouter.addImpression(message);
     }
     updateZoomUI(gBrowser.selectedBrowser);
+
+    // Fork: show the 白い熊 火狐 full version on the last line of the menu. Set
+    // here rather than in the markup because the panel is a template that is
+    // cloned on first use, and because the value is a pref, not a string id.
+    let kakoVersion = PanelMultiView.getViewNode(
+      document,
+      "appMenu-kako-version"
+    );
+    if (kakoVersion) {
+      kakoVersion.value = Services.prefs.getCharPref("kako.version.full", "");
+    }
   },
 
   _onHelpViewShow() {

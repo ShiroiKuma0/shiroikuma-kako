@@ -58,7 +58,12 @@ function init() {
   ]);
   let versionIdKey = "base";
   let versionAttributes = {
-    version: AppConstants.MOZ_APP_VERSION_DISPLAY,
+    // Fork: prefer the 白い熊 火狐 full version -- upstream base plus this tree's
+    // build counter, the string the deb filename carries. MOZ_APP_VERSION_DISPLAY
+    // is only the upstream base and cannot tell two builds of this fork apart.
+    version:
+      Services.prefs.getCharPref("kako.version.full", "") ||
+      AppConstants.MOZ_APP_VERSION_DISPLAY,
   };
 
   let arch = Services.sysinfo.get("arch");

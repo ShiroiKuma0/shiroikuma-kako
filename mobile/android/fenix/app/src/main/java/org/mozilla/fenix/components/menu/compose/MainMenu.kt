@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -345,7 +346,40 @@ fun MainMenu(
                 onQuitMenuClick = onQuitMenuClick,
             )
         }
+
+        KakoVersionLine()
     }
+}
+
+/**
+ * Fork: the 白い熊 火狐 full version, on the last line of the menu -- the desktop
+ * product shows the same string at the bottom of its app menu.
+ *
+ * Read from the package manager, not BuildConfig: app/build.gradle overrides the
+ * versionName per output (customBaseVersionName + customBuildNumber), which reaches
+ * the manifest but leaves BuildConfig.VERSION_NAME on the generated debug string.
+ */
+@Composable
+private fun KakoVersionLine() {
+    val context = LocalContext.current
+    val version = remember(context) {
+        runCatching {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        }.getOrNull().orEmpty()
+    }
+
+    if (version.isEmpty()) {
+        return
+    }
+
+    Text(
+        text = version,
+        color = MaterialTheme.colorScheme.primary,
+        style = MaterialTheme.typography.bodySmall,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+    )
 }
 
 @Composable
