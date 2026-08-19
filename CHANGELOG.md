@@ -5,6 +5,70 @@ Everything built on top of stock Firefox (release channel) — the Android brows
 `<upstream-base>+<build>`; the fork commits live on `custom`, rebased onto each
 adopted `FIREFOX_*_RELEASE` tag, and one tag covers both products.
 
+## 154.0+014 — 2026-08-19
+
+Both products on the same Firefox **154.0** base. Extensions are let off the
+sites Mozilla fences them away from, and both products finally say which build
+of this fork you are actually running.
+
+### Extensions run on Mozilla's own sites
+
+Stock Firefox blocks every extension on eleven of Mozilla's own hosts at once —
+`addons.mozilla.org`, its CDN, the discovery pane, `support.mozilla.org`, and the
+Firefox Accounts and Sync servers. It is a blanket ban: no extension is granted
+an exception, not even one installed by hand, so a userstyle or a userscript
+stops working the moment 白い熊 lands on any of them.
+
+A switch now takes the fence down, on by default, on both products — desktop in
+about:preferences under Privacy & Security, Android in Settings → Advanced, both
+labelled "Run extensions on restricted sites".
+
+The fence turned out to be **two** independent mechanisms, which is why the first
+attempt at this looked like it worked and did not. One is the pref list
+`extensions.webextensions.restrictedDomains`, read by `ExtensionPolicyService`.
+The other is `AddonManagerWebAPI::IsValidSite`, consulted separately by
+`WebExtensionPolicy::IsRestrictedURI`, with the AMO hostname compiled into the
+engine — so emptying the list leaves the one host this fork exists to work with
+still blocked. The second check is lifted through
+`privacy.resistFingerprinting.block_mozAddonManager`, Tor Browser's pref for
+hiding `mozAddonManager`, which makes `IsValidSite` return false as a side
+effect. The cost is that AMO's "Add to Firefox" button falls back to a plain XPI
+link and the normal install prompt; turning the setting off restores both prefs.
+
+Doing this by pref rather than by patching the C++ is what lets Android have the
+feature at all — the engine ships prebuilt in the GeckoView artifact, out of
+reach of an artifact build. Fenix writes the same two prefs through
+`Engine.setBrowserPref` instead. On the desktop `BrowserGlue` applies them at
+startup and re-applies whenever the checkbox is flipped, which
+`ExtensionPolicyService` picks up on the next navigation without a restart.
+
+The upstream list itself is never copied: it is emptied on the USER branch and
+left intact on the DEFAULT branch, so it stays upstream's to change on every
+rebase, and switching the setting off clears the user value rather than writing
+a stale duplicate back.
+
+### The full version, where you can see it
+
+Gecko's version is the upstream base alone — `154.0` — which cannot tell two
+builds of this fork apart, and it is the build counter that identifies what is
+installed. The About dialog said `154.0`, the app menus said nothing, and
+neither matched the APK or deb filename that produced them.
+
+The real string now appears in three places: the desktop About dialog (in the
+palette accent, since it is the one fact on that dialog worth checking), the
+last line of the desktop app menu, and the last line of the Android menu. It
+travels in a pref stamped by `tools/kako/bump-build.sh` at the moment that
+script burns the counter — same script, same source of truth as
+`gradle.properties`, so the two cannot drift. Android reads its own
+`versionName` from the package manager rather than `BuildConfig`, whose value
+the fork's per-output override never reaches.
+
+### The About dialog stops reporting a non-existent update
+
+"白い熊 火狐 is being updated by another instance" is gone. This fork ships no
+update server, so the line said nothing about a build installed by hand — it
+merely reported that some other process held a lock that will never be used.
+
 ## 154.0+010 — 2026-08-19
 
 Both products on the same Firefox **154.0** base. The desktop gets a control set
