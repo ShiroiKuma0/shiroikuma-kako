@@ -5,6 +5,86 @@ Everything built on top of stock Firefox (release channel) — the Android brows
 `<upstream-base>+<build>`; the fork commits live on `custom`, rebased onto each
 adopted `FIREFOX_*_RELEASE` tag, and one tag covers both products.
 
+## 154.0+010 — 2026-08-19
+
+Both products on the same Firefox **154.0** base. The desktop gets a control set
+that finally obeys the fork's own palette; both get an add-on installed from a
+file in one click.
+
+### Install an add-on from a file in one click
+
+Picking an `.xpi` cost three clicks on the desktop (cog, "Install Add-on From
+File…", picker) and three taps on Android (overflow, entry, picker). Every
+extension 白い熊 installs is unlisted and arrives as a file, so that path is the
+common case rather than the exception. Both products now put it one click away,
+immediately left of the control that used to hide it: a folder-with-plus button
+left of the cog in the about:addons header, and the same mark left of the
+overflow on the phone's extensions screen.
+
+The desktop button calls the very function the menu item calls and honours the
+same `xpinstall.enabled` gate, so nothing about the install path changes — only
+how many clicks reach it. It borrows the menu item's own localized string for
+its tooltip and accessible name rather than inventing a fork-only message. The
+Android entry becomes an always-shown toolbar action, which is what places it
+left of the overflow; its icon is tinted by hand, since a toolbar action arrives
+in the drawable's own colour and would otherwise be invisible on a black bar.
+
+The desktop icon set has a folder but nothing with a plus in it, so Android's
+`mozac_ic_folder_add_24` is transcribed into a branding SVG — an Android vector
+drawable's `pathData` is SVG path syntax already and its viewport maps straight
+to a `viewBox` — and both products show the identical mark.
+
+### One grammar for every control on the desktop
+
+The chrome was black and yellow, but the controls inside it were not: they drew
+themselves through the platform theme, which ignores `background-color` and
+`border` outright, so checkboxes were white squares, text fields slate grey with
+white text, plain buttons grey system slabs. Every control family is now painted
+by the fork, and all of them say the same two things: **at rest, a yellow ring at
+45% alpha; engaged, full yellow.**
+
+- **Checkboxes and radio buttons** carry the whole row — control and label — in a
+  pill, so a decision still open reads as one at a glance. Ticked fills the box
+  solid yellow with a black checkmark; a chosen radio fills the circle around a
+  black centre. Partly-ticked "select all" boxes get a black dash, disabled ones
+  dim, and doorhanger checkboxes stop dimming their own label.
+- **Dropdowns and text fields** take the same pill: the dropdown brightens on
+  hover or when its list opens, the field when it takes focus. Text selection
+  inside them is yellow with black glyphs, placeholders are yellow at low alpha.
+- **Buttons** are pills too, and the one that commits — a dialog's accept button,
+  a primary — is filled solid yellow with black text, which is to a dialog what a
+  ticked box is to a row.
+- **Toggles** wear the dim ring and dim dot when off, the filled yellow track
+  with a black dot when on.
+
+### Nothing keeps a colour from outside the palette
+
+- **Message bars** — the "extension has been removed" bars on about:addons were
+  solid information-blue slabs. Every severity is now black inside a yellow ring;
+  the icon still says which kind of message it is.
+- **Destructive buttons** were filled red to mark the weight of "Remove". With a
+  single accent colour there is no second hue for danger, so the weight is kept
+  and the hue dropped: a dark olive fill inside a full-yellow ring, heavier than
+  a resting button and plainly not the solid yellow that commits.
+- **Badges** lose their green: an ordinary badge is a dim-ringed pill, the "new"
+  badge is filled solid yellow with black text.
+- **Promo cards** lose their violet, and only the vibrant variant is touched —
+  overriding the base tokens would flatten the two variants into one.
+- **Scrollbars** were bright white bars down the side of every black panel, and
+  now take a dim yellow thumb on a black track.
+- **Sliders and progress bars** had the accent fill already but kept a
+  grey-lavender groove and thumb.
+- **Selected text** is yellow with black glyphs everywhere in the chrome and on
+  about: pages, and **tooltips** — the last surface still painted by the
+  operating system — are black inside a yellow ring.
+
+Everything above rides on the stylesheet the fork already registers globally, so
+it reaches chrome documents, panels, dialogs and about: pages alike. The rules
+are scoped with `@-moz-document` on purpose: a user sheet applies to *every*
+document, and unscoped they would restyle the controls of every website visited.
+The address bar and the search bar are deliberately untouched, being matched by
+element type rather than by a bare `input` selector.
+
 ## 154.0+002 — 2026-08-18
 
 A desktop-only release on the same Firefox **154.0** base. The Android build is
