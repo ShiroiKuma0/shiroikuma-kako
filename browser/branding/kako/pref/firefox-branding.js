@@ -106,4 +106,4 @@ pref("kako.extensions.ignoreRestrictedDomains", true);
 //
 // STAMPED BY tools/kako/bump-build.sh on every build, from gradle.properties.
 // Do not edit by hand -- the next bump overwrites it.
-pref("kako.version.full", "154.0+014");
+pref("kako.version.full", "154.0+019");
