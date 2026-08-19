@@ -49,6 +49,10 @@ sealed class CustomViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val allowedInPrivateBrowsingLabel: ImageView,
         val messageBarWarningView: View,
         val messageBarErrorView: View,
+        // Fork (白い熊 火狐): the line showing the installed version, under the
+        // name. Nullable with a default so upstream's own tests keep building a
+        // view holder without knowing about the fork's extra view.
+        val versionView: TextView? = null,
     ) : CustomViewHolder(view)
 
     /**
