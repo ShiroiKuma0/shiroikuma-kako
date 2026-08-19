@@ -27,6 +27,22 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
+// Fork: the two prefs the about:addons "Install Add-on From File…" entry reads,
+// so the copy of it on the extensions button's context menu behaves identically.
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "gXpinstallEnabled",
+  "xpinstall.enabled",
+  true
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "gPreferUpdateOverInstall",
+  "extensions.webextensions.prefer-update-over-install-for-existing-addon",
+  false
+);
+
 /**
  * Various events handlers to set the state of the toolbar-context-menu popup,
  * as well as to handle some commands from that popup.
@@ -563,6 +579,96 @@ export var ToolbarContextMenu = {
     let { BrowserAddonUI } = popup.documentGlobal;
     let id = this._getExtensionId(popup);
     await BrowserAddonUI.manageAddon(id, "browserAction");
+  },
+
+  /**
+   * Fork (白い熊 火狐): shows "Install Add-on From File…" -- the first entry in
+   * this menu -- when the extensions button is what was right-clicked.
+   *
+   * Only there. On any other toolbar item the entry, and the separator that
+   * follows it, stay hidden, so no other context menu grows a line. The
+   * separator is toggled here rather than left to hideLeadingSeparatorIfNeeded:
+   * that helper hides a leading separator, and ours is never leading -- it needs
+   * to disappear with the item above it instead.
+   *
+   * @param {Element} popup
+   *   The toolbar-context-menu element for a window.
+   */
+  kakoUpdateInstallAddonFromFile(popup) {
+    const triggerId = popup.triggerNode?.id;
+    const visible =
+      lazy.gXpinstallEnabled &&
+      (triggerId === "unified-extensions-button" ||
+        // The same button while the toolbar is being customized.
+        triggerId === "wrapper-unified-extensions-button");
+
+    popup.querySelector("#toolbar-context-kako-install-addon-from-file").hidden =
+      !visible;
+    popup.querySelector("#kako-install-addon-from-file-separator").hidden =
+      !visible;
+  },
+
+  /**
+   * Fork (白い熊 火狐): picks one or more .xpi files and installs them.
+   *
+   * This is about:addons' own installAddonsFromFilePicker (aboutaddons-utils.mjs)
+   * done from the chrome window: that one is written against the about:addons
+   * document -- its Fluent links, its browser element -- so it cannot be called
+   * from here, and a menu entry that first had to open about:addons would defeat
+   * the point of putting it on the toolbar. The install itself is untouched:
+   * the same AddonManager entry points, the same prompt, the same prefs.
+   *
+   * @param {Element} popup
+   *   The toolbar-context-menu element for a window.
+   */
+  async kakoInstallAddonFromFile(popup) {
+    // documentGlobal, not ownerGlobal: the chrome window is reached through the
+    // ChromeOnly Node attribute (Node.webidl), which is what every other method
+    // in this module uses. ownerGlobal is undefined on these elements and the
+    // picker never opened.
+    const win = popup.documentGlobal;
+    const doc = popup.ownerDocument;
+
+    const [dialogTitle, filterName] = await doc.l10n.formatMessages([
+      { id: "kako-toolbar-context-menu-install-addon-from-file-dialog-title" },
+      { id: "kako-toolbar-context-menu-install-addon-from-file-filter-name" },
+    ]);
+
+    const fp = Cc["@mozilla.org/filepicker;1"].createInstance(Ci.nsIFilePicker);
+    fp.init(
+      win.browsingContext,
+      dialogTitle.value,
+      Ci.nsIFilePicker.modeOpenMultiple
+    );
+    try {
+      fp.appendFilter(filterName.value, "*.xpi;*.jar;*.zip");
+      fp.appendFilters(Ci.nsIFilePicker.filterAll);
+    } catch (e) {
+      // appendFilter throws on platforms with no filter support; the picker
+      // still opens, just unfiltered.
+    }
+
+    fp.open(async result => {
+      if (result != Ci.nsIFilePicker.returnOK) {
+        return;
+      }
+      for (const file of fp.files) {
+        // "about:addons" is what the schema documents alongside the
+        // "install-from-file" method (toolkit/mozapps/extensions/metrics.yaml),
+        // and this is that action -- reached by a shortcut rather than through
+        // the page.
+        const install = await lazy.AddonManager.getInstallForFile(file, null, {
+          source: "about:addons",
+          method: "install-from-file",
+        });
+        lazy.AddonManager.installAddonFromAOMWithOptions(
+          win.gBrowser.selectedBrowser,
+          doc.documentURIObject,
+          install,
+          { preferUpdateOverInstall: lazy.gPreferUpdateOverInstall }
+        );
+      }
+    });
   },
 
   /**
