@@ -5,6 +5,137 @@ Everything built on top of stock Firefox (release channel) — the Android brows
 `<upstream-base>+<build>`; the fork commits live on `custom`, rebased onto each
 adopted `FIREFOX_*_RELEASE` tag, and one tag covers both products.
 
+## 154.0+019 — 2026-08-19
+
+Both products still on the Firefox **154.0** base. A pass over the add-ons UI on
+both of them, the fork's frame carried onto the surfaces that were still missing
+it, and two things upstream 154 had taken away put back.
+
+### The add-ons list shows what is installed, and puts your own work first
+
+Every add-on 白い熊 installs by hand is unlisted and arrives as an `.xpi`, so a
+file-installed add-on is one being worked on, while the AMO collection just
+fills the list. Sorting by name alone buried the first among the second, and the
+installed version — the thing you check after sideloading a new build — was
+only visible after expanding the card on the desktop, or opening the add-on's
+own screen on Android.
+
+Both products now list add-ons installed from a file **first**, and write the
+version on a line under the name.
+
+"Installed from a file" is the same signal on both, and it is the add-on's own
+`sourceURI`. The engine persists it, so it survives a restart, and GeckoView
+exports it to Android as `downloadUrl` — so the desktop tests its scheme and
+Android tests its prefix, and the two agree by construction. The install path
+does not matter: file picker, drag and drop and temporary installs all leave a
+`file:` URI behind, and all three are "from a file".
+
+On the desktop the sort is the list's own comparator, the one live insertion
+also uses, so an add-on installed while the page is open lands where a reload
+would put it. The version line is hidden on the expanded card, where the details
+already carry a Version row — the line exists to spare the click that opens it.
+On Android the reordering is a stable partition, so within each group the
+previous order is untouched, and an add-on that is not installed yet shows the
+version the collection offers, which is the only one it has.
+
+### No more "could not be verified"
+
+The desktop build turns add-on signature enforcement off, which is what lets a
+self-modified extension be installed at all. The add-on then installs — and
+`about:addons` put a warning bar on its card: "*<name> could not be verified for
+use in 白い熊 火狐. Proceed with caution.*" That warning is meant for someone who
+did not choose this. Here it fired on exactly the add-ons 白い熊 had built and
+installed on purpose, on every one of them, permanently.
+
+It is gone, through upstream's own escape hatch rather than a patch: the bar is
+skipped when `extensions.ui.disableUnsignedWarnings` is set *and* the build is
+not an official Mozilla one, and this fork is not. Nothing else changes — an
+add-on that fails signature checks is still reported in `about:support` and in
+the install prompt, it just stops being announced on the manage page forever.
+
+### Install an add-on from a file, straight off the toolbar (desktop)
+
+The one-click install added in 154.0+010 lives on the add-ons page, which means
+navigating to `about:addons` first. The toolbar button that manages extensions
+is where the hand already is, so **right-clicking it** now offers "Install
+Add-on From File…" as the first entry of its menu, with the same
+folder-with-plus icon.
+
+Only there: on any other toolbar item the entry, and the separator under it,
+stay hidden, so no other context menu grows a line. The install itself is
+upstream's, run from the chrome window — same entry points, same prompt, same
+prefs — because the add-ons page's own picker is written against that page's
+document and cannot be called from the toolbar.
+
+### The address bar is a rectangle again when you click it
+
+The fork gives buttons, dropdowns and text fields a pill by setting one radius
+token for the whole chrome. The address bar is not a button, but it derives its
+own two radii from that token — so at pill radius it looked right while closed
+and became an **oval** the moment it was clicked, because the results list drops
+out of the same box and the radius then clamps to half of a 250px-tall element.
+The page showed through at the four corners where the black fill was clipped
+away.
+
+Both radii are pinned back to the design system's own medium radius, so the open
+bar is a rounded rectangle filled black to its edges. Buttons keep their pill.
+
+### Every pull-up and popup is framed (Android)
+
+On a black theme, elevation says nothing: a surface that separates itself from
+the page by a shadow arrives as text floating on nothing. Three families of
+surface were still doing that.
+
+**Bottom sheets.** The fork's dialog-framing hook already watched every fragment
+manager and stamped the frame onto alert dialogs, and explicitly skipped the
+sheets. It now frames both, and that one branch catches **every** pull-up in the
+app, because they all turn out to be a dialog fragment carrying a
+`BottomSheetDialog`: translations, the main menu, the trust panel, tab history,
+protections, summarization, microsurvey, send-to-device, IP protection, terms of
+use, review prompt, wallpaper onboarding, lens opt-out, uninstall survey, debug
+info — and the mozilla-components prompt sheets for save login, save credit card,
+save address, password generator and app-link redirect. The tab manager's sheets
+are the one case that hook cannot see, being Compose sheets in an ordinary
+fragment, and they take the same ring directly.
+
+A sheet could not reuse the alert-dialog ring: that one is hung off the window
+and would be frozen where the sheet was when it was stamped, and a sheet slides
+in, is dragged, and settles at half or full height. The sheet ring is the sheet
+view's own foreground instead, so it paints over the Compose surface that fills
+most of these sheets and follows the view through every drag for free. Its
+bottom edge is pushed outside the sheet and clipped, since a sheet sits on the
+screen edge where a line is either invisible or a stray rule under the
+navigation bar.
+
+**Toolbar popups.** The long-press menu on a pinned extension button (move left,
+move right, remove from toolbar) had no edge at all. The one popup every Compose
+toolbar menu is built from now carries a ring, so the tab counter, the search
+selector and the page-origin menu take it too.
+
+**The add-on permission sheet**, and the "add-on installed" sheet that follows it
+in the install flow, get a line along their top edge — placed outside the scroll
+view, so it stays on the edge of the dialog instead of scrolling away with the
+permission list. Their checkboxes — private browsing, technical data, the
+user-scripts opt-in — are now enclosed in a pill, box and label together, the
+same shape the desktop draws around the same controls.
+
+Every one of these reads its colour from the theme attribute the surface's own
+text already uses, so no hard-coded colour lands in android-components.
+
+### Synced tabs are readable at a glance again (desktop)
+
+Firefox 153 rendered the account panel as one flat list — a device name, then
+that device's tabs under it. Upstream 154 rewrote it to render the same panel
+two different ways: the app menu keeps a section per device with its tabs
+inline, while the **account button's** menu turns each device into a row with an
+arrow that opens a subpanel. Reading one device's tabs cost a second click, and
+coming back out a third before the next device.
+
+The account menu takes the inline branch too. The renderer is upstream's own;
+the only fork part is that the condition choosing between them is gone. With
+every device expanded in place, the device cap and the "All Devices" button that
+paged the overflow into yet another subpanel go with it.
+
 ## 154.0+014 — 2026-08-19
 
 Both products on the same Firefox **154.0** base. Extensions are let off the

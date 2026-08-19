@@ -10,7 +10,7 @@ A fork of [Mozilla Firefox](https://github.com/mozilla-firefox/firefox) (release
 
 Installs **side-by-side** with stock Firefox/Beta/Nightly: app id `shiroikuma.kako` on Android, package `shiroikuma-kako` with its own `~/.mozilla/kako` profile on the desktop.
 
-**📥 Latest release: [`154.0+014`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
+**📥 Latest release: [`154.0+019`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
 
 </div>
 
@@ -21,7 +21,9 @@ Stock Fenix locks custom AMO add-on collections behind Nightly. This fork opens 
 
 Extensions here also **run on Mozilla's own sites**. Stock Firefox fences every extension off eleven hosts at once — AMO, its CDN, the discovery pane, SUMO, and the Firefox Accounts and Sync servers — and grants no exception, not even to an add-on you installed yourself, so a userstyle or userscript simply stops working the moment you land on one. A switch on both products, on by default, takes the fence down: your extensions behave on `addons.mozilla.org` exactly as they do everywhere else. Two separate mechanisms guard those hosts and both come down together — the domain list, and the hardcoded check that singles out AMO — the second at the price of hiding `mozAddonManager` there, so AMO's install button falls back to a plain download and the ordinary install prompt. Turning the switch off restores both.
 
-Extensions also install **straight from a file, in one click**. A collection can only hold add-ons published and reviewed on AMO, which locks out anything personal; the add-ons screen here takes an `.xpi` off the device instead, so an extension signed for self-distribution — private, unlisted, unreviewed — installs on the phone like any other. Both products put it on the extensions page itself, behind a folder-with-plus button — left of the cog on the desktop, left of the overflow on the phone — rather than three clicks down a menu. The desktop build goes further and requires no signature at all — signature enforcement is off in the build *and* in the fork's branding defaults — so a modified add-on can be tested unsigned and only signed when it ships. Such an xpi still has to declare its own add-on id, there being no certificate to take one from.
+Extensions also install **straight from a file, in one click**. A collection can only hold add-ons published and reviewed on AMO, which locks out anything personal; the add-ons screen here takes an `.xpi` off the device instead, so an extension signed for self-distribution — private, unlisted, unreviewed — installs on the phone like any other. Both products put it on the extensions page itself, behind a folder-with-plus button — left of the cog on the desktop, left of the overflow on the phone — rather than three clicks down a menu. The desktop build goes further and requires no signature at all — signature enforcement is off in the build *and* in the fork's branding defaults — so a modified add-on can be tested unsigned and only signed when it ships. Such an xpi still has to declare its own add-on id, there being no certificate to take one from. On the desktop the same command sits on the **right-click menu of the extensions toolbar button**, so an `.xpi` can be installed without going to the add-ons page at all.
+
+The add-ons list is arranged for this way of working: add-ons installed from a file are listed **first**, ahead of everything the collection brought in, and each one shows its **installed version** under its name — on both products — so the build you just sideloaded is legible without opening anything. And since the desktop build requires no signature, it no longer warns that your own add-ons “could not be verified”.
 
 ---
 
