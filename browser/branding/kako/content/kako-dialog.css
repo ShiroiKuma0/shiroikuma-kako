@@ -361,8 +361,9 @@ window,
     color: rgba(255, 255, 0, 0.5) !important;
   }
 
-  input::selection,
-  textarea::selection {
+  /* Selected text, everywhere in the chrome and on about: pages -- not just in
+   * the fields above, which is where this rule started. */
+  ::selection {
     background-color: #FFFF00 !important;
     color: #000000 !important;
   }
@@ -531,6 +532,55 @@ window,
   progress::-moz-progress-bar {
     border-radius: 999px !important;
     background-color: #FFFF00 !important;
+  }
+
+  /* --- Badges and promo cards ----------------------------------------------
+   *
+   * A badge is a label rather than a control, so it takes the emphasis reading
+   * instead of the decision one: an ordinary badge is a dim-ringed pill, and
+   * the "new" badge -- filled green upstream -- is filled solid yellow with
+   * black text, the same weight the green was carrying.
+   *
+   * Promo cards were already palette-derived in their default form, since
+   * --promo-background-color is a color-mix against currentColor and the text
+   * is yellow. The "vibrant" variant is not: it hardcodes the violet ramp,
+   * which is the last of the design system's own hues left in this UI.
+   * ---------------------------------------------------------------------- */
+
+  moz-badge {
+    --badge-border-radius: 999px !important;
+    --badge-border-color: var(--kako-undecided-stroke) !important;
+    --badge-text-color: #FFFF00 !important;
+    --badge-background-color-filled: #FFFF00 !important;
+    --badge-border-color-filled: #FFFF00 !important;
+    --badge-text-color-filled: #000000 !important;
+  }
+
+  /* Only the vibrant tokens are touched. Setting the base ones would win over
+   * the :host([type="vibrant"]) rule that maps these into them, flattening the
+   * two variants into one -- and the default card needs no help anyway. */
+  moz-promo {
+    --promo-background-color-vibrant: var(--kako-decided-fill) !important;
+    --promo-border-color-vibrant: #FFFF00 !important;
+    --promo-message-text-color-vibrant: #FFFF00 !important;
+    --promo-heading-text-color-vibrant: #FFFF00 !important;
+  }
+
+  /* --- Tooltips ------------------------------------------------------------
+   *
+   * The one surface still painted by the operating system: a XUL tooltip is
+   * `appearance: auto` over InfoBackground/InfoText, so it arrived as a pale
+   * GTK slab in front of a black window. Native anonymous content, but it lives
+   * in the chrome document, so a user sheet scoped to chrome:// reaches it --
+   * including the tooltip that serves web pages, which browser.xhtml owns.
+   * ---------------------------------------------------------------------- */
+
+  tooltip {
+    appearance: none !important;
+    background-color: #000000 !important;
+    color: #FFFF00 !important;
+    border: 1px solid #FFFF00 !important;
+    border-radius: 8px !important;
   }
 }
 
