@@ -301,6 +301,10 @@ document.addEventListener(
           break;
 
         // == toolbar-context-menu ==
+        case "toolbar-context-kako-install-addon-from-file":
+          // Fork: pick an .xpi off the disk and install it.
+          ToolbarContextMenu.kakoInstallAddonFromFile(event.target.parentElement);
+          break;
         case "toolbar-context-manage-extension":
           ToolbarContextMenu.openAboutAddonsForContextAction(
             event.target.parentElement
@@ -627,6 +631,8 @@ document.addEventListener(
           ToolbarContextMenu.updateDownloadsAlwaysOpenPanel(event.target);
           ToolbarContextMenu.updateExtensionsButtonContextMenu(event.target);
           ToolbarContextMenu.updateExtension(event.target);
+          // Fork: the "Install Add-on From File…" entry at the top.
+          ToolbarContextMenu.kakoUpdateInstallAddonFromFile(event.target);
 
           // The following methods must be called last after updating the menu items above,
           // as they may change which items are visible.

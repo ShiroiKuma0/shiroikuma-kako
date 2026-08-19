@@ -556,6 +556,18 @@
   </menupopup>
 
   <menupopup id="toolbar-context-menu">
+    <!-- Fork: install an add-on from a file, first item when the extensions
+         button is the one right-clicked (see
+         ToolbarContextMenu.kakoUpdateInstallAddonFromFile, which also toggles
+         the separator below it). Every add-on 白い熊 installs is unlisted and
+         arrives as an .xpi, so this is the common way in; the toolbar button
+         that manages extensions is where the hand already is. -->
+    <menuitem id="toolbar-context-kako-install-addon-from-file"
+              class="menuitem-iconic"
+              image="chrome://branding/content/kako-folder-add.svg"
+              data-lazy-l10n-id="kako-toolbar-context-menu-install-addon-from-file"
+              hidden="true"/>
+    <menuseparator id="kako-install-addon-from-file-separator" hidden="true"/>
     <menuitem id="toolbar-context-manage-extension"
               data-lazy-l10n-id="toolbar-context-menu-manage-extension"
               contexttype="toolbaritem"
