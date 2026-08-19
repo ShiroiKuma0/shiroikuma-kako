@@ -20,7 +20,7 @@
   content: "";
   position: fixed;
   inset: 0;
-  border: 2px solid #FFFF00;
+  border: 2px solid #ffff00;
   border-radius: 9px; /* trace the GTK CSD corner rounding */
   pointer-events: none; /* never eat a click meant for the tab strip */
   z-index: 2147483647;
@@ -41,4 +41,15 @@
  * outlined against its neighbours. */
 :root#main-window[sizemode="fullscreen"]::after {
   display: none;
+}
+
+/* The fork's full version, last line of the app menu (appmenu-viewcache.inc.xhtml,
+ * filled in by PanelUI._onMainViewShow). Indented to the same start as the menu
+ * items above it and dimmed, so it reads as a stamp rather than a command. */
+#appMenu-kako-version {
+  color: #ffff00;
+  padding-block: 6px;
+  padding-inline: 16px;
+  opacity: 0.75;
+  font-size: 0.9em;
 }
