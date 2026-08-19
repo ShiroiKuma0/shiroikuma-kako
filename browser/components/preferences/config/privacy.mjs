@@ -311,6 +311,11 @@ const SECURITY_PRIVACY_STATUS_CARD_ENABLED =
   );
 
 Preferences.addAll([
+  // Fork: 白い熊 火狐. The restricted-domains switch. A Setting is not enough on
+  // its own -- Setting.mjs looks the underlying pref up in this registry and
+  // throws PreferenceNotAddedError if it is missing, which aborts the whole pane.
+  { id: "kako.extensions.ignoreRestrictedDomains", type: "bool" },
+
   // Content blocking / Tracking Protection
   { id: "privacy.trackingprotection.enabled", type: "bool" },
   { id: "privacy.trackingprotection.pbmode.enabled", type: "bool" },
@@ -531,6 +536,17 @@ if (SECURITY_PRIVACY_STATUS_CARD_ENABLED) {
 }
 
 SettingGroupManager.registerGroups({
+  // Fork: 白い熊 火狐 -- whether extensions are fenced off Mozilla's own hosts.
+  kakoExtensions: {
+    l10nId: "kako-extensions-group",
+    headingLevel: 2,
+    items: [
+      {
+        id: "kakoIgnoreRestrictedDomains",
+        l10nId: "kako-ignore-restricted-domains",
+      },
+    ],
+  },
   httpsOnly: {
     l10nId: "httpsonly-group",
     supportPage: "https-only-prefs",
@@ -2378,6 +2394,13 @@ Preferences.addSetting({
       setting.value = true;
     }
   },
+});
+
+// Fork: the switch itself. BrowserGlue watches it and empties (or restores) the
+// extensions.webextensions.restrictedDomains list Gecko actually reads.
+Preferences.addSetting({
+  id: "kakoIgnoreRestrictedDomains",
+  pref: "kako.extensions.ignoreRestrictedDomains",
 });
 
 Preferences.addSetting({

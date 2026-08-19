@@ -67,3 +67,17 @@ pref("browser.newtabpage.activity-stream.showWeather", false);
 // certificate common name for XPIInstall to fall back to, and only the
 // temporary-install location generates one.
 pref("xpinstall.signatures.required", false);
+
+// Let extensions run on Mozilla's own hosts. Stock Firefox fences AMO, its CDN,
+// the discovery pane, SUMO and the Firefox Accounts and Sync servers off from
+// every extension at once through extensions.webextensions.restrictedDomains
+// (modules/libpref/init/all.js) -- no extension gets an exception, not even one
+// you installed yourself.
+//
+// This is the switch, not the fence: BrowserGlue reads it and empties the
+// restrictedDomains list on the USER branch, leaving upstream's own list on the
+// DEFAULT branch. Turning it off clears that user value rather than writing a
+// copy of the list back, so the list stays upstream's to change on every rebase.
+// about:preferences exposes it under Privacy & Security. The Android product
+// carries the same switch in Settings -> Advanced.
+pref("kako.extensions.ignoreRestrictedDomains", true);
