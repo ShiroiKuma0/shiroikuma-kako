@@ -2,7 +2,23 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { AboutAddonsHTMLElement } from "../aboutaddons-utils.mjs";
+import {
+  AboutAddonsHTMLElement,
+  installAddonsFromFilePicker,
+} from "../aboutaddons-utils.mjs";
+
+// Fork: "Install Add-on From File…" also exists in the page-options menu, which
+// gates it on this pref; the header button follows the same gate.
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+const lazy = {};
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "XPINSTALL_ENABLED",
+  "xpinstall.enabled",
+  true
+);
 
 class AddonPageHeader extends AboutAddonsHTMLElement {
   static get markup() {
@@ -33,6 +49,11 @@ class AddonPageHeader extends AboutAddonsHTMLElement {
               id="updates-message"
               hidden
             ></addon-updates-message>
+            <moz-button
+              size="default"
+              class="install-from-file-button"
+              iconsrc="chrome://global/skin/icons/folder.svg"
+            ></moz-button>
             <div class="page-options-menu">
               <moz-button
                 size="default"
@@ -55,6 +76,21 @@ class AddonPageHeader extends AboutAddonsHTMLElement {
       this.heading = this.querySelector(".header-name");
       this.backButton = this.querySelector(".back-button");
       this.pageOptionsMenuButton = this.querySelector(".more-options-button");
+
+      // Fork: one click to install an .xpi from disk, instead of the gear menu
+      // plus its "Install Add-on From File…" item. It borrows that item's own
+      // Fluent string for the tooltip and the accessible name, rather than
+      // adding a fork-only message: the button carries an icon and no label, so
+      // the string has to arrive as an attribute, which data-l10n-id on a
+      // moz-button would not do on its own.
+      this.installFromFileButton = this.querySelector(
+        ".install-from-file-button"
+      );
+      this.installFromFileButton.hidden = !lazy.XPINSTALL_ENABLED;
+      document.l10n.formatValue("addon-install-from-file").then(label => {
+        this.installFromFileButton.title = label;
+        this.installFromFileButton.ariaLabel = label;
+      });
 
       // The addon-page-options element is outside of this element since this is
       // position: sticky and that would break the positioning of the menu.
@@ -102,6 +138,11 @@ class AddonPageHeader extends AboutAddonsHTMLElement {
       switch (e.target) {
         case this.backButton:
           window.history.back();
+          break;
+        case this.installFromFileButton:
+          if (lazy.XPINSTALL_ENABLED) {
+            installAddonsFromFilePicker();
+          }
           break;
       }
     } else if (e.target == document && e.type == "view-selected") {
