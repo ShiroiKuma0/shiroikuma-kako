@@ -21,5 +21,6 @@ browser.jar:
   content/branding/icon128.png                   (../default128.png)
   content/branding/aboutDialog.css
   content/branding/kako-chrome.css
+  content/branding/kako-folder-add.svg
   content/branding/kako-dialog.css
   content/branding/kako-newtab-user.css
