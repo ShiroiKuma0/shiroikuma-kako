@@ -99,3 +99,14 @@ toolbar-context-menu-bookmarks-show-other-bookmarks =
 toolbar-context-menu-menu-bar-cmd =
     .toolbarname = Menu Bar
     .accesskey = M
+
+# Fork (白い熊 火狐): "Install Add-on From File…", first entry on the extensions
+# button's context menu. Wording matches about:addons' own menu item
+# (addon-install-from-file) so the two read as one command in two places.
+kako-toolbar-context-menu-install-addon-from-file =
+    .label = Install Add-on From File…
+    .accesskey = I
+# Title of the file picker that entry opens.
+kako-toolbar-context-menu-install-addon-from-file-dialog-title = Select add-on to install
+# Name of the file-type filter in that picker.
+kako-toolbar-context-menu-install-addon-from-file-filter-name = Add-ons
