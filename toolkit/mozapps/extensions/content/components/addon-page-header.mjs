@@ -52,7 +52,7 @@ class AddonPageHeader extends AboutAddonsHTMLElement {
             <moz-button
               size="default"
               class="install-from-file-button"
-              iconsrc="chrome://global/skin/icons/folder.svg"
+              iconsrc="chrome://branding/content/kako-folder-add.svg"
             ></moz-button>
             <div class="page-options-menu">
               <moz-button
