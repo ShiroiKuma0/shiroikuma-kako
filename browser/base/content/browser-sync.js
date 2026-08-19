@@ -540,34 +540,35 @@ this.FxAMenuDeviceList = class FxAMenuDeviceList {
       this.devicesList.lastChild.remove();
     }
 
+    // Fork (白い熊 火狐): every device shows its open tabs inline, in both menus.
+    //
     // The FxA panel is shared between the account (toolbar) menu and the app
-    // (hamburger) menu. In the app menu each device is shown as its own inline
-    // section; in the account menu each device is a button that opens the
-    // per-device recent tabs subpanel.
-    let inAppMenu = document
-      .getElementById("appMenu-popup")
-      ?.contains(this.devicesList);
-
-    if (inAppMenu) {
-      for (let client of clients) {
-        let device = this._getDeviceForClient(client);
-        // A separator precedes each section, including the first, so the list
-        // of devices is separated from the content above it.
-        this.devicesList.appendChild(
-          document.createXULElement("toolbarseparator")
-        );
-        this._appendDeviceSection(client, device);
-      }
-    } else {
-      // Only the first few devices are shown inline; the rest are reachable
-      // through the "All Devices" button.
-      for (let client of clients.slice(0, FxAMenuDeviceList.MAX_DEVICES)) {
-        let device = this._getDeviceForClient(client);
-        this.devicesList.appendChild(this._createDeviceEntry(client, device));
-      }
-      if (clients.length > FxAMenuDeviceList.MAX_DEVICES) {
-        this.devicesList.appendChild(this._createAllDevicesButton(clients));
-      }
+    // (hamburger) menu, and upstream 154 split their rendering: the app menu
+    // gets a section per device with that device's tabs under its name, while
+    // the account menu turned each device into a subviewbutton-nav that opens a
+    // per-device subpanel. Reading one device's tabs then costs a second click,
+    // and going back out costs a third before the next device -- for a list
+    // that used to be readable at a glance. 153 had no such split: the panel
+    // was one flat list of device name followed by that device's tabs.
+    //
+    // So the account menu takes the inline branch too. The renderer is
+    // upstream's own (_appendDeviceSection); the only fork part is that the
+    // condition is gone.
+    //
+    // Losing the else branch also loses MAX_DEVICES and the "All Devices"
+    // button that paged the overflow into yet another subpanel. That is the
+    // point: with every device expanded in place there is no overflow left for
+    // it to hold, and capping the list would be the very thing being undone.
+    // _createDeviceEntry and friends are left in place, unreferenced, so a
+    // rebase that reworks them still applies cleanly.
+    for (let client of clients) {
+      let device = this._getDeviceForClient(client);
+      // A separator precedes each section, including the first, so the list
+      // of devices is separated from the content above it.
+      this.devicesList.appendChild(
+        document.createXULElement("toolbarseparator")
+      );
+      this._appendDeviceSection(client, device);
     }
 
     this.devicesList.hidden = false;
