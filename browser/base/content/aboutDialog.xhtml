@@ -84,7 +84,10 @@
                 <description id="policyDisabled" data-l10n-id="update-policy-disabled"/>
                 <description id="noUpdatesFound" data-l10n-id="update-noUpdatesFound"/>
                 <description id="checkingFailed" data-l10n-id="aboutdialog-update-checking-failed"/>
-                <description id="otherInstanceHandlingUpdates" data-l10n-id="update-otherInstanceHandlingUpdates"/>
+                <!-- Fork: deliberately empty. This fork ships no update server, so
+                     "is being updated by another instance" told 白い熊 nothing. The
+                     element stays because selectPanel() looks it up by id. -->
+                <description id="otherInstanceHandlingUpdates"/>
                 <description id="manualUpdate" data-l10n-id="aboutdialog-update-manual-with-link" data-l10n-args='{"displayUrl":""}'>
                   <label class="manualLink" is="text-link" data-l10n-name="manual-link"/>
                 </description>
