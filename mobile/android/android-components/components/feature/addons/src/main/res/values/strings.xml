@@ -218,6 +218,8 @@
 
     <!-- The version on of add-on. -->
     <string name="mozac_feature_addons_version">Version</string>
+    <!-- Fork (白い熊 火狐): the installed version, shown under each add-on in the manager list. %1$s is the version. -->
+    <string name="kako_addons_item_version">Version %1$s</string>
     <!-- The author of an add-on. -->
     <string name="mozac_feature_addons_author">Author</string>
     <!-- The last date that the add-on was updated. -->
