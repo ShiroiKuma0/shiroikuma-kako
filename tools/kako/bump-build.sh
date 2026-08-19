@@ -31,4 +31,17 @@ sed -i "s/^customBuildNumber=${current}\$/customBuildNumber=${new}/" "$GP"
 base=$(grep -oP '^customBaseVersionName=\K.+' "$GP" || true)
 [[ -n "$base" ]] || die "customBaseVersionName=<string> line not found in $GP"
 
-printf '%s+%03d\n' "$base" "$new"
+full=$(printf '%s+%03d' "$base" "$new")
+
+# Stamp the same string into the desktop branding prefs, so the About dialog and
+# the app menu can show the full version. Gecko's own version is only the
+# upstream base, which cannot tell two builds of this fork apart. The Android
+# product needs no equivalent: gradle reads gradle.properties directly.
+BRANDING_PREF="$REPO_ROOT/browser/branding/kako/pref/firefox-branding.js"
+if [[ -f "$BRANDING_PREF" ]]; then
+    grep -q '^pref("kako.version.full"' "$BRANDING_PREF" ||
+        die "kako.version.full pref line not found in $BRANDING_PREF"
+    sed -i "s|^pref(\"kako.version.full\", \".*\");\$|pref(\"kako.version.full\", \"${full}\");|" "$BRANDING_PREF"
+fi
+
+printf '%s\n' "$full"
