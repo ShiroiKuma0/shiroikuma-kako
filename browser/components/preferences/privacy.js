@@ -626,6 +626,8 @@ var gPrivacyPane = {
     initSettingGroup("history");
     initSettingGroup("history2");
     initSettingGroup("permissions");
+    // Fork: 白い熊 火狐 -- extensions on Mozilla's own hosts.
+    initSettingGroup("kakoExtensions");
     initSettingGroup("dataCollection");
     initSettingGroup("privacyPanel");
     initSettingGroup("dnsOverHttps");
