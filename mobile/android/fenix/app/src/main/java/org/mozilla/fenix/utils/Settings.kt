@@ -2012,6 +2012,18 @@ class Settings(
         default = Config.channel.isDebug,
     )
 
+    /**
+     * Fork: whether extensions may run on Mozilla's own hosts — AMO, SUMO, the Firefox
+     * Accounts pages — which stock Firefox fences off through the Gecko pref
+     * `extensions.webextensions.restrictedDomains`. On by default; see
+     * [org.mozilla.fenix.kako.KakoRestrictedDomains], which is what actually empties
+     * that list in Gecko.
+     */
+    var kakoIgnoreRestrictedDomains by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_kako_ignore_restricted_domains),
+        default = true,
+    )
+
     fun amoCollectionOverrideConfigured(): Boolean {
         return overrideAmoUser.isNotEmpty() || overrideAmoCollection.isNotEmpty()
     }

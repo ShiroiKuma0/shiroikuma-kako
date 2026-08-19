@@ -2241,6 +2241,16 @@ space-alert-over-5gb-message2 = <strong>{ -brand-short-name } is running out of 
 
 space-alert-under-5gb-message2 = <strong>{ -brand-short-name } is running out of disk space.</strong> Website contents may not display properly. Visit “Learn more” to optimize your disk usage for better browsing experience.
 
+## Privacy Section - Extensions (白い熊 火狐 fork)
+
+kako-extensions-group =
+    .label = Extensions
+    .description = A handful of sites normally block every extension at once — no exceptions, whichever extension it is and however you installed it.
+
+kako-ignore-restricted-domains =
+    .label = Run extensions on restricted sites
+    .description = Lets extensions work on addons.mozilla.org, support.mozilla.org and the account and sync servers as they do on any other site.
+
 ## Privacy Section - HTTPS-Only
 
 httpsonly-group =

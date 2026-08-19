@@ -426,6 +426,8 @@ const CONFIG_PANES = Object.freeze({
       "cookiesAndSiteData2",
       "history2",
       "nonTechnicalPrivacy2",
+      // Fork: 白い熊 火狐 -- extensions on Mozilla's own hosts.
+      "kakoExtensions",
       "dnsOverHttps",
       "connectionLink",
     ],

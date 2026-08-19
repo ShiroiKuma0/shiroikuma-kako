@@ -656,6 +656,7 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
             FeatureFlags.customExtensionCollectionFeature,
         )
         setupGeckoLogsPreference(settings)
+        setupKakoRestrictedDomainsPreference(settings)
         setupHttpsOnlyPreferences(settings)
         setupIPProtectionPreferences(components.ipProtection.store)
         setupNotificationPreference(
@@ -766,6 +767,22 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
                     },
                     FXA_SYNC_OVERRIDE_EXIT_DELAY,
                 )
+                true
+            }
+    }
+
+    /**
+     * Fork: the restricted-domains switch. Flipping it rewrites the Gecko pref straight
+     * away — `ExtensionPolicyService` observes it, so the change lands on the next
+     * navigation without a restart.
+     */
+    private fun setupKakoRestrictedDomainsPreference(settings: Settings) {
+        findPreference<Preference>(
+            getPreferenceKey(R.string.pref_key_kako_ignore_restricted_domains),
+        )?.onPreferenceChangeListener =
+            Preference.OnPreferenceChangeListener { _, newValue ->
+                settings.kakoIgnoreRestrictedDomains = newValue as Boolean
+                org.mozilla.fenix.kako.KakoRestrictedDomains.apply(requireContext())
                 true
             }
     }
