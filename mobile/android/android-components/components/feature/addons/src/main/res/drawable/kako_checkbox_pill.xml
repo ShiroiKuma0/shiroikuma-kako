@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<!-- Fork (白い熊 火狐): the pill that encloses a whole checkbox row in the add-on
+   - permission dialogs, box and label together, so the eye catches "there is
+   - something to decide here" before it reads a word. The desktop product draws
+   - the same shape around the same controls (the checkbox rules in
+   - kako-dialog.css).
+   -
+   - The stroke takes textColorPrimary, which is what these rows already use for
+   - their label, so it is the fork's yellow here and whatever the theme says
+   - anywhere else. No hard coded colour reaches into android-components.
+   -
+   - 24dp rather than a "999dp pill": these labels wrap on a phone, and a radius
+   - larger than half the height turns a two line row into an oval. 24dp is half
+   - of the 48dp touch target a single line row occupies, so one line is a true
+   - pill and a wrapped one stays a rounded rectangle.
+   -
+   - Note for the next editor: no double hyphen may appear inside an XML comment.
+   - One here made the whole file fail to parse. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="24dp" />
+    <stroke
+        android:width="1dp"
+        android:color="?android:attr/textColorPrimary" />
+    <solid android:color="@android:color/transparent" />
+</shape>
