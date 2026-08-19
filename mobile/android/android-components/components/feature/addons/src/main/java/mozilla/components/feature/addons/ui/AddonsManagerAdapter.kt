@@ -154,6 +154,8 @@ class AddonsManagerAdapter(
         val iconView = view.findViewById<ImageView>(R.id.add_on_icon)
         val titleView = view.findViewById<TextView>(R.id.add_on_name)
         val summaryView = view.findViewById<TextView>(R.id.add_on_description)
+        // Fork (白い熊 火狐): the installed version, under the name.
+        val versionView = view.findViewById<TextView>(R.id.add_on_version)
         val ratingView = view.findViewById<RatingBar>(R.id.rating)
         val ratingAccessibleView = view.findViewById<TextView>(R.id.rating_accessibility)
         val reviewCountView = view.findViewById<TextView>(R.id.review_count)
@@ -175,6 +177,7 @@ class AddonsManagerAdapter(
             allowedInPrivateBrowsingLabel,
             messageBarWarningView,
             messageBarErrorView,
+            versionView,
         )
     }
 
@@ -315,6 +318,8 @@ class AddonsManagerAdapter(
             holder.summaryView.visibility = View.GONE
         }
 
+        bindVersion(holder, addon)
+
         holder.itemView.tag = addon
         // Attach the on click listener to the content wrapper so that it doesn't overlap with the install button.
         holder.contentWrapperView.setOnClickListener {
@@ -352,6 +357,24 @@ class AddonsManagerAdapter(
         )
     }
 
+    /**
+     * Fork (白い熊 火狐): writes the installed version on the line under the add-on's
+     * name.
+     *
+     * An add-on that is not installed yet has only the version the collection
+     * offers, so that is what it shows. When neither is set the line is hidden
+     * rather than left empty, so no gap opens under the name.
+     */
+    private fun bindVersion(holder: AddonViewHolder, addon: Addon) {
+        val versionView = holder.versionView ?: return
+        val version = addon.installedState?.version.orEmpty().ifBlank { addon.version }
+        versionView.isVisible = version.isNotBlank()
+        if (version.isNotBlank()) {
+            versionView.text = versionView.context.getString(R.string.kako_addons_item_version, version)
+        }
+        style?.maybeSetAddonSummaryTextColor(versionView)
+    }
+
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun createListWithSections(addons: List<Addon>, excludedAddonIDs: List<String> = emptyList()): List<Any> {
         val itemsWithSections = ArrayList<Any>()
@@ -368,6 +391,17 @@ class AddonsManagerAdapter(
                 addon.inDisabledSection() -> disabledAddons.add(addon)
             }
         }
+
+        // Fork (白い熊 火狐): add-ons installed from a file come first, ahead of the
+        // ones the AMO collection brought in.
+        //
+        // Everything 白い熊 installs by hand is unlisted and arrives as an .xpi, so
+        // a file-installed add-on is one being worked on, while the collection just
+        // fills the list. The sort is stable, so within each of the two groups the
+        // previous order is untouched -- this only lifts, it does not reorder.
+        val fileInstalledFirst = compareBy<Addon> { if (it.isInstalledFromFile()) 0 else 1 }
+        installedAddons.sortWith(fileInstalledFirst)
+        disabledAddons.sortWith(fileInstalledFirst)
 
         // Calls are safe, except in tests since the store is mocked in most cases.
         @Suppress("UNNECESSARY_SAFE_CALL")
@@ -610,6 +644,19 @@ class AddonsManagerAdapter(
         }
     }
 }
+
+/**
+ * Fork (白い熊 火狐): was this add-on installed from a file on disk?
+ *
+ * [Addon.downloadUrl] carries the add-on's own `sourceURI` -- GeckoViewWebExtension
+ * exports it as `downloadUrl: sourceURI?.displaySpec` -- and the engine persists
+ * that with the add-on, so it survives a restart. An .xpi picked off the device
+ * therefore stays recognisable by its file: scheme, while everything the AMO
+ * collection installed keeps an https: one. The desktop reads the very same value
+ * (isInstalledFromFile in aboutaddons-utils.mjs), so both products agree on what
+ * "installed from a file" means.
+ */
+private fun Addon.isInstalledFromFile() = downloadUrl.startsWith("file:")
 
 private fun Addon.inUnsupportedSection() = isInstalled() && !isSupported()
 private fun Addon.inRecommendedSection() = !isInstalled()
