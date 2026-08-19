@@ -366,6 +366,172 @@ window,
     background-color: #FFFF00 !important;
     color: #000000 !important;
   }
+
+  /* --- Buttons -------------------------------------------------------------
+   *
+   * Pill, dim ring at rest, full yellow under the pointer -- and the button
+   * that commits stays solid yellow with black text, which is to a dialog what
+   * a ticked box is to a row.
+   *
+   * moz-button paints a <span class="button-background"> inside its shadow root
+   * from the --button-* tokens, so tokens are the whole story there. Plain
+   * buttons are a different matter: in a chrome document nothing points those
+   * tokens at them, and they came out as grey system slabs with white text --
+   * `appearance: auto` again. They are painted here by hand, and `button`
+   * without a namespace deliberately matches the XUL and the HTML element
+   * alike, since dialogs use one and in-content pages the other.
+   *
+   * Excluded: #main-button/#chevron-button, which are moz-button's own inner
+   * <button> wrapping the span above -- styling those would draw a second pill
+   * around every design-system button -- and .text-link, a button that is meant
+   * to look like a link.
+   *
+   * Destructive buttons were the one genuinely off-palette case: upstream fills
+   * them red (--color-red-60/30) to mark the weight of "Remove". With a single
+   * accent colour there is no second hue to say "danger", so the weight is kept
+   * and the hue dropped: a dark olive fill (the palette's own button-active
+   * tone) inside a full-yellow ring. Heavier than a resting button, plainly not
+   * the solid-yellow one that commits.
+   * ---------------------------------------------------------------------- */
+
+  :root {
+    --button-border-radius: 999px !important;
+    --button-border-color: var(--kako-undecided-stroke) !important;
+    --button-border-color-hover: var(--kako-decided-stroke) !important;
+    --button-border-color-active: var(--kako-decided-stroke) !important;
+    --button-border-color-ghost: var(--kako-undecided-stroke) !important;
+    --button-border-color-primary: var(--kako-decided-stroke) !important;
+
+    --button-background-color-destructive: #4D4D00 !important;
+    --button-background-color-destructive-hover: #666600 !important;
+    --button-background-color-destructive-active: #808000 !important;
+    --button-background-color-destructive-disabled: #4D4D00 !important;
+    --button-border-color-destructive: var(--kako-decided-stroke) !important;
+    --button-border-color-destructive-hover: var(--kako-decided-stroke) !important;
+    --button-border-color-destructive-active: var(--kako-decided-stroke) !important;
+    --button-text-color-destructive: #FFFF00 !important;
+    --button-text-color-destructive-hover: #FFFF00 !important;
+    --button-text-color-destructive-active: #FFFF00 !important;
+  }
+
+  button:not(.text-link, .toggle-button, [id="main-button"], [id="chevron-button"]) {
+    appearance: none !important;
+    border: 1px solid var(--kako-undecided-stroke) !important;
+    border-radius: 999px !important;
+    background-color: #000000 !important;
+    color: #FFFF00 !important;
+  }
+
+  button:not(.text-link, .toggle-button, [id="main-button"], [id="chevron-button"]):not([disabled]):hover {
+    border-color: var(--kako-decided-stroke) !important;
+    background-color: #333300 !important;
+  }
+
+  button:not(.text-link, .toggle-button, [id="main-button"], [id="chevron-button"]):not([disabled]):hover:active {
+    background-color: #4D4D00 !important;
+  }
+
+  button:not(.text-link, .toggle-button, [id="main-button"], [id="chevron-button"])[disabled] {
+    opacity: 0.55 !important;
+  }
+
+  /* The accepting button of a dialog, and in-content's primary class. */
+  button:is(.primary, [default="true"], [dlgtype="accept"]):not([disabled], .text-link, .toggle-button, [id="main-button"], [id="chevron-button"]) {
+    background-color: #FFFF00 !important;
+    border-color: #FFFF00 !important;
+    color: #000000 !important;
+  }
+
+  button:is(.primary, [default="true"], [dlgtype="accept"]):not([disabled], .text-link, .toggle-button, [id="main-button"], [id="chevron-button"]):hover {
+    background-color: #CCCC00 !important;
+  }
+
+  /* --- Toggles -------------------------------------------------------------
+   *
+   * These were already black and yellow -- what they lacked was the same
+   * distinction every other control now makes, so an unpressed toggle wears the
+   * dim ring and dim dot, and brightens to full yellow when pressed or under
+   * the pointer. Pressed keeps the filled track with a black dot: solid yellow
+   * with a black mark, the ticked-checkbox reading once more.
+   * ---------------------------------------------------------------------- */
+
+  moz-toggle {
+    --toggle-background-color: #000000 !important;
+    --toggle-background-color-hover: var(--kako-hover-fill) !important;
+    --toggle-background-color-active: #4D4D00 !important;
+    --toggle-border-color: var(--kako-undecided-stroke) !important;
+    --toggle-dot-background-color: var(--kako-undecided-stroke) !important;
+    --toggle-background-color-pressed: #FFFF00 !important;
+    --toggle-background-color-pressed-hover: #CCCC00 !important;
+    --toggle-background-color-pressed-active: #999900 !important;
+    --toggle-dot-background-color-on-pressed: #000000 !important;
+  }
+
+  moz-toggle:hover {
+    --toggle-border-color: var(--kako-decided-stroke) !important;
+    --toggle-dot-background-color: var(--kako-decided-stroke) !important;
+  }
+
+  /* --- Scrollbars ----------------------------------------------------------
+   *
+   * Left at the platform default they were bright white bars down the side of
+   * every black panel -- the loudest off-palette thing left in the chrome. The
+   * thumb takes the dim yellow of a control at rest; Gecko derives its own
+   * hover and active shades from it.
+   * ---------------------------------------------------------------------- */
+
+  :root {
+    scrollbar-color: rgba(255, 255, 0, 0.55) #000000 !important;
+  }
+
+  /* --- Sliders and progress ------------------------------------------------
+   *
+   * The filled part already took the accent colour, but the groove behind it
+   * and the thumb stayed the design system's grey-lavender. `appearance: none`
+   * hands over the whole control, and the pseudo-elements paint the three
+   * pieces: an unfilled groove at low alpha, a full-yellow fill, and a thumb
+   * that repeats the ticked-control shape -- solid yellow with a black centre
+   * ring so it stays legible on top of the filled groove.
+   * ---------------------------------------------------------------------- */
+
+  input[type="range"] {
+    appearance: none !important;
+    background-color: transparent !important;
+    border: none !important;
+  }
+
+  input[type="range"]::-moz-range-track {
+    background-color: rgba(255, 255, 0, 0.25) !important;
+    height: 4px !important;
+    border-radius: 999px !important;
+  }
+
+  input[type="range"]::-moz-range-progress {
+    background-color: #FFFF00 !important;
+    height: 4px !important;
+    border-radius: 999px !important;
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 14px !important;
+    height: 14px !important;
+    border: 2px solid #000000 !important;
+    border-radius: 50% !important;
+    background-color: #FFFF00 !important;
+  }
+
+  progress {
+    appearance: none !important;
+    height: 8px !important;
+    border: none !important;
+    border-radius: 999px !important;
+    background-color: rgba(255, 255, 0, 0.25) !important;
+  }
+
+  progress::-moz-progress-bar {
+    border-radius: 999px !important;
+    background-color: #FFFF00 !important;
+  }
 }
 
 /* ---------------------------------------------------------------------------
