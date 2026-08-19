@@ -70,4 +70,15 @@
         android:textAlignment="center"
         android:textAllCaps="false" />
 
+    <!-- Fork (白い熊 火狐): the sheet's top edge, same line the permission dialog
+         draws. This is the dialog that follows it in the install flow, so the
+         two would look unrelated without it. Declared last so it paints over
+         the background rather than under it. -->
+    <View
+        android:id="@+id/kako_dialog_top_border"
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:layout_alignParentTop="true"
+        android:background="?android:attr/textColorPrimary" />
+
 </RelativeLayout>
