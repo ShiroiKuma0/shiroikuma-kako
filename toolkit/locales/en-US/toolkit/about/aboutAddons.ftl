@@ -420,6 +420,13 @@ never-activate-button = Never Activate
 
 addon-detail-author-label = Author
 addon-detail-version-label = Version
+
+# Fork (白い熊 火狐): the installed version, shown under every add-on in the
+# list instead of only inside the expanded card.
+# Variables:
+#   $version (string) - The version of the installed add-on.
+kako-addon-card-version = Version { $version }
+
 addon-detail-last-updated-label = Last Updated
 addon-detail-homepage-label = Homepage
 addon-detail-rating-label = Rating
