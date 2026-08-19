@@ -50,6 +50,7 @@ import java.io.File
 import java.io.IOException
 import com.google.android.material.R as materialR
 import mozilla.components.feature.addons.R as addonsR
+import mozilla.components.ui.icons.R as iconsR
 
 // Fork: identifiers for the "install add-on from file" entry.
 private const val KAKO_INSTALL_FROM_FILE_ITEM_ID = 0x4B41_4B4F
@@ -202,17 +203,41 @@ class AddonsManagementFragment : Fragment(R.layout.fragment_add_ons_management),
      *
      * The menu item is added in code rather than through a menu resource, to keep the
      * fork's footprint to one file.
+     *
+     * It is shown as a toolbar action rather than an overflow entry, so picking an
+     * .xpi is one tap instead of three. An always-shown action is laid out to the
+     * left of the overflow button, which is where 白い熊 asked for it; the title
+     * stays set as the item's accessible name and long-press tooltip, since the
+     * button itself carries only the icon.
      */
     private fun kakoAddInstallFromFileMenu() {
         requireActivity().addMenuProvider(
             object : MenuProvider {
                 override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-                    menu.add(
+                    val item = menu.add(
                         Menu.NONE,
                         KAKO_INSTALL_FROM_FILE_ITEM_ID,
                         Menu.NONE,
                         getString(R.string.kako_install_addon_from_file),
-                    ).setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
+                    )
+                    item.icon = ContextCompat.getDrawable(
+                        requireContext(),
+                        iconsR.drawable.mozac_ic_folder_add_24,
+                    )?.apply {
+                        // Toolbar actions are not tinted for us here, and an
+                        // untinted icon arrives in the drawable's own colour --
+                        // invisible against the fork's black toolbar.
+                        setTint(
+                            ContextCompat.getColor(
+                                requireContext(),
+                                ThemeManager.resolveAttribute(
+                                    materialR.attr.colorOnSurface,
+                                    requireContext(),
+                                ),
+                            ),
+                        )
+                    }
+                    item.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
                 }
 
                 override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
