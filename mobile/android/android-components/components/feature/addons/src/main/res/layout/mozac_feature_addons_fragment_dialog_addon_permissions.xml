@@ -140,6 +140,9 @@
                 android:textColor="?android:attr/textColorPrimary"
                 android:text="@string/mozac_feature_addons_permissions_dialog_heading_optional_settings" />
 
+            <!-- Fork (白い熊 火狐): the row is a pill (kako_checkbox_pill), box and
+                 label enclosed together. Padding is the pill's inner room; the
+                 top margin keeps consecutive pills from touching. -->
             <androidx.appcompat.widget.AppCompatCheckBox
                 android:id="@+id/allow_in_private_browsing"
                 android:layout_width="match_parent"
@@ -148,14 +151,18 @@
                 android:layout_alignStart="@id/optional_settings_title"
                 android:layout_alignEnd="@id/optional_settings_title"
                 android:layout_gravity="center"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
-                android:paddingTop="4dp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/kako_checkbox_pill"
+                android:paddingStart="14dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
                 android:text="@string/mozac_feature_addons_settings_allow_in_private_browsing_2"
                 android:textColor="?android:attr/textColorPrimary"
                 android:gravity="center_vertical"
                 android:drawablePadding="8dp" />
 
+            <!-- Fork (白い熊 火狐): same pill as the row above. -->
             <androidx.appcompat.widget.AppCompatCheckBox
                 android:id="@+id/technical_and_interaction_data"
                 android:layout_width="match_parent"
@@ -164,9 +171,12 @@
                 android:layout_alignStart="@id/allow_in_private_browsing"
                 android:layout_alignEnd="@id/allow_in_private_browsing"
                 android:layout_gravity="center"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp"
-                android:paddingTop="4dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/kako_checkbox_pill"
+                android:paddingStart="14dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
                 android:text="@string/mozac_feature_addons_permissions_dialog_technical_and_interaction_data"
                 android:textColor="?android:attr/textColorPrimary"
                 android:gravity="center_vertical"
@@ -176,6 +186,19 @@
 
         </RelativeLayout>
     </androidx.core.widget.NestedScrollView>
+
+    <!-- Fork (白い熊 火狐): the sheet's top edge, traced the way the desktop
+         window and every other fork surface is.
+         Placed in the FrameLayout rather than inside the NestedScrollView so it
+         stays pinned to the edge of the dialog instead of scrolling away with
+         the permission list, and declared before the button bar so that bar's
+         elevation still lifts it above this line. -->
+    <View
+        android:id="@+id/kako_dialog_top_border"
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:layout_gravity="top"
+        android:background="?android:attr/textColorPrimary" />
 
     <RelativeLayout
         android:layout_width="match_parent"
