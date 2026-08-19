@@ -4,9 +4,11 @@
 
 package org.mozilla.fenix.compose.navigation
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -65,10 +67,24 @@ internal class BottomSheetScene<T : Any>(
             }
         }
 
+        // Fork (白い熊 火狐): trace the sheet, like every other pull-up in the app.
+        //
+        // This is the one bottom sheet KakoDialogBorder cannot reach: it is a
+        // Compose ModalBottomSheet inside an ordinary fragment, not a
+        // DialogFragment carrying a BottomSheetDialog, so the fragment watcher
+        // never sees a dialog to stamp. The shape is named rather than left to
+        // the default so the ring and the surface round by the same amount.
+        val sheetShape = BottomSheetDefaults.ExpandedShape
         ModalBottomSheet(
             onDismissRequest = onBack,
+            modifier = Modifier.border(
+                width = 2.dp,
+                color = MaterialTheme.colorScheme.onSurface,
+                shape = sheetShape,
+            ),
             properties = modalBottomSheetProperties,
             sheetState = sheetState,
+            shape = sheetShape,
             dragHandle = null,
             containerColor = MaterialTheme.colorScheme.surface,
             scrimColor = MaterialTheme.colorScheme.scrim,
