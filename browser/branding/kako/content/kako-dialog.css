@@ -39,6 +39,10 @@
   --text-color: #FFFF00 !important;
   --text-color-deemphasized: #FFFF00 !important;
 
+  /* Icons drawn with -moz-context-properties read this one -- the magnifier
+   * inside a search field, for instance, which was left near-white. */
+  --icon-color: #FFFF00 !important;
+
   --border-color: #FFFF00 !important;
   --border-color-deemphasized: #FFFF00 !important;
   --border-color-interactive: #FFFF00 !important;
@@ -63,6 +67,10 @@
   --color-accent-primary: #FFFF00 !important;
   --color-accent-primary-hover: #CCCC00 !important;
   --color-accent-primary-active: #999900 !important;
+  /* The chosen row of an open dropdown list (in-content styles a selected
+   * menulist menuitem with these two). Matches the theme's popup_highlight. */
+  --color-accent-primary-selected: #333300 !important;
+  --text-color-accent-primary-selected: #FFFF00 !important;
   --focus-outline-color: #FFFF00 !important;
 
   /* --- older in-content family, still used by some surfaces --- */
@@ -261,6 +269,102 @@ window,
     border-color: var(--kako-decided-stroke) !important;
     background-color: var(--kako-decided-stroke) !important;
     background-image: radial-gradient(circle at 50%, #000000 3.5px, transparent 3.5px) !important;
+  }
+
+  /* --- Dropdowns and text fields ------------------------------------------
+   *
+   * The same grammar one step further: a control at rest wears the dim ring,
+   * and brightens to full yellow the moment it is engaged. For a checkbox that
+   * moment is being ticked; for a dropdown it is hover or the open list, and
+   * for a text field it is focus. Both are pill-shaped like the rows above --
+   * except the textarea, where a fully rounded end around several lines of text
+   * looks like a mistake rather than a shape, so it gets a soft corner instead.
+   *
+   * Dropdowns come in three spellings and each paints from a different place:
+   *
+   *   moz-select   -- the ring lives on .select-wrapper INSIDE its shadow root,
+   *                   so ONLY the --select-* tokens can move it. Giving the host
+   *                   a border of its own would draw a second ring around the
+   *                   first.
+   *   menulist     -- the XUL element paints :host(:not([native])) from those
+   *                   same tokens, and in-content pages additionally style it
+   *                   with the --button-* family
+   *                   (toolkit/themes/shared/in-content/common-shared.css).
+   *   select       -- plain HTML, painted by that same in-content rule; its
+   *                   chevron is a background-image, so `appearance` is left
+   *                   alone here or the arrow would vanish with it.
+   *
+   * Text fields are matched by explicit type= selectors rather than a bare
+   * `input`. That is deliberate: the address bar and the search bar are
+   * <html:input> elements with NO type attribute, and they already carry the
+   * toolbar_field colours from the kako-theme add-on. Naming the types keeps
+   * this rule out of the toolbar entirely.
+   * ---------------------------------------------------------------------- */
+
+  select,
+  menulist,
+  moz-select {
+    --select-background-color: #000000 !important;
+    --select-background-color-hover: var(--kako-hover-fill) !important;
+    --select-border: 1px solid var(--kako-undecided-stroke) !important;
+    --select-border-color-hover: var(--kako-decided-stroke) !important;
+    --select-border-radius: 999px !important;
+    --select-text-color: #FFFF00 !important;
+    --select-text-color-hover: #FFFF00 !important;
+    --select-icon-fill: #FFFF00 !important;
+  }
+
+  select:not([size], [multiple]),
+  menulist {
+    border: 1px solid var(--kako-undecided-stroke) !important;
+    border-radius: 999px !important;
+    background-color: #000000 !important;
+    color: #FFFF00 !important;
+  }
+
+  select:not([size], [multiple]):enabled:hover,
+  select:not([size], [multiple]):focus,
+  menulist:not([disabled]):hover,
+  menulist[open="true"] {
+    border-color: var(--kako-decided-stroke) !important;
+    background-color: var(--kako-hover-fill) !important;
+    color: #FFFF00 !important;
+  }
+
+  input:is([type="text"], [type="search"], [type="url"], [type="email"], [type="tel"], [type="password"], [type="number"]),
+  textarea {
+    /* Same trap as the checkbox: a field left at `appearance: auto` is painted
+     * by the theme, which ignores background-color and border outright. The
+     * in-content stylesheet already turns it off for its own text fields, which
+     * is why only the ones in chrome documents (dialogs, panels, moz-input-text
+     * and friends) came out grey. Selects deliberately keep their appearance --
+     * their chevron comes with it. */
+    appearance: none !important;
+    border: 1px solid var(--kako-undecided-stroke) !important;
+    border-radius: 999px !important;
+    background-color: #000000 !important;
+    color: #FFFF00 !important;
+    caret-color: #FFFF00 !important;
+  }
+
+  textarea {
+    border-radius: 10px !important;
+  }
+
+  input:is([type="text"], [type="search"], [type="url"], [type="email"], [type="tel"], [type="password"], [type="number"]):focus,
+  textarea:focus {
+    border-color: var(--kako-decided-stroke) !important;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: rgba(255, 255, 0, 0.5) !important;
+  }
+
+  input::selection,
+  textarea::selection {
+    background-color: #FFFF00 !important;
+    color: #000000 !important;
   }
 }
 
