@@ -193,4 +193,11 @@ sealed class BrowserToolbarMenuItem {
      * Divider to show in a [BrowserToolbarMenu].
      */
     data object BrowserToolbarMenuDivider : BrowserToolbarMenuItem()
+
+    /**
+     * Fork: a divider drawn in the accent color instead of the muted outline, for
+     * separating groups that come from different owners -- the browser's own entries
+     * above, an extension's own entries below.
+     */
+    data object BrowserToolbarMenuAccentDivider : BrowserToolbarMenuItem()
 }

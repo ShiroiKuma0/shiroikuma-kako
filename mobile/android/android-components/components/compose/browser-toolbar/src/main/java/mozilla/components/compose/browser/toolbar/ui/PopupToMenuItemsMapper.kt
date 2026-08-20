@@ -53,6 +53,7 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.B
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.Icon.DrawableResIcon
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.Text.StringResText
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.Text.StringText
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuAccentDivider
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuDivider
 
 @Stable
@@ -143,6 +144,12 @@ internal fun menuItemComposable(
         is BrowserToolbarMenuDivider -> {
             @Composable {
                 HorizontalDivider()
+            }
+        }
+
+        is BrowserToolbarMenuAccentDivider -> {
+            @Composable {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline)
             }
         }
     }
