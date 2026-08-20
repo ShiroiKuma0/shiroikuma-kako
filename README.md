@@ -6,11 +6,11 @@
 
 **Firefox in pure black & yellow — on the phone and on the desktop — with extension freedom on the release channel.**
 
-A fork of [Mozilla Firefox](https://github.com/mozilla-firefox/firefox) (release channel) with **major additions**: custom AMO extension collections unlocked on release, add-ons installable straight from a file, a fully settable black/yellow UI with external fonts, pinned extension buttons on a two-row toolbar, one-tap sync from that toolbar, whole-profile export & import — scriptable from outside the app — about:config, a line-traced fox, and a **GNU/Linux desktop build** in the same palette.
+A fork of [Mozilla Firefox](https://github.com/mozilla-firefox/firefox) (release channel) with **major additions**: custom AMO extension collections unlocked on release, add-ons installable straight from a file, a fully settable black/yellow UI with external fonts, pinned extension buttons that carry the extension's own options on a two-row toolbar, one-tap sync from that toolbar, whole-profile export & import — scriptable from outside the app — about:config, a line-traced fox, and a **GNU/Linux desktop build** in the same palette.
 
 Installs **side-by-side** with stock Firefox/Beta/Nightly: app id `shiroikuma.kako` on Android, package `shiroikuma-kako` with its own `~/.mozilla/kako` profile on the desktop.
 
-**📥 Latest release: [`154.0+019`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
+**📥 Latest release: [`154.0+021`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
 
 </div>
 
@@ -51,6 +51,11 @@ The same export answers a token-gated broadcast, so an automation app can back t
 
 ## 📌 Pinned extensions & the two-row toolbar
 Any extension with a browser action can be pinned to the toolbar from its settings screen, desktop-style — with its real multicolor icon, an icon-size slider, long-press reordering, and a drag-to-reorder dialog. A toggleable two-row layout keeps navigation and the address pill on top and moves new tab, pinned extensions, manage-extensions, tab counter, the account button and the menu to their own row beneath.
+
+---
+
+## ⚙ An extension's own options, on its button
+On the PC, right-clicking an extension's toolbar button offers whatever that extension puts there — Stylus alone offers "Toggle current tab", "Turn all styles off", "Manage" and "Reload". On Android none of it was reachable, because the API behind it does not exist there: `browser.menus` is implemented for the desktop only, and GeckoView's scaffolding for it has answered "Not implemented" since 2019. This fork ships the missing half, so extensions can register those options on the phone at last — and a long press on a pinned button now shows the fork's own move-and-remove entries, a yellow rule, and below it everything the extension itself offers. Checkboxes, radio entries and separators render, and a nested entry is indented rather than lost.
 
 ---
 
