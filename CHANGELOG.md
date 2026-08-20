@@ -5,6 +5,86 @@ Everything built on top of stock Firefox (release channel) — the Android brows
 `<upstream-base>+<build>`; the fork commits live on `custom`, rebased onto each
 adopted `FIREFOX_*_RELEASE` tag, and one tag covers both products.
 
+## 154.0+021 — 2026-08-20
+
+Both products still on the Firefox **154.0** base. Android gains a WebExtension
+API it has never had, and the extension options that ride on it.
+
+### An extension's own options, on its toolbar button
+
+Long-pressing a pinned extension offered only the fork's own management entries
+— 左へ移動, 右へ移動, ツールバーから削除. On the PC the same button carries
+whatever the extension itself hangs off a right-click: Stylus offers "Toggle
+current tab", "Turn all styles off", "Manage", "Reload"; other add-ons offer
+their own. None of it was reachable on the phone.
+
+Now the long press shows both: the fork's entries, a full-strength yellow rule,
+and below it everything the extension contributes. Separators, checkboxes and
+radio entries render — a ticked one carries a checkmark — disabled entries stay
+in place but do nothing, and a nested entry is indented rather than hidden
+behind a submenu the popup does not have.
+
+### …which meant implementing `browser.menus` for Android
+
+There was nothing to merge in, because the API behind those options does not
+exist on Firefox for Android. `menus` (a.k.a. `contextMenus`) is implemented
+only for the desktop; Android's extension API list is `browserAction`,
+`browsingData`, `pageAction` and `tabs`. GeckoView has carried the Java
+scaffolding for menus since 2019 — `WebExtension.Menu`,
+`MenuContextFlags.BROWSER_ACTION` — but `getMenu()` returns null and the JS half
+answers "Not implemented" (bug 1595822). An extension calling `browser.menus` on
+Android simply found it undefined, so it registered nothing to show.
+
+The fork now ships the missing half. The model layer follows the desktop
+implementation closely — menu items, context matching, click info, persistence
+through the same store — so behaviour matches Firefox for Desktop; what replaces
+the desktop's XUL menu builder is a push to the browser over GeckoView's event
+dispatcher. `menus.create`, `update`, `remove`, `removeAll`, `onClicked`,
+`onShown`, `onHidden` and the deprecated `onclick` property all work. Items
+registered for page, link, selection and tab contexts are accepted and stored as
+before; they are simply never shown, the toolbar button being the only place
+Android has to show them.
+
+Two deliberate departures from the desktop: there is no six-item cap folding the
+rest into a submenu, because a scrolling popup does not need one, and `onShown`
+fires on opening but the popup is drawn from the last published state, so an
+extension that builds its menu from that event is right from the second long
+press onwards.
+
+### `__MSG_` placeholders no longer leak into those menus
+
+The first build showed Stylus's entries as `__MSG_toggleCurrentTab__` where the
+PC reads "Toggle current tab". Stylus titles them from its own manifest, and
+`runtime.getManifest()` returns the *normalized* manifest — which on the desktop
+means those strings have already been localized, because the `commands` schema
+marks that field for it.
+
+Android has no `commands` API at all, so nothing described that manifest key and
+it fell through the manifest's catch-all for unrecognized properties, which
+passes values along untouched. The raw placeholder became the menu title. Only
+the four entries backed by a command were affected; the two without one resolved
+through the extension's own translations, which is exactly what the screen
+showed.
+
+The fix ships the manifest half of the `commands` schema and nothing else, so
+the key is described and localized while `browser.commands` stays absent exactly
+as before — an extension that feature-detects it sees no change. This fixes any
+add-on that titles its UI from its own manifest, not just Stylus.
+
+### Caches that would have hidden all of this
+
+The engine keeps a startup cache holding the parsed extension API list and every
+installed add-on's parsed manifest and permissions, and upstream drops it only
+when the application version changes. That is sound for Firefox, where a new API
+always arrives with a new version. It is not sound here: the Android build takes
+a prebuilt engine, so its version stands still while the fork adds APIs on top of
+it — and without dropping that cache, a newly added API stays invisible to every
+extension installed before it, its permission still recorded as unknown.
+
+The browser now drops that cache once whenever the fork's own extension API
+surface changes, which is what makes both of the above take effect on add-ons
+that were already installed rather than only on freshly installed ones.
+
 ## 154.0+019 — 2026-08-19
 
 Both products still on the Firefox **154.0** base. A pass over the add-ons UI on
