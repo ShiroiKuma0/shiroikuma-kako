@@ -27,5 +27,13 @@
   },
   "geckoViewAddons": {
     "schema": "chrome://geckoview/content/schemas/gecko_view_addons.json"
+  },
+  "menusInternal": {
+    "url": "chrome://geckoview/content/ext-menus.js",
+    "schema": "chrome://geckoview/content/schemas/menus.json",
+    "scopes": ["addon_parent"],
+    "events": ["startup"],
+    "permissions": ["menus", "contextMenus"],
+    "paths": [["contextMenus"], ["menus"], ["menusInternal"]]
   }
 }
