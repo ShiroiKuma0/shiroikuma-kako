@@ -112,6 +112,49 @@ const JSWINDOWACTORS = {
 };
 
 export class GeckoViewStartup {
+  /**
+   * Fork: drops the caches that would otherwise hide a change to the fork's own
+   * WebExtension API surface.
+   *
+   * The extension startup cache (`webext.sc.lz4`) holds the parsed API module
+   * manifest *and* every installed extension's parsed manifest, permissions
+   * included -- and upstream only ever drops it when the application version
+   * changes. That is sound for Firefox, where a new API always arrives with a new
+   * version; it is not sound here, where an artifact build holds GeckoView's
+   * version still while the fork adds APIs on top of it. Without this, an API the
+   * fork adds stays invisible to every extension installed before it: the cached
+   * manifest still records the permission as unknown and therefore dropped.
+   *
+   * The file is removed rather than invalidated through the "startupcache-invalidate"
+   * observer, because ExtensionParent.sys.mjs registers that observer when it loads
+   * and it has not loaded yet this early. The notification is sent as well, for the
+   * script preloader, which is a native singleton and is listening by now.
+   */
+  dropStaleExtensionApiCaches() {
+    const REVISION_PREF = "extensions.kako.apiRevision";
+    // Bump on every change to the fork's extension API surface.
+    const REVISION = 1;
+
+    if (Services.prefs.getIntPref(REVISION_PREF, 0) === REVISION) {
+      return;
+    }
+    Services.prefs.setIntPref(REVISION_PREF, REVISION);
+
+    try {
+      const cache = Services.dirsvc.get("ProfLD", Ci.nsIFile);
+      cache.append("startupCache");
+      cache.append("webext.sc.lz4");
+      if (cache.exists()) {
+        // Synchronously, so nothing can read the stale copy first.
+        cache.remove(false);
+      }
+    } catch (ex) {
+      console.error("Could not drop the extension startup cache", ex);
+    }
+
+    Services.obs.notifyObservers(null, "startupcache-invalidate");
+  }
+
   /* ----------  nsIObserver  ---------- */
   observe(aSubject, aTopic) {
     debug`observe: ${aTopic}`;
@@ -296,6 +339,8 @@ export class GeckoViewStartup {
       }
 
       case "profile-after-change": {
+        this.dropStaleExtensionApiCaches();
+
         GeckoViewUtils.addLazyGetter(this, "GeckoViewRemoteDebugger", {
           module: "resource://gre/modules/GeckoViewRemoteDebugger.sys.mjs",
           init: gvrd => gvrd.onInit(),

@@ -56,12 +56,15 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.Ini
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent.Source
-import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarMenu
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.CombinedEventAndMenu
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuAccentDivider
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.ContentDescription.StringContentDescription
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.ContentDescription.StringResContentDescription
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.Icon.DrawableResIcon
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.Text.StringResText
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuButton.Text.StringText
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuDivider
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import mozilla.components.compose.browser.toolbar.store.ProgressBarConfig
@@ -151,6 +154,7 @@ import org.mozilla.fenix.ext.canGoBackInHistoryOrToStories
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.navigateSafe
+import org.mozilla.fenix.kako.KakoExtensionMenus
 import org.mozilla.fenix.kako.KakoSyncAvatar
 import org.mozilla.fenix.kako.KakoTheme
 import org.mozilla.fenix.nimbus.FxNimbus
@@ -168,6 +172,12 @@ import mozilla.components.feature.summarize.R as summariesR
 import mozilla.components.lib.state.Action as MVIAction
 import mozilla.components.ui.icons.R as iconsR
 import mozilla.components.ui.tabcounter.R as tabcounterR
+
+/**
+ * Fork: what one level of nesting costs an extension menu entry, since the popup has no
+ * submenus to put a child in.
+ */
+private const val EXTENSION_MENU_INDENT = "    "
 
 // Fork: how long the account button holds its sync verdict before going back to the avatar.
 private const val SYNC_FLASH_DURATION_MS = 1_500L
@@ -206,6 +216,13 @@ internal sealed class DisplayActions(override val source: Source) : BrowserToolb
     data class ExtensionMoveClicked(val extensionId: String, val delta: Int) :
         DisplayActions(Source.AddressBar.BrowserEnd)
     data class ExtensionUnpinClicked(val extensionId: String) : DisplayActions(Source.AddressBar.BrowserEnd)
+
+    // Fork: the long-press menu of a pinned extension was opened, and one of the
+    // extension's own entries in it was tapped.
+    data class ExtensionMenuOpened(val extensionId: String) :
+        DisplayActions(Source.AddressBar.BrowserEnd)
+    data class ExtensionMenuItemClicked(val extensionId: String, val itemKey: String) :
+        DisplayActions(Source.AddressBar.BrowserEnd)
 
     // Fork: the manage-extensions button at the end of the pinned extension row.
     data object ManageExtensionsClicked : DisplayActions(Source.AddressBar.BrowserEnd)
@@ -772,6 +789,19 @@ class BrowserToolbarMiddleware(
                 next(action)
             }
 
+            // Fork: the long-press menu is on screen -- let the extension know, so its
+            // menus.onShown listener can refresh the entries for the next opening.
+            is DisplayActions.ExtensionMenuOpened -> {
+                KakoExtensionMenus.notifyShown(action.extensionId)
+                next(action)
+            }
+
+            // Fork: hand a tap on one of the extension's own entries back to it.
+            is DisplayActions.ExtensionMenuItemClicked -> {
+                KakoExtensionMenus.click(action.extensionId, action.itemKey)
+                next(action)
+            }
+
             // Fork: unpin a pinned extension from its long-press menu.
             is DisplayActions.ExtensionUnpinClicked -> {
                 settings.toolbarPinnedExtensions = settings.toolbarPinnedExtensions
@@ -1229,34 +1259,93 @@ class BrowserToolbarMiddleware(
                 shouldTint = icon == null,
                 contentDescription = contentDescription,
                 onClick = DisplayActions.ExtensionActionClicked(extensionId),
-                // Long-press: reorder within the pinned row or unpin (desktop-style
-                // "move left/right" management without leaving the toolbar).
-                onLongClick = BrowserToolbarMenu {
-                    listOf(
-                        BrowserToolbarMenuButton(
-                            icon = DrawableResIcon(iconsR.drawable.mozac_ic_back_24),
-                            text = StringResText(R.string.kako_addon_move_left),
-                            contentDescription =
-                                StringResContentDescription(R.string.kako_addon_move_left),
-                            onClick = DisplayActions.ExtensionMoveClicked(extensionId, -1),
-                        ),
-                        BrowserToolbarMenuButton(
-                            icon = DrawableResIcon(iconsR.drawable.mozac_ic_forward_24),
-                            text = StringResText(R.string.kako_addon_move_right),
-                            contentDescription =
-                                StringResContentDescription(R.string.kako_addon_move_right),
-                            onClick = DisplayActions.ExtensionMoveClicked(extensionId, 1),
-                        ),
-                        BrowserToolbarMenuButton(
-                            icon = DrawableResIcon(iconsR.drawable.mozac_ic_cross_24),
-                            text = StringResText(R.string.kako_addon_remove_from_toolbar),
-                            contentDescription =
-                                StringResContentDescription(R.string.kako_addon_remove_from_toolbar),
-                            onClick = DisplayActions.ExtensionUnpinClicked(extensionId),
-                        ),
-                    )
+                // Long-press: the fork's own management entries (desktop-style
+                // "move left/right" without leaving the toolbar), and below a yellow
+                // rule whatever the extension itself offers -- the options it hangs off
+                // a right-click of its toolbar button on the PC.
+                onLongClick = CombinedEventAndMenu(
+                    DisplayActions.ExtensionMenuOpened(extensionId),
+                ) {
+                    buildList {
+                        add(
+                            BrowserToolbarMenuButton(
+                                icon = DrawableResIcon(iconsR.drawable.mozac_ic_back_24),
+                                text = StringResText(R.string.kako_addon_move_left),
+                                contentDescription =
+                                    StringResContentDescription(R.string.kako_addon_move_left),
+                                onClick = DisplayActions.ExtensionMoveClicked(extensionId, -1),
+                            ),
+                        )
+                        add(
+                            BrowserToolbarMenuButton(
+                                icon = DrawableResIcon(iconsR.drawable.mozac_ic_forward_24),
+                                text = StringResText(R.string.kako_addon_move_right),
+                                contentDescription =
+                                    StringResContentDescription(R.string.kako_addon_move_right),
+                                onClick = DisplayActions.ExtensionMoveClicked(extensionId, 1),
+                            ),
+                        )
+                        add(
+                            BrowserToolbarMenuButton(
+                                icon = DrawableResIcon(iconsR.drawable.mozac_ic_cross_24),
+                                text = StringResText(R.string.kako_addon_remove_from_toolbar),
+                                contentDescription =
+                                    StringResContentDescription(R.string.kako_addon_remove_from_toolbar),
+                                onClick = DisplayActions.ExtensionUnpinClicked(extensionId),
+                            ),
+                        )
+                        addAll(extensionOwnMenuItems(extensionId))
+                    }
                 },
             )
+        }
+    }
+
+    /**
+     * Fork: the entries an extension itself contributes to its toolbar button, below a
+     * yellow rule separating them from the fork's own management entries above.
+     *
+     * These come from `browser.menus` -- the API the fork adds to GeckoView, since
+     * upstream ships it for desktop only. Empty for the great majority of extensions:
+     * only those registering an item for the `browser_action`/`action` context have
+     * anything to show here, which is exactly the set that offers options on a
+     * right-click of the toolbar button on the PC.
+     *
+     * The popup has no submenus, so a nested entry is indented by its depth instead.
+     * The list is a snapshot the engine last published: an extension that builds its
+     * entries from `menus.onShown` sees that event fire on this opening, but its reply
+     * only lands in time for the next one.
+     */
+    private fun extensionOwnMenuItems(extensionId: String): List<BrowserToolbarMenuItem> {
+        val items = KakoExtensionMenus.itemsFor(extensionId)
+        if (items.isEmpty()) return emptyList()
+
+        return buildList {
+            add(BrowserToolbarMenuAccentDivider)
+            for (item in items) {
+                if (item.type == KakoExtensionMenus.TYPE_SEPARATOR) {
+                    add(BrowserToolbarMenuDivider)
+                    continue
+                }
+                add(
+                    BrowserToolbarMenuButton(
+                        // A ticked checkbox or radio entry is marked the only way the
+                        // popup can mark anything -- there is no check column.
+                        icon = when {
+                            item.checked -> DrawableResIcon(iconsR.drawable.mozac_ic_checkmark_24)
+                            else -> null
+                        },
+                        text = StringText(EXTENSION_MENU_INDENT.repeat(item.depth) + item.title),
+                        contentDescription = StringContentDescription(item.title),
+                        // A disabled entry keeps its place but does nothing, as on the PC.
+                        onClick = when {
+                            item.enabled ->
+                                DisplayActions.ExtensionMenuItemClicked(extensionId, item.key)
+                            else -> null
+                        },
+                    ),
+                )
+            }
         }
     }
 

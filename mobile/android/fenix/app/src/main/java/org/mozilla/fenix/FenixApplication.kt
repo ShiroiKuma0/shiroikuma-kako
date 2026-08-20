@@ -184,6 +184,11 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             org.mozilla.fenix.kako.KakoTheme.migratePureYellow(this)
             org.mozilla.fenix.kako.KakoFonts.refresh(this)
             org.mozilla.fenix.kako.KakoTheme.refreshChromeOverrides(this)
+            // Fork: listen for the browser-action menus extensions register before
+            // anything can start the engine -- a publish sent while nothing is
+            // listening is dropped, not queued, and would leave a button's extra
+            // entries missing until the extension next changed them.
+            org.mozilla.fenix.kako.KakoExtensionMenus.register()
         }
     }
 
