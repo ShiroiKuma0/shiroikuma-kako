@@ -28,6 +28,9 @@
   "geckoViewAddons": {
     "schema": "chrome://geckoview/content/schemas/gecko_view_addons.json"
   },
+  "commandsManifest": {
+    "schema": "chrome://geckoview/content/schemas/commands.json"
+  },
   "menusInternal": {
     "url": "chrome://geckoview/content/ext-menus.js",
     "schema": "chrome://geckoview/content/schemas/menus.json",

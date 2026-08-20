@@ -1,0 +1,73 @@
+[
+  {
+    "namespace": "manifest",
+    "types": [
+      {
+        "id": "KeyName",
+        "type": "string",
+        "format": "manifestShortcutKey"
+      },
+      {
+        "$extend": "WebExtensionManifest",
+        "properties": {
+          "commands": {
+            "type": "object",
+            "optional": true,
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "UnrecognizedProperty"
+              },
+              "properties": {
+                "suggested_key": {
+                  "type": "object",
+                  "optional": true,
+                  "properties": {
+                    "default": {
+                      "$ref": "KeyName",
+                      "optional": true
+                    },
+                    "mac": {
+                      "$ref": "KeyName",
+                      "optional": true
+                    },
+                    "linux": {
+                      "$ref": "KeyName",
+                      "optional": true
+                    },
+                    "windows": {
+                      "$ref": "KeyName",
+                      "optional": true
+                    },
+                    "chromeos": {
+                      "type": "string",
+                      "optional": true
+                    },
+                    "android": {
+                      "type": "string",
+                      "optional": true
+                    },
+                    "ios": {
+                      "type": "string",
+                      "optional": true
+                    },
+                    "additionalProperties": {
+                      "type": "string",
+                      "deprecated": "Unknown platform name",
+                      "optional": true
+                    }
+                  }
+                },
+                "description": {
+                  "type": "string",
+                  "preprocess": "localize",
+                  "optional": true
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+]
