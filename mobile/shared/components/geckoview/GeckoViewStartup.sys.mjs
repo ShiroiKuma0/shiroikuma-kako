@@ -178,7 +178,7 @@ export class GeckoViewStartup {
   dropStaleExtensionApiCaches() {
     const REVISION_PREF = "extensions.kako.apiRevision";
     // Bump on every change to the fork's extension API surface.
-    const REVISION = 1;
+    const REVISION = 2;
 
     if (Services.prefs.getIntPref(REVISION_PREF, 0) === REVISION) {
       return;
