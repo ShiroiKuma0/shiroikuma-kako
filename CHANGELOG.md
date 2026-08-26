@@ -5,6 +5,65 @@ Everything built on top of stock Firefox (release channel) — the Android brows
 `<upstream-base>+<build>`; the fork commits live on `custom`, rebased onto each
 adopted `FIREFOX_*_RELEASE` tag, and one tag covers both products.
 
+## 154.0.1+001 — 2026-08-26
+
+The base moves to Firefox **154.0.1** (`FIREFOX_154_0_1_RELEASE`), the first point
+release on the 154 branch. Both products are rebuilt on it and carry the same
+version. The fork itself gains nothing this time — what follows is what upstream
+moved, and what that cost the patches sitting on top of it.
+
+### What the point release brings
+
+Forty-three upstream commits, and the one that lands closest to home is on
+Android: the browser now asks the system for the `ACCESS_LOCAL_NETWORK`
+permission before opening a connection to a device on your own network, instead
+of letting the attempt fail with nothing to explain it (bug 2061658). The
+companion rule is relaxed in the same cycle, so a page served over plain HTTP may
+still reach the local network for now rather than being refused outright (bug
+2059274) — between them, a router's admin page or a box on `192.168.…` behaves
+the way it did before local-network access was fenced off.
+
+The rest is repair work, most of it shared by both products. A service worker
+whose initialization failed is now neutralized rather than left half-built, and
+the `file://` allowlist no longer steers worker process selection (bug 2064648);
+sticky-positioned content gets its WebRender key computed correctly again (bug
+2063312); bitmap-strike glyphs round their pen to the nearest pixel, which is what
+emoji and colour fonts are drawn from (bug 2056856); SVG text stops accepting
+generated content (bug 2065136); and NSS moves to 3.126.1 (bug 2063371).
+
+Desktop-only, and worth knowing if you keep passwords in it: upstream backed the
+Rust logins store out of the release channel and returned to the JSON one, then
+fixed the restore so switching back does not lose what was saved (bugs 2063993,
+2065593). Address autofill's all-regions rollout and its ML form-field detection
+are both confined to pre-release channels now (bugs 2065145, 2063599), the VPN
+toggle is debounced against a double tap (bug 2061846) and its allowed-region list
+refreshed (bug 2065582), tab-group colours stop applying `light-dark()` twice (bug
+2057443), and deleting every active tab no longer takes the inactive ones with it
+(bug 2064507).
+
+### What it cost the fork
+
+Eighty-nine of the ninety fork commits replayed untouched. The single conflict is
+a collision of two additions at the same spot, and both survive it.
+
+Upstream's local-network work puts its new pending-request flag and its permission
+request at the very head of `GeckoViewStartup` — exactly where the fork adds the
+cache drop that keeps its own WebExtension API surface visible to add-ons installed
+before it, the piece that made `browser.menus` take effect on the phone last
+release. The two are independent members of one class, so both stay, and each keeps
+its own trigger: the fork's on profile startup, upstream's on the engine asking for
+the permission.
+
+One near-miss is worth naming for the same reason. Upstream debounced the IP
+Protection menu toggle a few lines above the row where the fork replaces the stock
+clip-and-fill with its own card treatment, so the two landed side by side without a
+word from git.
+
+Nothing else the fork stands on moved. The clobber marker is unchanged between the
+two tags, so neither build directory needed wiping, and the toolchain floor is the
+same one 154.0 raised — a point release, for once, costing exactly what a point
+release should.
+
 ## 154.0+021 — 2026-08-20
 
 Both products still on the Firefox **154.0** base. Android gains a WebExtension
