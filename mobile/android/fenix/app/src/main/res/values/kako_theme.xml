@@ -69,7 +69,6 @@
              homepage header and the Settings → About page. -->
         <item name="fenixLogo">@drawable/ic_kako_wordmark</item>
         <item name="fenixWordmarkLogo">@drawable/ic_kako_wordmark</item>
-        <item name="fenixWordmarkSportLogo">@drawable/ic_kako_wordmark</item>
 
         <!-- The private-browsing mask button on the homepage header. -->
         <item name="mozac_ic_private_mode_circle_fill_icon_color">@color/kako_yellow</item>
