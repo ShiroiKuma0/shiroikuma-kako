@@ -5,6 +5,84 @@ Everything built on top of stock Firefox (release channel) — the Android brows
 `<upstream-base>+<build>`; the fork commits live on `custom`, rebased onto each
 adopted `FIREFOX_*_RELEASE` tag, and one tag covers both products.
 
+## 155.0+001 — 2026-09-03
+
+The base moves to Firefox **155.0** (`FIREFOX_155_0_RELEASE`) — a major release,
+5392 upstream commits on from 154.0.1. Both products are rebuilt on it and carry
+the same version. The fork adds nothing of its own this time; what follows is what
+the new base brings, and what it cost the patches sitting on top of it.
+
+### What the major release brings
+
+On Android, the headline is one the fork has a stake in: **a toolbar shortcut can
+now be long-pressed to edit its setting directly** (bug 2051292), so the button in
+the shortcut slot carries its own configuration instead of sending you to Settings
+to find it. Tab groups are easier to ungroup and to share, shake-to-summarize gains
+an adjustable sensitivity, and translation reaches Marathi and Urdu on both
+products.
+
+The Android repairs are worth naming for a browser used to run extensions. **A tab
+opened by an extension during private browsing now loads privately**, instead of
+quietly writing its site data into ordinary browsing. Autofill prompts close when
+focus leaves the field. A long press selects text inside a button at last, which is
+what makes a direct message on X or a YouTube comment copyable. And a live audio
+stream — internet radio — keeps playing when the screen goes off.
+
+On the desktop, the address bar now reports **how many trackers it has blocked**,
+containers can be reordered in Settings, and Smart Window reaches every user in the
+USA, Canada and France, with faster assistant answers carrying Exa web-search
+citations and better-named tab groupings from Organize Tabs. Two fixes land
+squarely on our own platform: text no longer disappears in Microsoft 365 Word
+Online on Linux with certain keyboards, and Linux machines are no longer kept awake
+after a browsing session. Alongside them, the toolbar and tab strip stop going
+unresponsive mid-drag, arrow-key and Page Up/Down scrolling works again on pages
+with embedded content, and the paste confirmation Google Docs did not need is gone.
+
+Four deliberate behaviour changes: CSS is capped at 75 levels of nested blocks and
+functions, captive-portal detection moves to `firefox-portal-detection.com`, a
+`mailto:` link now needs an explicit action before it will launch a mail client,
+and a PDF smaller than the paper can be enlarged past 100% when printing. For
+developers, the Rules view gains a `prefers-reduced-motion` toggle, `Ctrl+Alt+B`
+toggles every breakpoint at once, and the JSON viewer reads JSON Lines.
+
+### What it cost the fork
+
+Eighty-five of the ninety-two fork commits replayed untouched. Seven needed
+resolving, all Android-side — and three of those seven are the same upstream change
+landing on three different patches.
+
+That change is the toolbar shortcut long-press above. Upstream added its two new
+actions to the sealed class every toolbar event goes through, and threaded a
+shortcut flag down the builder so whichever action sits in the shortcut slot gets
+the new menu. The fork adds its own arms to that same class and that same
+dispatch — one for tapping a pinned extension button, one for the long press on the
+menu button that opens the 白い熊 火狐 UI page — and builds the trailing row itself
+rather than taking upstream's. Every arm is kept, and the fork's own shortcut slot
+now passes the new flag, so the shortcut **gains** upstream's long-press menu
+instead of quietly losing it to a hand-built row.
+
+Two more conflicts are upstream reshaping code the fork had reached into. The fix
+for the VPN toggle's animation (bug 2041496) split the toolbar's per-action branch
+into one composable per action type; the fork's single line there is what keeps a
+multicolour extension icon from being flooded with the theme tint, and it moves
+into the new button composable intact. And measuring a widget now takes the context
+of the display it is drawn on rather than the application's (bug 1934909), turning
+the toolbar-height property into a function; the fork's split of that height into a
+base row plus the second row follows the new shape, so the find-in-page bar still
+measures exactly one row while the two-row toolbar measures both.
+
+Two upstream removals took fork code with them. The `pixelSizeFor` helpers moved
+into android-components (bug 2062075), so the Fenix-side one no longer exists — the
+fork imported it in two files that already receive the replacement, and both
+imports simply come out. The Homepage Sports Widget is gone entirely (bug 2052838),
+and it took the wordmark attribute the fork was theming with the 白い熊 火狐 logo;
+that override has nothing left to point at, and the release resource link failed
+until it was dropped.
+
+Building 155 needs a merge-day clobber in both objdirs. The toolchain floor is
+unchanged from 154, so unlike the last major bump nothing had to be installed
+first.
+
 ## 154.0.1+001 — 2026-08-26
 
 The base moves to Firefox **154.0.1** (`FIREFOX_154_0_1_RELEASE`), the first point
