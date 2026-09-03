@@ -49,7 +49,6 @@ import org.mozilla.fenix.addons.AddonsManagementFragmentDirections
 import org.mozilla.fenix.addons.DownloadAddonDialogFragment
 import org.mozilla.fenix.addons.DownloadAddonDialogFragmentArgs
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.kako.KakoTheme
 import org.mozilla.fenix.kako.createKako
 import org.mozilla.fenix.settings.SupportUtils
