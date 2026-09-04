@@ -267,9 +267,12 @@ class KakoUiSettingsFragment : Fragment() {
     }
 
     /**
-     * The sister-app automation contract's two rows, appended directly below the existing
+     * The sister-app automation contract's three rows, appended directly below the existing
      * export rows — this is a backup feature, so it lives where backup lives, and every
-     * sister app puts them in the same place. Nothing is reachable until the switch is on.
+     * sister app puts them in the same place (never a section of its own).
+     *
+     * In contract v2 the master switch ships **on** and the token is opt-in, so the third row
+     * is hidden until the second asks for it. See [KakoAutomation] for why.
      */
     private fun addAutomationRows() {
         val context = requireContext()
@@ -314,7 +317,8 @@ class KakoUiSettingsFragment : Fragment() {
             },
         )
 
-        // The token itself: tap to copy the whole secret, Regenerate on the right.
+        // Row 3, built first because row 2's switch shows and hides it: the token itself —
+        // tap to copy the whole secret, Regenerate on the right.
         val tokenValue = TextView(context).apply {
             this.text = KakoAutomation.abbreviated(KakoAutomation.token(context))
             setTextColor(accent)
@@ -322,50 +326,94 @@ class KakoUiSettingsFragment : Fragment() {
             textSize = VALUE_TEXT_SIZE_SP
             setPadding(0, dp(3), 0, 0)
         }
+        val tokenRow = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPaddingRelative(dp(ROW_START_DP), dp(5), dp(END_MARGIN_DP), dp(5))
+            setBackgroundResource(android.R.drawable.list_selector_background)
+            // Hidden unless it is actually being asked for: a 48-character secret sitting
+            // under an off switch invites 白い熊 to paste it somewhere it will do nothing.
+            visibility = if (KakoAutomation.requireToken(context)) View.VISIBLE else View.GONE
+            addView(
+                LinearLayout(context).apply {
+                    orientation = LinearLayout.VERTICAL
+                    addView(
+                        TextView(context).apply {
+                            this.text = getString(R.string.kako_automation_token_row)
+                            setTextColor(text)
+                            textSize = ITEM_TEXT_SIZE_SP
+                        },
+                    )
+                    addView(tokenValue)
+                },
+                LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f),
+            )
+            addView(
+                TextView(context).apply {
+                    this.text = getString(R.string.kako_automation_regenerate)
+                    setTextColor(KakoExim.WARN_COLOR)
+                    setTypeface(typeface, Typeface.BOLD)
+                    textSize = VALUE_TEXT_SIZE_SP
+                    setPaddingRelative(dp(12), dp(8), 0, dp(8))
+                    setBackgroundResource(android.R.drawable.list_selector_background)
+                    setOnClickListener {
+                        val fresh = KakoAutomation.regenerateToken(context)
+                        tokenValue.text = KakoAutomation.abbreviated(fresh)
+                        toast(getString(R.string.kako_automation_regenerated), long = true)
+                    }
+                },
+            )
+            setOnClickListener {
+                val clipboard = context.getSystemService(ClipboardManager::class.java)
+                clipboard?.setPrimaryClip(
+                    ClipData.newPlainText("token", KakoAutomation.token(context)),
+                )
+                toast(getString(R.string.kako_automation_token_copied))
+            }
+        }
+
+        // Row 2: whether a caller must present the token at all. Default OFF — a pasted secret
+        // cannot survive the wipe this feature exists to recover from, and the door that
+        // actually moves data identifies its caller instead (KakoAutomationCallers).
+        val requireToggle = SwitchCompat(context).apply {
+            isChecked = KakoAutomation.requireToken(context)
+            setOnCheckedChangeListener { _, checked ->
+                KakoAutomation.setRequireToken(context, checked)
+                tokenRow.visibility = if (checked) View.VISIBLE else View.GONE
+            }
+        }
         holder.addView(
             LinearLayout(context).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
                 setPaddingRelative(dp(ROW_START_DP), dp(5), dp(END_MARGIN_DP), dp(5))
-                setBackgroundResource(android.R.drawable.list_selector_background)
                 addView(
                     LinearLayout(context).apply {
                         orientation = LinearLayout.VERTICAL
                         addView(
                             TextView(context).apply {
-                                this.text = getString(R.string.kako_automation_token_row)
+                                this.text = getString(R.string.kako_automation_require_token)
                                 setTextColor(text)
                                 textSize = ITEM_TEXT_SIZE_SP
                             },
                         )
-                        addView(tokenValue)
+                        addView(
+                            TextView(context).apply {
+                                this.text = getString(R.string.kako_automation_require_token_desc)
+                                setTextColor(KakoTheme.color(context, KakoSlot.TEXT_SECONDARY))
+                                textSize = VALUE_TEXT_SIZE_SP
+                                setPadding(0, dp(3), 0, 0)
+                            },
+                        )
                     },
                     LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f),
                 )
-                addView(
-                    TextView(context).apply {
-                        this.text = getString(R.string.kako_automation_regenerate)
-                        setTextColor(KakoExim.WARN_COLOR)
-                        setTypeface(typeface, Typeface.BOLD)
-                        textSize = VALUE_TEXT_SIZE_SP
-                        setPaddingRelative(dp(12), dp(8), 0, dp(8))
-                        setBackgroundResource(android.R.drawable.list_selector_background)
-                        setOnClickListener {
-                            val fresh = KakoAutomation.regenerateToken(context)
-                            tokenValue.text = KakoAutomation.abbreviated(fresh)
-                            toast(getString(R.string.kako_automation_regenerated), long = true)
-                        }
-                    },
-                )
-                setOnClickListener {
-                    val clipboard = context.getSystemService(ClipboardManager::class.java)
-                    clipboard?.setPrimaryClip(
-                        ClipData.newPlainText("token", KakoAutomation.token(context)),
-                    )
-                    toast(getString(R.string.kako_automation_token_copied))
-                }
+                addView(requireToggle)
+                setOnClickListener { requireToggle.toggle() }
             },
         )
+
+        holder.addView(tokenRow)
     }
 
     /**
