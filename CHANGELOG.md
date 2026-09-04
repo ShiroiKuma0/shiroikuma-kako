@@ -5,6 +5,100 @@ Everything built on top of stock Firefox (release channel) — the Android brows
 `<upstream-base>+<build>`; the fork commits live on `custom`, rebased onto each
 adopted `FIREFOX_*_RELEASE` tag, and one tag covers both products.
 
+## 155.0+004 — 2026-09-04
+
+Still built on Firefox **155.0** (`FIREFOX_155_0_RELEASE`). Android only this
+time — nothing under `browser/` changed, so the desktop build stays at
+155.0+001. The whole of this release is the sister-app backup contract moving to
+**v2**: the gate opens by default, and the browser gains a second, identified
+way of handing its backup over.
+
+### The gate opens, and the token becomes optional
+
+Automation is **on out of the box**, and the authorization token is **off** by
+default. The token it replaces was a secret pasted from this app's settings into
+a companion app's — which cannot survive a wipe, and restoring a wiped phone is
+exactly what this now exists to serve. A gate that only works once the phone is
+already set up is no gate for setting the phone up.
+
+The switch stays, because being able to close the browser off is the point of
+having one; it just no longer starts closed. Both checks moved into a single
+place so "automation disabled" and "bad token" cannot drift apart — they debug
+differently and must stay distinct. And a token sent to the browser while it is
+not asking for one is now **ignored rather than refused**: tokens outlive the
+settings they were pasted for, and rejecting them turns one switch being off
+into half a batch mysteriously failing.
+
+The Export / Import section grows a second row, 「Use authorization token?」, and
+the token row itself is hidden unless that is on — a long secret sitting under an
+off switch only invites pasting it somewhere it will do nothing.
+
+### A data door, for restoring onto a clean phone
+
+New alongside the existing broadcast surface: a content provider that answers
+**describe, export, import and cancel**, and moves the archive through a **file
+descriptor the caller supplies** rather than a path.
+
+The descriptor is the substance, not a detail. A backup being assembled is not a
+stable directory — it is written to a temporary path and renamed on commit, and
+it is encrypted and checksummed per file its owner knows about. A file this
+browser dropped in by itself would be renamed out from under that process, would
+sit unencrypted inside an otherwise encrypted backup, and would be unverified
+rather than verified-and-failing. A descriptor also expires when it is closed,
+which a path never does.
+
+Because the caller now chooses where the data lands, **who** is calling is
+checked before anything moves, three ways: an exact package name from a pinned
+list, the uid the kernel reports for the caller, and a pinned signing
+certificate. A package-name prefix would have been worse than the token it
+replaces — a name is free for anyone to take while the real package is absent,
+and a phone being restored is precisely a phone where things are not installed
+yet.
+
+**Restore is reachable only through that identified door.** It is deliberately
+not a broadcast: the broadcast surface is exported without a permission, so an
+import there would let any app on the phone overwrite this one's data.
+
+Three manifest entries declare the contract version so a companion app can tell
+whether the browser can be backed up **without waking it** — a frozen app cannot
+be asked anything, and the answer has to exist for one that is currently
+disabled.
+
+### Made to survive the way phones actually behave
+
+The transfer runs in a foreground service rather than in the provider call or
+the broadcast receiver: a binder call would freeze the caller for minutes, and a
+receiver overrunning its window is killed mid-export, leaving a half-written
+archive and a caller waiting on a dead process.
+
+Three failures worth naming, because each is silent:
+
+- The service now enters the foreground **before any path can return**. The
+  platform has already been promised a foreground service by the time the
+  service starts, and returning without one kills the process — so a companion
+  app retrying with a stale job id could have taken the browser down with it.
+- Every restored preference is **committed to disk before success is reported**.
+  A companion app force-stops the browser the instant it hears success, and a
+  preference write that was merely queued would be lost with the process — a
+  restore reporting success over settings that never landed, discovered only
+  when the browser is next opened.
+- An incoming archive is **spooled to disk under a size cap** instead of being
+  grown in memory, and the caller's file is closed on every path out, including
+  the ones where the transfer never starts.
+
+Live progress reports the category being written by name, so a companion app's
+list highlights the right row instead of inferring one from a count.
+
+### One thing to know about what a backup contains
+
+Unchanged in this release, and stated here because a backup is only as safe as
+what you know about it: the archive carries **saved passwords, credit cards and
+addresses**, and it is a plain ZIP of readable JSON — those three categories are
+in it as ordinary text, exactly as the Export / Import panel has always warned.
+All three are included **by default** and each can be switched off individually
+before exporting. Browsing history, cookies, cache and open tabs are **not**
+exported at all. Treat an export like the credentials it holds.
+
 ## 155.0+001 — 2026-09-03
 
 The base moves to Firefox **155.0** (`FIREFOX_155_0_RELEASE`) — a major release,
