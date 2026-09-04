@@ -6,11 +6,11 @@
 
 **Firefox in pure black & yellow — on the phone and on the desktop — with extension freedom on the release channel.**
 
-A fork of [Mozilla Firefox](https://github.com/mozilla-firefox/firefox) (release channel) with **major additions**: custom AMO extension collections unlocked on release, add-ons installable straight from a file, a fully settable black/yellow UI with external fonts, pinned extension buttons that carry the extension's own options on a two-row toolbar, one-tap sync from that toolbar, whole-profile export & import — scriptable from outside the app — about:config, a line-traced fox, and a **GNU/Linux desktop build** in the same palette.
+A fork of [Mozilla Firefox](https://github.com/mozilla-firefox/firefox) (release channel) with **major additions**: custom AMO extension collections unlocked on release, add-ons installable straight from a file, a fully settable black/yellow UI with external fonts, pinned extension buttons that carry the extension's own options on a two-row toolbar, one-tap sync from that toolbar, whole-profile export & import — scriptable from outside the app, and handed to a companion app through a verified data door — about:config, a line-traced fox, and a **GNU/Linux desktop build** in the same palette.
 
 Installs **side-by-side** with stock Firefox/Beta/Nightly: app id `shiroikuma.kako` on Android, package `shiroikuma-kako` with its own `~/.mozilla/kako` profile on the desktop.
 
-**📥 Latest release: [`155.0+001`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
+**📥 Latest release: [`155.0+004`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
 
 </div>
 
@@ -45,7 +45,12 @@ Pick a backup directory once; the page then shows the newest export in it every 
 ---
 
 ## 🤖 Backups that another app can trigger
-The same export answers a token-gated broadcast, so an automation app can back the browser up headlessly — no Activity, no tapping — and be told the exact path, byte count and category count of the ZIP it just wrote, with live progress reported as real counts (`区分 3/8 — Fonts`) rather than a percentage. The enumeration it answers says which items start ticked, so the caller's picker opens on the browser's own answer instead of guessing one. A running export can be **stopped from outside**: the cancel unwinds it at the next category boundary and takes the half-written archive with it, leaving the backup directory exactly as it was found. Nothing is reachable until the switch inside Export / Import is turned on, and the shared secret behind it never travels inside a backup.
+The same export answers a broadcast, so an automation app can back the browser up headlessly — no Activity, no tapping — and be told the exact path, byte count and category count of the ZIP it just wrote, with live progress reported as real counts (`区分 3/8 — Fonts`) rather than a percentage. The enumeration it answers says which items start ticked, so the caller's picker opens on the browser's own answer instead of guessing one. A running export can be **stopped from outside**: the cancel unwinds it at the next category boundary and takes the half-written archive with it, leaving the backup directory exactly as it was found. The whole surface sits under one switch inside Export / Import, and an authorization token is available for callers that want one — off by default, because a pasted secret cannot survive the wipe this feature exists to recover from.
+
+---
+
+## 🚪 A data door for a clean phone
+Beyond writing a ZIP to a directory, the browser will hand its whole backup **straight to a companion app through a file descriptor** — and take one back the same way, which is what makes restoring onto a wiped phone possible at all. A descriptor rather than a path is the point: a backup being assembled is renamed on commit, and it is encrypted and checksummed per file its owner knows about, so a file dropped into that directory by someone else would be moved out from under them, unencrypted and unverified. Because the caller chooses where the data lands, it is identified before a byte moves — an exact package name, the uid the kernel reports, and a pinned signing certificate, all three. Restoring is reachable **only** through that identified door, never through the open broadcast surface. The work runs in a foreground service with real progress and a working cancel, an incoming archive is spooled under a size cap rather than held in memory, and every restored preference is written to disk before success is reported.
 
 ---
 
