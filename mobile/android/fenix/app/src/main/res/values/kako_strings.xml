@@ -127,7 +127,9 @@
     <!-- Automation export (the sister-app state-export contract) — the last two rows of
          the Export / Import section. -->
     <string name="kako_automation_switch" translatable="false">Automation export</string>
-    <string name="kako_automation_switch_desc" translatable="false">Let sister-app tasks trigger this export via the token-gated EXPORT_STATE intent.</string>
+    <string name="kako_automation_switch_desc" translatable="false">Let sister apps trigger this export headlessly, and back this app\'s data up and restore it.</string>
+    <string name="kako_automation_require_token" translatable="false">Use authorization token?</string>
+    <string name="kako_automation_require_token_desc" translatable="false">Off: any sister app may drive the automation. On: a caller must also present the token below. Either way the data door checks the caller\'s package, uid and signing certificate.</string>
     <string name="kako_automation_token_row" translatable="false">Automation token (tap to copy)</string>
     <string name="kako_automation_token_copied" translatable="false">Automation token copied</string>
     <string name="kako_automation_regenerate" translatable="false">Regenerate</string>

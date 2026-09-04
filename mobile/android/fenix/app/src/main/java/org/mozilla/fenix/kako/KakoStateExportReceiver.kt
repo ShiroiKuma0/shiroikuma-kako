@@ -27,12 +27,13 @@ import java.util.concurrent.atomic.AtomicBoolean
  * BackupContactsReceiver, the EMUI-proven round-trip, and 自由作業盤's StateExportReceiver).
  *
  * - `<pkg>.action.EXPORT_STATE`: run the full category-ZIP export ([KakoExim]) without UI.
- *   Extras (all String): `token` (required — [KakoAutomation]), `path` (optional absolute
- *   directory, wins over the configured SAF directory), `items` (optional comma list of
- *   [KakoExim.Cat] ids; absent/empty = all), `progress_action` (optional — see below), plus
- *   the reply trio `reply_action` / `reply_package` / `reply_id`.
- * - `<pkg>.action.LIST_CATEGORIES`: token-gated category enumeration for the caller's picker.
- * - `<pkg>.action.CANCEL_EXPORT`: token-gated stop for a running export. Extras: `token`
+ *   Extras (all String): `token` (optional — [KakoAutomation], checked only when this app is
+ *   asking for one), `path` (optional absolute directory, wins over the configured SAF
+ *   directory), `items` (optional comma list of [KakoExim.Cat] ids; absent/empty = all),
+ *   `progress_action` (optional — see below), plus the reply trio
+ *   `reply_action` / `reply_package` / `reply_id`.
+ * - `<pkg>.action.LIST_CATEGORIES`: gated category enumeration for the caller's picker.
+ * - `<pkg>.action.CANCEL_EXPORT`: gated stop for a running export. Extras: `token`
  *   and an optional `reply_id` (absent = whatever is running). Fire-and-forget — it never
  *   answers, and it is a silent no-op when nothing is running or the export already
  *   finished. The cancelled run deletes its partial file and answers its *own* request
@@ -83,13 +84,10 @@ class KakoStateExportReceiver : BroadcastReceiver() {
             )
         }
 
-        // Gate first, and report "disabled" and "bad token" distinctly (family convention).
-        if (!KakoAutomation.enabled(app)) {
-            reply("ERROR:automation disabled")
-            return
-        }
-        if (!KakoAutomation.isTokenValid(app, token)) {
-            reply("ERROR:bad token")
+        // The whole gate, in one call — see [KakoAutomation.refuse], which reports "disabled"
+        // and "bad token" distinctly and ignores a token this app is not asking for.
+        KakoAutomation.refuse(app, token)?.let {
+            reply(it)
             return
         }
 
