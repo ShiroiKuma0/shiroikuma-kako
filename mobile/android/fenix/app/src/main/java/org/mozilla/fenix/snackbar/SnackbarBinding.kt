@@ -25,7 +25,6 @@ import mozilla.components.lib.state.helpers.AbstractBinding
 import mozilla.components.support.utils.DefaultDownloadFileUtils
 import mozilla.components.support.utils.DownloadFileUtils
 import mozilla.components.ui.widgets.SnackbarDelegate
-import org.mozilla.fenix.GleanMetrics.SentFromFirefox
 import org.mozilla.fenix.R
 import org.mozilla.fenix.bookmarks.BookmarksGlobalResultReport
 import org.mozilla.fenix.bookmarks.friendlyRootTitle
@@ -191,7 +190,6 @@ class SnackbarBinding(
                             duration = Snackbar.LENGTH_LONG,
                             action = R.string.link_shared_snackbar_action,
                         ) {
-                            SentFromFirefox.snackbarClicked.record()
                             // Navigating twice ensures the correct behavior when opening the link
                             // sharing settings screen. The first navigation scrolls to the link
                             // sharing section in the settings screen. The second navigation opens

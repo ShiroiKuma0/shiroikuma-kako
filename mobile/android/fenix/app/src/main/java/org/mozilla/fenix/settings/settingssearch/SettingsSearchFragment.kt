@@ -18,7 +18,6 @@ import androidx.fragment.compose.content
 import androidx.lifecycle.coroutineScope
 import androidx.navigation.fragment.findNavController
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.storeProvider
-import org.mozilla.fenix.GleanMetrics.SettingsSearch
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.settings.settingssearch.DefaultFenixSettingsIndexer.Companion.defaultPreferenceFileInformationList
@@ -85,12 +84,6 @@ open class SettingsSearchFragment : Fragment(), SystemInsetsPaddedFragment {
         item: SettingsSearchItem,
         isRecentSearch: Boolean,
     ) {
-        SettingsSearch.searchResultClicked.record(
-            SettingsSearch.SearchResultClickedExtra(
-                itemPreferenceKey = item.preferenceKey,
-                isRecentSearch = isRecentSearch,
-            ),
-        )
         settingsSearchStore.dispatch(SettingsSearchAction.ResultItemClicked(item))
     }
 }

@@ -14,8 +14,6 @@ import mozilla.components.browser.state.selector.normalTabs
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.tab.collections.TabCollection
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Collections
 import org.mozilla.fenix.components.TabCollectionStorage
 import org.mozilla.fenix.ext.getDefaultCollectionNumber
 
@@ -91,12 +89,6 @@ class DefaultCollectionCreationController(
             tabCollectionStorage.createCollection(name, sessionBundle)
         }
 
-        Collections.saved.record(
-            Collections.SavedExtra(
-                browserStore.state.normalTabs.size.toString(),
-                sessionBundle.size.toString(),
-            ),
-        )
     }
 
     override fun renameCollection(collection: TabCollection, name: String) {
@@ -104,7 +96,6 @@ class DefaultCollectionCreationController(
         scope.launch {
             tabCollectionStorage.renameCollection(collection, name)
         }
-        Collections.renamed.record(NoExtras())
     }
 
     override fun backPressed(fromStep: SaveCollectionStep) {
@@ -136,12 +127,6 @@ class DefaultCollectionCreationController(
                 .addTabsToCollection(collection, sessionBundle)
         }
 
-        Collections.tabsAdded.record(
-            Collections.TabsAddedExtra(
-                browserStore.state.normalTabs.size.toString(),
-                sessionBundle.size.toString(),
-            ),
-        )
     }
 
     override fun saveTabsToCollection(tabs: List<Tab>) {

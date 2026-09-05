@@ -12,8 +12,6 @@ import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
 import mozilla.components.concept.sync.SyncEngine
 import mozilla.components.feature.autofill.preference.AutofillPreference
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Logins
 import org.mozilla.fenix.R
 import org.mozilla.fenix.biometricauthentication.AuthenticationStatus
 import org.mozilla.fenix.biometricauthentication.BiometricAuthenticationManager
@@ -124,7 +122,6 @@ class SavedLoginsAuthFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
 
     private fun navigateToSavedLoginsFragment() {
         if (findNavController().currentDestination?.id == R.id.savedLoginsAuthFragment) {
-            Logins.openLogins.record(NoExtras())
             val directions =
                 SavedLoginsAuthFragmentDirections.actionSavedLoginsAuthFragmentToLoginsListFragment()
             findNavController().navigate(directions)

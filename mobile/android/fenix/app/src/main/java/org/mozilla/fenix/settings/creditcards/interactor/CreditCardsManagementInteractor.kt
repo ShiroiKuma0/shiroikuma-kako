@@ -5,8 +5,6 @@
 package org.mozilla.fenix.settings.creditcards.interactor
 
 import mozilla.components.concept.storage.CreditCard
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.CreditCards
 import org.mozilla.fenix.settings.creditcards.controller.CreditCardsManagementController
 
 /**
@@ -41,11 +39,9 @@ class DefaultCreditCardsManagementInteractor(
 
     override fun onSelectCreditCard(creditCard: CreditCard) {
         controller.handleCreditCardClicked(creditCard)
-        CreditCards.managementCardTapped.record(NoExtras())
     }
 
     override fun onAddCreditCardClick() {
         controller.handleAddCreditCardClicked()
-        CreditCards.managementAddTapped.record(NoExtras())
     }
 }

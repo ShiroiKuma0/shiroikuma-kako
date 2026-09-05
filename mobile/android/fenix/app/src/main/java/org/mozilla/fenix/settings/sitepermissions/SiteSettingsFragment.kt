@@ -13,8 +13,6 @@ import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
 import com.google.android.material.color.MaterialColors
 import mozilla.components.browser.state.action.DefaultDesktopModeAction
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Autoplay
 import org.mozilla.fenix.R
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
@@ -126,7 +124,6 @@ class SiteSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragm
             .actionSitePermissionsToManagePhoneFeatures(phoneFeature)
 
         if (phoneFeature == PhoneFeature.AUTOPLAY_AUDIBLE) {
-            Autoplay.visitedSetting.record(NoExtras())
         }
         context?.let {
             requireView().findNavController().navigateWithBreadcrumb(

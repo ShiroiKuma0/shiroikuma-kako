@@ -43,10 +43,6 @@ import androidx.core.net.toUri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import mozilla.components.support.ktx.android.net.hostWithoutCommonPrefixes
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.History
-import org.mozilla.fenix.GleanMetrics.HomeBookmarks
-import org.mozilla.fenix.GleanMetrics.RecentlyVisitedHomepage
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.appstate.AppAction
@@ -485,7 +481,6 @@ private fun BookmarksSection(
     interactor: BookmarksInteractor,
 ) {
     LaunchedEffect(Unit) {
-        HomeBookmarks.shown.record(NoExtras())
     }
 
     Spacer(modifier = Modifier.height(40.dp))
@@ -546,17 +541,10 @@ private fun RecentlyVisitedSection(
         onRecentVisitClick = { recentlyVisitedItem, pageNumber ->
             when (recentlyVisitedItem) {
                 is RecentHistoryHighlight -> {
-                    RecentlyVisitedHomepage.historyHighlightOpened.record(NoExtras())
                     interactor.onRecentHistoryHighlightClicked(recentlyVisitedItem)
                 }
 
                 is RecentHistoryGroup -> {
-                    RecentlyVisitedHomepage.searchGroupOpened.record(NoExtras())
-                    History.recentSearchesTapped.record(
-                        History.RecentSearchesTappedExtra(
-                            pageNumber.toString(),
-                        ),
-                    )
                     interactor.onRecentHistoryGroupClicked(recentlyVisitedItem)
                 }
             }

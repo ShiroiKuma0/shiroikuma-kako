@@ -39,9 +39,7 @@ import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.support.utils.ext.isLandscape
 import mozilla.components.support.utils.ext.packageManagerCompatHelper
 import mozilla.components.support.utils.ext.top
-import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.BuildConfig
-import org.mozilla.fenix.GleanMetrics.SyncAccount
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.share.DefaultShareController.Companion.ACTION_COPY_LINK_TO_CLIPBOARD
@@ -178,7 +176,6 @@ class SendToDevicesDialogFragment : BottomSheetDialogFragment() {
     }
 
     internal fun navigateToSignIn() {
-        SyncAccount.signInToSendTab.record(NoExtras())
         requireActivity().startActivity(
             Intent(
                 Intent.ACTION_VIEW,

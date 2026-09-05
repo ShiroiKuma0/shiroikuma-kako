@@ -16,7 +16,6 @@ import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.launch
 import mozilla.components.browser.icons.IconRequest
 import mozilla.components.feature.search.ext.createSearchEngine
-import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.FragmentSaveSearchEngineBinding
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
@@ -61,7 +60,6 @@ class SaveSearchEngineFragment : Fragment(R.layout.fragment_save_search_engine),
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        Events.customEngineSettingsViewed.record()
 
         _binding = FragmentSaveSearchEngineBinding.bind(view)
 
@@ -69,7 +67,6 @@ class SaveSearchEngineFragment : Fragment(R.layout.fragment_save_search_engine),
             isEnabled = false
             setOnClickListener {
                 createCustomEngine()
-                Events.customEngineCreated.record()
             }
         }
 

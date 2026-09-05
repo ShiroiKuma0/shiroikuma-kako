@@ -8,7 +8,6 @@ import android.os.Bundle
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
-import org.mozilla.fenix.GleanMetrics.SentFromFirefox
 import org.mozilla.fenix.R
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
@@ -27,11 +26,6 @@ class LinkSharingFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragme
 
             onPreferenceChangeListener = object : SharedPreferenceUpdater() {
                 override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
-                    SentFromFirefox.settingsToggled.record(
-                        SentFromFirefox.SettingsToggledExtra(
-                            enabled = newValue as Boolean,
-                        ),
-                    )
 
                     return super.onPreferenceChange(preference, newValue)
                 }

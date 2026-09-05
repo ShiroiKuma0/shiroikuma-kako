@@ -61,9 +61,6 @@ import mozilla.components.support.ktx.kotlin.isIpv4OrIpv6
 import mozilla.components.support.ktx.kotlin.trimmed
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
 import mozilla.components.support.utils.ClipboardHandler
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Events
-import org.mozilla.fenix.GleanMetrics.Toolbar
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.BrowserFragmentDirections
@@ -159,26 +156,12 @@ class CustomTabBrowserToolbarMiddleware(
             }
 
             is CloseClicked -> {
-                Toolbar.buttonTapped.record(
-                    Toolbar.ButtonTappedExtra(
-                        source = SOURCE_ADDRESS_BAR,
-                        item = ACTION_CLOSE_CLICKED,
-                        surface = SURFACE_CUSTOM_TAB,
-                    ),
-                )
 
                 useCases.remove(customTabId)
                 closeTabDelegate()
             }
 
             is SiteInfoClicked -> {
-                Toolbar.buttonTapped.record(
-                    Toolbar.ButtonTappedExtra(
-                        source = SOURCE_ADDRESS_BAR,
-                        item = ACTION_SECURITY_INDICATOR_CLICKED,
-                        surface = SURFACE_CUSTOM_TAB,
-                    ),
-                )
 
                 val safeCustomTab = customTab ?: return
                 scope.launch(Dispatchers.IO) {
@@ -213,13 +196,6 @@ class CustomTabBrowserToolbarMiddleware(
             }
 
             is CustomButtonClicked -> {
-                Toolbar.buttonTapped.record(
-                    Toolbar.ButtonTappedExtra(
-                        source = SOURCE_ADDRESS_BAR,
-                        item = ACTION_SITE_CUSTOM_CLICKED,
-                        surface = SURFACE_CUSTOM_TAB,
-                    ),
-                )
                 val customTab = customTab
                 customTab?.config?.actionButtonConfig?.pendingIntent?.send(
                     uiContext,
@@ -229,13 +205,6 @@ class CustomTabBrowserToolbarMiddleware(
             }
 
             is ShareClicked -> {
-                Toolbar.buttonTapped.record(
-                    Toolbar.ButtonTappedExtra(
-                        source = SOURCE_ADDRESS_BAR,
-                        item = ACTION_SHARE_CLICKED,
-                        surface = SURFACE_CUSTOM_TAB,
-                    ),
-                )
                 val customTab = customTab
                 navController.navigate(
                     NavGraphDirections.actionGlobalShareFragment(
@@ -252,13 +221,6 @@ class CustomTabBrowserToolbarMiddleware(
             }
 
             is MenuClicked -> {
-                Toolbar.buttonTapped.record(
-                    Toolbar.ButtonTappedExtra(
-                        source = SOURCE_ADDRESS_BAR,
-                        item = ACTION_MENU_CLICKED,
-                        surface = SURFACE_CUSTOM_TAB,
-                    ),
-                )
                 navController.nav(
                     R.id.externalAppBrowserFragment,
                     BrowserFragmentDirections.actionGlobalMenuDialogFragment(
@@ -276,7 +238,6 @@ class CustomTabBrowserToolbarMiddleware(
     }
 
     private fun handleCopyToClipboard() {
-        Events.copyUrlTapped.record(NoExtras())
         val currentTab = customTab
         val url = currentTab?.content?.url
         // For added safety unless the current tab is explicitly set to non-private,

@@ -31,8 +31,6 @@ import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Vpn
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.hideToolbar
@@ -97,14 +95,11 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
                 promoDate = promoDate,
                 onVpnToggle = { enabled ->
                     if (enabled) {
-                        Vpn.settingsTurnedOn.record(NoExtras())
                     } else {
-                        Vpn.settingsTurnedOff.record(NoExtras())
                     }
                     requireComponents.ipProtection.store.dispatch(IPProtectionAction.Toggle)
                 },
                 onLearnMoreClick = {
-                    Vpn.settingsLearnMoreTapped.record(NoExtras())
                     SupportUtils.launchSandboxCustomTab(
                         requireActivity(),
                         SupportUtils.getSumoURLForTopic(
@@ -115,7 +110,6 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
                     )
                 },
                 onGetStartedClick = {
-                    Vpn.getStartedTapped.record(Vpn.GetStartedTappedExtra(entrypoint = "Settings"))
                     requireComponents.ipProtection.store.dispatch(IPProtectionAction.Toggle)
                 },
                 showDebugAction = requireComponents.settings.showSecretDebugMenuThisSession,
@@ -158,7 +152,6 @@ class IPProtectionFragment : Fragment(), SystemInsetsPaddedFragment {
             feature = IPProtectionWarningBinding(
                 store = requireComponents.ipProtection.store,
                 proxyUnavailable = {
-                    Vpn.proxyUnavailable.record()
                     findNavController().navigate(
                         HomeFragmentDirections.actionGlobalIpProtectionUnavailableDialog(),
                     )

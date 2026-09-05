@@ -16,8 +16,6 @@ import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import mozilla.components.support.locale.LocaleManager
 import mozilla.components.support.utils.ext.getParcelableCompat
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.SearchWidget
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.IntentReceiverActivity
 import org.mozilla.fenix.ext.components
@@ -102,7 +100,6 @@ class VoiceSearchActivity : AppCompatActivity() {
                 },
             )
         }
-        SearchWidget.voiceButton.record(NoExtras())
 
         startForResult.launch(intentSpeech)
     }

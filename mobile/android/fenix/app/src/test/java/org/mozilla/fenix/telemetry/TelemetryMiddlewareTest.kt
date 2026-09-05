@@ -48,7 +48,7 @@ import org.mozilla.fenix.GleanMetrics.Translations
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.fake.FakeMetricController
-import org.mozilla.fenix.components.metrics.Event
+import org.mozilla.fenix.components.attribution.Event
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.utils.Settings

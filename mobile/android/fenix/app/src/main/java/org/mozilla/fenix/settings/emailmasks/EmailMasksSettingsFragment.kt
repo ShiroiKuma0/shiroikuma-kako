@@ -18,7 +18,6 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.emailmasks.middleware.EmailMasksNavigationMiddleware
 import org.mozilla.fenix.settings.emailmasks.middleware.EmailMasksPreferencesMiddleware
-import org.mozilla.fenix.settings.emailmasks.middleware.EmailMasksTelemetryMiddleware
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
@@ -62,7 +61,6 @@ class EmailMasksSettingsFragment : Fragment(), SystemInsetsPaddedFragment {
                 },
             ),
             EmailMasksPreferencesMiddleware(requireComponents.emailMasksRepository),
-            EmailMasksTelemetryMiddleware(),
         ),
     )
 }

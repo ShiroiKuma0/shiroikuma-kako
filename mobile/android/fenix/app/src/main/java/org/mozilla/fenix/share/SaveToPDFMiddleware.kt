@@ -17,7 +17,6 @@ import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.lib.state.Action
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
-import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.StandardSnackbarError
 import org.mozilla.fenix.components.appstate.AppAction
@@ -148,33 +147,13 @@ class SaveToPDFMiddleware(
             tab?.engineState?.engineSession?.checkForPdfViewer(
                 onResult = { isPdf ->
                     if (isPrint) {
-                        Events.printTapped.record(
-                            Events.PrintTappedExtra(
-                                source = telemetrySource(isPdf),
-                            ),
-                        )
                         context.recordEventInNimbus("print_tapped")
                     } else {
-                        Events.saveToPdfTapped.record(
-                            Events.SaveToPdfTappedExtra(
-                                source = telemetrySource(isPdf),
-                            ),
-                        )
                     }
                 },
                 onException = {
                     if (isPrint) {
-                        Events.printTapped.record(
-                            Events.PrintTappedExtra(
-                                source = telemetrySource(null),
-                            ),
-                        )
                     } else {
-                        Events.saveToPdfTapped.record(
-                            Events.SaveToPdfTappedExtra(
-                                source = telemetrySource(null),
-                            ),
-                        )
                     }
                 },
             )
@@ -192,32 +171,12 @@ class SaveToPDFMiddleware(
             tab?.engineState?.engineSession?.checkForPdfViewer(
                 onResult = { isPdf ->
                     if (isPrint) {
-                        Events.printCompleted.record(
-                            Events.PrintCompletedExtra(
-                                source = telemetrySource(isPdf),
-                            ),
-                        )
                     } else {
-                        Events.saveToPdfCompleted.record(
-                            Events.SaveToPdfCompletedExtra(
-                                source = telemetrySource(isPdf),
-                            ),
-                        )
                     }
                 },
                 onException = {
                     if (isPrint) {
-                        Events.printCompleted.record(
-                            Events.PrintCompletedExtra(
-                                source = telemetrySource(null),
-                            ),
-                        )
                     } else {
-                        Events.saveToPdfCompleted.record(
-                            Events.SaveToPdfCompletedExtra(
-                                source = telemetrySource(null),
-                            ),
-                        )
                     }
                 },
             )
@@ -237,36 +196,12 @@ class SaveToPDFMiddleware(
             tab?.engineState?.engineSession?.checkForPdfViewer(
                 onResult = { isPdf ->
                     if (isPrint) {
-                        Events.printFailure.record(
-                            Events.PrintFailureExtra(
-                                source = telemetrySource(isPdf),
-                                reason = telFailureReason,
-                            ),
-                        )
                     } else {
-                        Events.saveToPdfFailure.record(
-                            Events.SaveToPdfFailureExtra(
-                                source = telemetrySource(isPdf),
-                                reason = telFailureReason,
-                            ),
-                        )
                     }
                 },
                 onException = {
                     if (isPrint) {
-                        Events.printFailure.record(
-                            Events.PrintFailureExtra(
-                                source = telemetrySource(null),
-                                reason = telFailureReason,
-                            ),
-                        )
                     } else {
-                        Events.saveToPdfFailure.record(
-                            Events.SaveToPdfFailureExtra(
-                                source = telemetrySource(null),
-                                reason = telFailureReason,
-                            ),
-                        )
                     }
                 },
             )

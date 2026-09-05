@@ -27,8 +27,6 @@ import mozilla.components.service.fxa.store.SyncStore
 import mozilla.components.service.fxa.sync.SyncReason
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.ktx.kotlin.tryGetHostFromUrl
-import mozilla.telemetry.glean.GleanTimerId
-import org.mozilla.fenix.GleanMetrics.RecentSyncedTabs
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 import java.util.concurrent.TimeUnit
@@ -59,7 +57,6 @@ class RecentSyncedTabFeature(
     private val currentTimeMillis: () -> Long = { System.currentTimeMillis() },
 ) : LifecycleAwareFeature {
 
-    private var syncStartId: GleanTimerId? = null
     private var lastSyncedTabs: List<RecentSyncedTab>? = null
 
     override fun start() {
@@ -105,8 +102,6 @@ class RecentSyncedTabFeature(
     }
 
     private fun dispatchLoading() {
-        syncStartId?.let { RecentSyncedTabs.recentSyncedTabTimeToLoad.cancel(it) }
-        syncStartId = RecentSyncedTabs.recentSyncedTabTimeToLoad.start()
         if (appStore.state.recentSyncedTabState == RecentSyncedTabState.None) {
             appStore.dispatch(AppAction.RecentSyncedTabStateChange(RecentSyncedTabState.Loading))
         }
@@ -162,7 +157,6 @@ class RecentSyncedTabFeature(
                 AppAction.RecentSyncedTabStateChange(RecentSyncedTabState.None),
             )
         } else {
-            recordMetrics(syncedTabs.first(), lastSyncedTabs?.first())
             appStore.dispatch(
                 AppAction.RecentSyncedTabStateChange(RecentSyncedTabState.Success(syncedTabs)),
             )
@@ -173,20 +167,6 @@ class RecentSyncedTabFeature(
     private fun onError() {
         if (appStore.state.recentSyncedTabState == RecentSyncedTabState.Loading) {
             appStore.dispatch(AppAction.RecentSyncedTabStateChange(RecentSyncedTabState.None))
-        }
-    }
-
-    private fun recordMetrics(
-        tab: RecentSyncedTab,
-        lastSyncedTab: RecentSyncedTab?,
-    ) {
-        RecentSyncedTabs.recentSyncedTabShown[tab.deviceType.name.lowercase()].add()
-        syncStartId?.let {
-            RecentSyncedTabs.recentSyncedTabTimeToLoad.stopAndAccumulate(it)
-            syncStartId = null
-        }
-        if (tab == lastSyncedTab) {
-            RecentSyncedTabs.latestSyncedTabIsStale.add()
         }
     }
 

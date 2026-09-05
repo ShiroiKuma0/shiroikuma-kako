@@ -17,8 +17,6 @@ import kotlinx.coroutines.launch
 import mozilla.components.lib.state.ext.consumeFrom
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.storeProvider
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Addresses
 import org.mozilla.fenix.R
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
@@ -65,11 +63,9 @@ class AddressManagementFragment : Fragment(), SystemInsetsPaddedFragment {
                     addresses = addresses.value,
                     onAddressClick = {
                         interactor.onSelectAddress(it)
-                        Addresses.managementAddressTapped.record(NoExtras())
                     },
                     onAddAddressButtonClick = {
                         interactor.onAddAddressButtonClick()
-                        Addresses.managementAddTapped.record(NoExtras())
                     },
                 )
             }

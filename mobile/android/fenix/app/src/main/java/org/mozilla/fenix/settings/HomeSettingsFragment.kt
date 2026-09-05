@@ -14,8 +14,6 @@ import androidx.preference.CheckBoxPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
-import org.mozilla.fenix.GleanMetrics.CustomizeHome
-import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.appstate.AppAction
@@ -36,9 +34,6 @@ import org.mozilla.fenix.utils.view.addToRadioGroup
 class HomeSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment {
 
     private val args by navArgs<HomeSettingsFragmentArgs>()
-
-    @VisibleForTesting
-    internal var customizeHomeMetrics: CustomizeHome = CustomizeHome
 
     @VisibleForTesting
     internal var contentRecommendationsHelper: ContentRecommendationsFeatureHelper = ContentRecommendationsFeatureHelper
@@ -165,20 +160,7 @@ class HomeSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragm
         return Preference.OnPreferenceChangeListener { preference, newValue ->
             val newBooleanValue = newValue as? Boolean ?: return@OnPreferenceChangeListener false
 
-            customizeHomeMetrics.preferenceToggled.record(
-                CustomizeHome.PreferenceToggledExtra(
-                    newBooleanValue,
-                    metricKey,
-                ),
-            )
-
             if (recordEventsToggle) {
-                Events.preferenceToggled.record(
-                    Events.PreferenceToggledExtra(
-                        newBooleanValue,
-                        metricKey,
-                    ),
-                )
             }
 
             fenixSettings.preferences.edit { putBoolean(preference.key, newBooleanValue) }

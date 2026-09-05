@@ -4,9 +4,9 @@
 
 package org.mozilla.fenix.components.fake
 
-import org.mozilla.fenix.components.metrics.Event
-import org.mozilla.fenix.components.metrics.MetricController
-import org.mozilla.fenix.components.metrics.MetricServiceType
+import org.mozilla.fenix.components.attribution.Event
+import org.mozilla.fenix.components.attribution.MetricController
+import org.mozilla.fenix.components.attribution.MetricServiceType
 
 /**
  * A class to facilitate inspection of MetricController interactions for unit tests.

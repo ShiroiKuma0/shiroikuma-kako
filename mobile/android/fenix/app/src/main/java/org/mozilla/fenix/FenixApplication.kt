@@ -82,30 +82,10 @@ import mozilla.components.support.utils.Browsers
 import mozilla.components.support.utils.RunWhenReadyQueue
 import mozilla.components.support.utils.logElapsedTime
 import mozilla.components.support.webextensions.WebExtensionSupport
-import mozilla.telemetry.glean.Glean
-import org.mozilla.fenix.GleanMetrics.Addons
-import org.mozilla.fenix.GleanMetrics.Addresses
-import org.mozilla.fenix.GleanMetrics.AndroidAutofill
-import org.mozilla.fenix.GleanMetrics.Browser
-import org.mozilla.fenix.GleanMetrics.CreditCards
-import org.mozilla.fenix.GleanMetrics.CustomizeHome
-import org.mozilla.fenix.GleanMetrics.Events.marketingNotificationAllowed
-import org.mozilla.fenix.GleanMetrics.GenaiAiControls
-import org.mozilla.fenix.GleanMetrics.Logins
-import org.mozilla.fenix.GleanMetrics.Metrics
-import org.mozilla.fenix.GleanMetrics.PerfStartup
-import org.mozilla.fenix.GleanMetrics.Preferences
-import org.mozilla.fenix.GleanMetrics.SearchDefaultEngine
-import org.mozilla.fenix.GleanMetrics.SearchDefaultEngineForPrivate
-import org.mozilla.fenix.GleanMetrics.TabStrip
-import org.mozilla.fenix.GleanMetrics.TermsOfUse
-import org.mozilla.fenix.GleanMetrics.UserAiSummarize
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.Core
 import org.mozilla.fenix.components.appstate.AppAction
-import org.mozilla.fenix.components.initializeGlean
-import org.mozilla.fenix.components.metrics.MozillaProductDetector
-import org.mozilla.fenix.components.startMetricsIfEnabled
+import org.mozilla.fenix.components.attribution.MozillaProductDetector
 import org.mozilla.fenix.experiments.maybeFetchExperiments
 import org.mozilla.fenix.ext.application
 import org.mozilla.fenix.ext.components
@@ -122,7 +102,6 @@ import org.mozilla.fenix.perf.ApplicationExitInfoMetrics
 import org.mozilla.fenix.perf.MarkersActivityLifecycleCallbacks
 import org.mozilla.fenix.perf.ProfilerMarkerFactProcessor
 import org.mozilla.fenix.perf.StartupTimeline
-import org.mozilla.fenix.perf.StorageStatsMetrics
 import org.mozilla.fenix.perf.runBlockingIncrement
 import org.mozilla.fenix.push.PushFxaIntegration
 import org.mozilla.fenix.push.WebPushEngineIntegration
@@ -264,7 +243,6 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             // glean will queue this if the backend is still starting up.
             val stop = SystemClock.elapsedRealtimeNanos()
             val durationMillis = TimeUnit.NANOSECONDS.toMillis(stop - start)
-            PerfStartup.applicationOnCreate.accumulateSamples(listOf(durationMillis))
         }
     }
 
@@ -289,18 +267,6 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
                 }
                 putBoolean(rawKey, value)
             }
-        }
-    }
-
-    // Begin initialization of Glean if we have data-upload consent, otherwise we will have to
-    // wait until we do. Note that Glean initialization is asynchronous any may not be finished
-    // when this method returns.
-    @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
-    private fun maybeInitializeGlean() {
-        // We delay the Glean initialization until we have user consent from onboarding.
-        // If onboarding is disabled (when in local builds), continue to initialize Glean.
-        if (components.fenixOnboarding.userHasBeenOnboarded() || !FeatureFlags.onboardingFeatureEnabled) {
-            initializeGlean(this, logger, components.settings.isTelemetryEnabled, components.core.client)
         }
     }
 
@@ -348,19 +314,13 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         // construct the instance.
         components.core.engine
 
-        // Kick off initialization of Glean backend off-thread. Glean will continue to queue
-        // metric samples until the backend is ready. If we don't have data-upload consent then
-        // this will be a no-op and initialization may be attempted after onboarding.
-        maybeInitializeGlean()
-
-        // Initialize the [BrowserStore] so that [setStartupMetrics] can reference this.
+        // Initialize the [BrowserStore] early; other components reference it.
         // Note: This is a historical artifact and should be revisited.
         val store = components.core.store
 
         // StartupMetrics accesses shared preferences so do this off thread.
         @OptIn(DelicateCoroutinesApi::class)
         GlobalScope.launch(IO) {
-            setStartupMetrics(store, components.settings)
         }
 
         // Start setup for concept-fetch networking in megazord. This runs off-thread, but we wait
@@ -404,17 +364,8 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         setupLeakCanary()
 
         if (components.fenixOnboarding.userHasBeenOnboarded()) {
-            startMetricsIfEnabled(
-                logger = logger,
-                analytics = components.analytics,
-                isTelemetryEnabled = components.settings.isTelemetryEnabled,
-                isMarketingTelemetryEnabled = components.settings.isMarketingTelemetryEnabled &&
-                    components.settings.hasMadeMarketingTelemetrySelection,
-                isDailyUsagePingEnabled = components.settings.isDailyUsagePingEnabled,
-            )
         } else {
             CoroutineScope(IO).launch {
-                components.distributionIdManager.startAdjustIfSkippingConsentScreen()
             }
         }
 
@@ -446,7 +397,6 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             VisibilityLifecycleObserver(),
         )
 
-        components.analytics.metricsStorage.tryRegisterAsUsageRecorder(this)
 
         CoroutineScope(IO).launch {
             components.useCases.wallpaperUseCases.fetchCurrentWallpaperUseCase.invoke()
@@ -576,7 +526,6 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         // Because it may be slow to capture the storage stats, it might be preferred to
         // create a WorkManager task for this metric, however, I ran out of
         // implementation time and WorkManager is harder to test.
-        StorageStatsMetrics.report(this.applicationContext)
     }
 
     @OptIn(DelicateCoroutinesApi::class)
@@ -910,189 +859,6 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         }
     }
 
-    /**
-     * This function is called right after Glean is initialized. Part of this function depends on
-     * shared preferences to be updated so the correct value is sent with the metrics ping.
-     *
-     * The reason we're using shared preferences to track these values is due to the limitations of
-     * the current metrics ping design. The values set here will be sent in every metrics ping even
-     * if these values have not changed since the last startup.
-     */
-    @Suppress("CognitiveComplexMethod", "LongMethod", "CyclomaticComplexMethod")
-    @VisibleForTesting
-    internal suspend fun setStartupMetrics(
-        browserStore: BrowserStore,
-        settings: Settings,
-        dohSettingsProvider: DohSettingsProvider = DefaultDohSettingsProvider(
-            components.core.engine,
-            settings,
-        ),
-        mozillaProductDetector: MozillaProductDetector = MozillaProductDetector,
-    ) {
-        setPreferenceMetrics(settings, dohSettingsProvider)
-        with(Metrics) {
-            // Set this early to guarantee it's in every ping from here on.
-            distributionId.set(components.distributionIdManager.getDistributionId())
-
-            if (settings.hasAcceptedTermsOfService) {
-                setTermsOfUseStartUpMetrics(settings)
-            }
-
-            defaultBrowser.set(Browsers.isDefaultBrowser(applicationContext))
-            mozillaProductDetector.getMozillaBrowserDefault(applicationContext)?.also {
-                defaultMozBrowser.set(it)
-            }
-
-            mozillaProducts.set(
-                mozillaProductDetector.getInstalledMozillaProducts(
-                    applicationContext,
-                ),
-            )
-
-            adjustCampaign.set(settings.adjustCampaignId)
-            adjustAdGroup.set(settings.adjustAdGroup)
-            adjustCreative.set(settings.adjustCreative)
-            adjustNetwork.set(settings.adjustNetwork)
-
-            settings.migrateSearchWidgetInstalledPrefIfNeeded()
-            searchWidgetInstalled.set(settings.searchWidgetInstalled)
-
-            val openTabsCount = settings.openTabsCount
-            hasOpenTabs.set(openTabsCount > 0)
-            if (openTabsCount > 0) {
-                tabsOpenCount.add(openTabsCount)
-            }
-
-            val openPrivateTabsCount = settings.openPrivateTabsCount
-            if (openPrivateTabsCount > 0) {
-                privateTabsOpenCount.add(openPrivateTabsCount)
-            }
-
-            val topSitesSize = settings.topSitesSize
-            hasTopSites.set(topSitesSize > 0)
-            if (topSitesSize > 0) {
-                topSitesCount.add(topSitesSize)
-            }
-
-            val installedAddonSize = settings.installedAddonsCount
-            Addons.hasInstalledAddons.set(installedAddonSize > 0)
-            if (installedAddonSize > 0) {
-                Addons.installedAddons.set(settings.installedAddonsList.split(','))
-            }
-
-            val enabledAddonSize = settings.enabledAddonsCount
-            Addons.hasEnabledAddons.set(enabledAddonSize > 0)
-            if (enabledAddonSize > 0) {
-                Addons.enabledAddons.set(settings.enabledAddonsList.split(','))
-            }
-
-            val desktopBookmarksSize = settings.desktopBookmarksSize
-            hasDesktopBookmarks.set(desktopBookmarksSize > 0)
-            if (desktopBookmarksSize > 0) {
-                desktopBookmarksCount.add(desktopBookmarksSize)
-            }
-
-            val mobileBookmarksSize = settings.mobileBookmarksSize
-            hasMobileBookmarks.set(mobileBookmarksSize > 0)
-            if (mobileBookmarksSize > 0) {
-                mobileBookmarksCount.add(mobileBookmarksSize)
-            }
-
-            tabViewSetting.set(settings.getTabViewPingString())
-            closeTabSetting.set(settings.getTabTimeoutPingString())
-
-            val isDefaultTheCurrentWallpaper =
-                Wallpaper.nameIsDefault(settings.currentWallpaperName)
-
-            defaultWallpaper.set(isDefaultTheCurrentWallpaper)
-
-            val notificationManagerCompat = NotificationManagerCompat.from(applicationContext)
-            notificationsAllowed.set(notificationManagerCompat.areNotificationsEnabledSafe())
-            marketingNotificationAllowed.set(
-                notificationManagerCompat.isNotificationChannelEnabled(MARKETING_CHANNEL_ID),
-            )
-
-            ramMoreThanThreshold.set(isDeviceRamAboveThreshold)
-            deviceTotalRam.set(deviceTotalRAM)
-
-            isLargeDevice.set(isLargeScreenSize())
-        }
-
-        with(AndroidAutofill) {
-            val autofillUseCases = AutofillUseCases()
-            supported.set(autofillUseCases.isSupported(applicationContext))
-            enabled.set(autofillUseCases.isEnabled(applicationContext))
-        }
-
-        val summarizeSettings = SummarizationSettings.dataStore(applicationContext)
-        UserAiSummarize.summarizationEnabled.set(summarizeSettings.getFeatureEnabledUserStatus().first() == true)
-        UserAiSummarize.gestureEnabled.set(summarizeSettings.getGestureEnabledUserStatus().first())
-        UserAiSummarize.summarizationConsented.set(summarizeSettings.getHasConsentedToShake().first())
-
-        Browser.globalAiControlIsBlocking.set(components.aiControlsFeatureBlock.isBlocked.first())
-        components.aiFeatureRegistry.getFeatures().forEach { feature ->
-            GenaiAiControls.featuresBlocked[feature.id.value].set(!feature.isEnabled.first())
-        }
-
-        browserStore.waitForSelectedOrDefaultSearchEngine { searchEngine ->
-            searchEngine?.let {
-                val sendSearchUrl =
-                    !searchEngine.isCustomEngine() || searchEngine.isKnownSearchDomain()
-                if (sendSearchUrl) {
-                    SearchDefaultEngine.apply {
-                        code.set(
-                            if (searchEngine.telemetrySuffix.isNullOrEmpty()) {
-                                searchEngine.id
-                            } else {
-                                "${searchEngine.id}-${searchEngine.telemetrySuffix}"
-                            },
-                        )
-                        name.set(searchEngine.name)
-                        searchUrl.set(searchEngine.buildSearchUrl(""))
-                    }
-                } else {
-                    SearchDefaultEngine.apply {
-                        code.set(searchEngine.id)
-                        name.set("custom")
-                    }
-                }
-
-                val privateSearchEngine =
-                    browserStore.state.search.selectedOrDefaultPrivateSearchEngine
-                privateSearchEngine?.let { privateEngine ->
-                    val isSameAsDefault = privateEngine.id == searchEngine.id
-                    val sendPrivateSearchUrl =
-                        !privateEngine.isCustomEngine() || privateEngine.isKnownSearchDomain()
-                    if (sendPrivateSearchUrl) {
-                        SearchDefaultEngineForPrivate.apply {
-                            code.set(
-                                if (privateEngine.telemetrySuffix.isNullOrEmpty()) {
-                                    privateEngine.id
-                                } else {
-                                    "${privateEngine.id}-${privateEngine.telemetrySuffix}"
-                                },
-                            )
-                            name.set(if (isSameAsDefault) "default" else privateEngine.name)
-                            searchUrl.set(privateEngine.buildSearchUrl(""))
-                        }
-                    } else {
-                        SearchDefaultEngineForPrivate.apply {
-                            code.set(privateEngine.id)
-                            name.set(if (isSameAsDefault) "default" else "custom")
-                        }
-                    }
-                }
-            }
-        }
-
-        setAutofillMetrics()
-    }
-
-    private fun setTermsOfUseStartUpMetrics(settings: Settings) {
-        TermsOfUse.version.set(settings.termsOfUseAcceptedVersion.toLong())
-        TermsOfUse.date.set(Date(settings.termsOfUseAcceptedTimeInMillis))
-    }
-
     @VisibleForTesting
     internal val deviceTotalRAM: Long by lazy {
         ActivityManager.MemoryInfo().let { info ->
@@ -1109,144 +875,13 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         deviceRamApproxMegabytes() > RAM_THRESHOLD_MEGABYTES
     }
 
-    @Suppress("CyclomaticComplexMethod")
-    private fun setPreferenceMetrics(
-        settings: Settings,
-        dohSettingsProvider: DohSettingsProvider,
-    ) {
-        with(Preferences) {
-            searchSuggestionsEnabled.set(settings.shouldShowSearchSuggestions)
-            showSponsorSuggestionsEnabled.set(settings.showSponsoredSuggestions)
-            showNonSponsorSuggestionsEnabled.set(settings.showNonSponsoredSuggestions)
-            remoteDebuggingEnabled.set(settings.isRemoteDebuggingEnabled)
-            studiesEnabled.set(settings.isExperimentationEnabled)
-            telemetryEnabled.set(settings.isTelemetryEnabled)
-            browsingHistorySuggestion.set(settings.shouldShowHistorySuggestions)
-            bookmarksSuggestion.set(settings.shouldShowBookmarkSuggestions)
-            clipboardSuggestionsEnabled.set(settings.shouldShowClipboardSuggestions)
-            voiceSearchEnabled.set(settings.shouldShowVoiceSearch)
-            googleLensEnabled.set(
-                settings.googleLensIntegrationEnabled && settings.googleLensIntegrationUserEnabled,
-            )
-            openLinksInAppEnabled.set(settings.openLinksInExternalApp)
-            signedInSync.set(settings.signedInFxaAccount)
-            isolatedContentProcessesEnabled.set(settings.isIsolatedProcessEnabled)
-            appZygoteIsolatedContentProcessesEnabled.set(settings.isAppZygoteEnabled)
-            TabStrip.enabled.set(settings.isTabStripEnabled)
-
-            val syncedItems = SyncEnginesStorage(applicationContext).getStatus().entries.filter {
-                it.value
-            }.map { it.key.nativeName }
-            syncItems.set(syncedItems)
-
-            toolbarPositionSetting.set(
-                when {
-                    settings.shouldUseFixedTopToolbar -> "fixed_top"
-                    settings.shouldUseBottomToolbar -> "bottom"
-                    else -> "top"
-                },
-            )
-
-            toolbarModeSetting.set(
-                when {
-                    settings.shouldUseExpandedToolbar -> "expanded"
-                    else -> "simple"
-                },
-            )
-
-            toolbarSimpleShortcut.set(settings.toolbarSimpleShortcutKey)
-            toolbarExpandedShortcut.set(settings.toolbarExpandedShortcutKey)
-            toolbarTabStripShortcut.set(settings.toolbarTabStripShortcutKey)
-
-            enhancedTrackingProtection.set(
-                when {
-                    !settings.shouldUseTrackingProtection -> ""
-                    settings.useStandardTrackingProtection -> "standard"
-                    settings.useStrictTrackingProtection -> "strict"
-                    settings.useCustomTrackingProtection -> "custom"
-                    else -> ""
-                },
-            )
-            etpCustomCookiesSelection.set(settings.blockCookiesSelectionInCustomTrackingProtection)
-
-            val accessibilitySelection = mutableListOf<String>()
-
-            if (settings.switchServiceIsEnabled) {
-                accessibilitySelection.add("switch")
-            }
-
-            if (settings.touchExplorationIsEnabled) {
-                accessibilitySelection.add("touch exploration")
-            }
-
-            accessibilityServices.set(accessibilitySelection.toList())
-
-            userTheme.set(
-                when {
-                    settings.shouldUseLightTheme -> "light"
-                    settings.shouldUseDarkTheme -> "dark"
-                    settings.shouldFollowDeviceTheme -> "system"
-                    settings.shouldUseAutoBatteryTheme -> "battery"
-                    else -> ""
-                },
-            )
-
-            inactiveTabsEnabled.set(settings.inactiveTabsAreEnabled)
-            dohProtectionLevel.set(dohSettingsProvider.getSelectedProtectionLevel().toString())
-            httpsOnlyMode.set(settings.getHttpsOnlyMode().toString())
-            globalPrivacyControlEnabled.set(settings.shouldEnableGlobalPrivacyControl)
-        }
-        reportHomeScreenMetrics(settings)
-    }
-
-    private fun setAutofillMetrics() {
-        @OptIn(DelicateCoroutinesApi::class)
-        GlobalScope.launch(IO) {
-            try {
-                val autoFillStorage = applicationContext.components.core.autofillStorage
-                Addresses.savedAll.set(autoFillStorage.countAllAddresses())
-                CreditCards.savedAll.set(autoFillStorage.countAllCreditCards())
-            } catch (e: AutofillApiException) {
-                logger.error("Failed to fetch autofill data", e)
-            }
-
-            try {
-                val passwordsStorage = applicationContext.components.core.passwordsStorage
-                Logins.savedAll.set(passwordsStorage.count())
-            } catch (e: LoginsApiException) {
-                logger.error("Failed to fetch list of logins", e)
-            }
-        }
-    }
-
-    @VisibleForTesting
-    internal fun reportHomeScreenMetrics(settings: Settings) {
-        reportOpeningScreenMetrics(settings)
-        reportHomeScreenSectionMetrics(settings)
-    }
-
     private fun reportOpeningScreenMetrics(settings: Settings) {
-        CustomizeHome.openingScreen.set(
-            when {
-                settings.alwaysOpenTheHomepageWhenOpeningTheApp -> "homepage"
-                settings.alwaysOpenTheLastTabWhenOpeningTheApp -> "last tab"
-                settings.openHomepageAfterFourHoursOfInactivity -> "homepage after four hours"
-                else -> ""
-            },
-        )
     }
 
     private fun reportHomeScreenSectionMetrics(settings: Settings) {
         // These settings are backed by Nimbus features.
         // We break them out here so they can be recorded when
         // `nimbus.applyPendingExperiments()` is called.
-        CustomizeHome.jumpBackIn.set(settings.showRecentTabsFeature)
-        CustomizeHome.bookmarks.set(settings.showBookmarksHomeFeature)
-        CustomizeHome.mostVisitedSites.set(settings.showTopSitesFeature)
-        CustomizeHome.recentlyVisited.set(settings.historyMetadataUIFeature)
-        CustomizeHome.pocket.set(settings.showPocketRecommendationsFeature)
-        CustomizeHome.sponsoredPocket.set(settings.showPocketSponsoredStories)
-        CustomizeHome.contile.set(settings.showContileFeature)
     }
 
     override fun onConfigurationChanged(config: android.content.res.Configuration) {

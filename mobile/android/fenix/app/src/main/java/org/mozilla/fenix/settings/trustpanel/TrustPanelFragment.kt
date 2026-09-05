@@ -63,7 +63,6 @@ import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
 import org.mozilla.fenix.BuildConfig
-import org.mozilla.fenix.GleanMetrics.Vpn
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.components
@@ -78,7 +77,6 @@ import org.mozilla.fenix.ipprotection.ui.IPProtectionSnackbarBinding
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.trustpanel.middleware.TrustPanelMiddleware
 import org.mozilla.fenix.settings.trustpanel.middleware.TrustPanelNavigationMiddleware
-import org.mozilla.fenix.settings.trustpanel.middleware.TrustPanelTelemetryMiddleware
 import org.mozilla.fenix.settings.trustpanel.store.TrustPanelAction
 import org.mozilla.fenix.settings.trustpanel.store.TrustPanelState
 import org.mozilla.fenix.settings.trustpanel.store.TrustPanelStore
@@ -161,7 +159,6 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                     tabsUseCases = requireComponents.useCases.tabsUseCases,
                     scope = lifecycleScope,
                 ),
-                TrustPanelTelemetryMiddleware(),
             ),
         )
     }
@@ -365,9 +362,6 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                                     handleIPProtectionToggleAndRecordTelemetry(ipProtectionMenuState, components)
                                 },
                                 onIPProtectionNavigate = {
-                                    Vpn.settingsPageTapped.record(
-                                        Vpn.SettingsPageTappedExtra(entrypoint = "Trust Panel"),
-                                    )
                                     store.dispatch(TrustPanelAction.Navigate.IPProtectionSettings)
                                 },
                             )
@@ -453,9 +447,9 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
 
     private fun recordIPProtectionTelemetry(status: IPProtectionMenuStatus) {
         when (status) {
-            IPProtectionMenuStatus.Disabled -> Vpn.trustPanelTurnedOn.record()
-            IPProtectionMenuStatus.Enabled -> Vpn.trustPanelTurnedOff.record()
-            IPProtectionMenuStatus.AuthRequired -> Vpn.trustPanelTryItTapped.record()
+            IPProtectionMenuStatus.Disabled -> Unit
+            IPProtectionMenuStatus.Enabled -> Unit
+            IPProtectionMenuStatus.AuthRequired -> Unit
 
             IPProtectionMenuStatus.DataLimitReached,
             IPProtectionMenuStatus.ConnectionError,

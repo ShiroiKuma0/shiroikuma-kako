@@ -7,7 +7,6 @@ package org.mozilla.fenix.settings.logins.fragment
 import android.os.Bundle
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
-import org.mozilla.fenix.GleanMetrics.Logins
 import org.mozilla.fenix.R
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
@@ -38,11 +37,6 @@ class SavedLoginsSettingFragment : PreferenceFragmentCompat(), SystemInsetsPadde
         preferenceSave.onPreferenceChangeListener = object : SharedPreferenceUpdater() {
             override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
                 if (newValue == true) {
-                    Logins.saveLoginsSettingChanged.record(
-                        Logins.SaveLoginsSettingChangedExtra(
-                            Setting.ASK_TO_SAVE.name,
-                        ),
-                    )
                 }
                 // We want to reload the current session here so we can try to fill the current page
                 context?.components?.useCases?.sessionUseCases?.reload?.invoke()
@@ -57,11 +51,6 @@ class SavedLoginsSettingFragment : PreferenceFragmentCompat(), SystemInsetsPadde
         preferenceNeverSave.onPreferenceChangeListener = object : SharedPreferenceUpdater() {
             override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
                 if (newValue == true) {
-                    Logins.saveLoginsSettingChanged.record(
-                        Logins.SaveLoginsSettingChangedExtra(
-                            Setting.NEVER_SAVE.name,
-                        ),
-                    )
                 }
                 // We want to reload the current session here so we don't save any currently inserted login
                 context?.components?.useCases?.sessionUseCases?.reload?.invoke()

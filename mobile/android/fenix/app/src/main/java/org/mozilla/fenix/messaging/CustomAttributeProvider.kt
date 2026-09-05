@@ -12,11 +12,11 @@ import mozilla.components.support.base.ext.areNotificationsEnabledSafe
 import mozilla.components.support.base.ext.isNotificationChannelEnabled
 import mozilla.components.support.utils.Browsers
 import org.json.JSONObject
-import org.mozilla.fenix.components.metrics.UTMParams.Companion.UTM_CAMPAIGN
-import org.mozilla.fenix.components.metrics.UTMParams.Companion.UTM_CONTENT
-import org.mozilla.fenix.components.metrics.UTMParams.Companion.UTM_MEDIUM
-import org.mozilla.fenix.components.metrics.UTMParams.Companion.UTM_SOURCE
-import org.mozilla.fenix.components.metrics.UTMParams.Companion.UTM_TERM
+import org.mozilla.fenix.components.attribution.UTMParams.Companion.UTM_CAMPAIGN
+import org.mozilla.fenix.components.attribution.UTMParams.Companion.UTM_CONTENT
+import org.mozilla.fenix.components.attribution.UTMParams.Companion.UTM_MEDIUM
+import org.mozilla.fenix.components.attribution.UTMParams.Companion.UTM_SOURCE
+import org.mozilla.fenix.components.attribution.UTMParams.Companion.UTM_TERM
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.onboarding.MARKETING_CHANNEL_ID
 import org.mozilla.fenix.utils.isLargeScreenSize

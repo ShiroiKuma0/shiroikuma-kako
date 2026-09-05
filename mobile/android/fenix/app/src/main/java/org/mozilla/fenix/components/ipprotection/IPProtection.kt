@@ -56,7 +56,6 @@ class IPProtection(
                     lazyAppStore = lazyAppStore,
                     messages = snackbarMessages,
                 ),
-                IPProtectionTelemetryMiddleware(),
                 IPProtectionPreferencesMiddleware(DefaultIPProtectionRepository(settings)),
             ),
         )

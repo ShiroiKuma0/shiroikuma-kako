@@ -21,7 +21,6 @@ import org.mozilla.experiments.nimbus.NimbusDeviceInfo
 import org.mozilla.experiments.nimbus.internal.JsonObject
 import org.mozilla.experiments.nimbus.internal.RecordedContext
 import org.mozilla.experiments.nimbus.internal.getCalculatedAttributes
-import org.mozilla.fenix.GleanMetrics.NimbusSystem
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.home.pocket.ContentRecommendationsFeatureHelper
 import org.mozilla.fenix.onboarding.MARKETING_CHANNEL_ID
@@ -94,36 +93,7 @@ class RecordedNimbusContext(
      * and use that instance to record the values to Glean.
      */
     override fun record() {
-        val eventQueryValuesObject = NimbusSystem.RecordedNimbusContextObjectItemEventQueryValuesObject(
-            daysOpenedInLast28 = eventQueryValues[DAYS_OPENED_IN_LAST_28]?.toInt(),
-        )
-        NimbusSystem.recordedNimbusContext.set(
-            NimbusSystem.RecordedNimbusContextObject(
-                isFirstRun = isFirstRun,
-                eventQueryValues = eventQueryValuesObject,
-                installReferrerResponseUtmSource = utmSource,
-                installReferrerResponseUtmMedium = utmMedium,
-                installReferrerResponseUtmCampaign = utmCampaign,
-                installReferrerResponseUtmTerm = utmTerm,
-                installReferrerResponseUtmContent = utmContent,
-                androidSdkVersion = androidSdkVersion,
-                appVersion = appVersion,
-                locale = locale,
-                daysSinceInstall = daysSinceInstall,
-                daysSinceUpdate = daysSinceUpdate,
-                language = language,
-                region = region,
-                deviceManufacturer = deviceManufacturer,
-                deviceModel = deviceModel,
-                userAcceptedTou = userAcceptedTou,
-                noShortcutsOrStoriesOptOuts = noShortcutsOrStoriesOptOuts,
-                addonIds = NimbusSystem.RecordedNimbusContextObjectAddonIds(addonIds.toMutableList()),
-                touPoints = touPoints,
-                userDisabledAi = userDisabledAi,
-                areNotificationsEnabled = areNotificationsEnabled,
-                areMarketingNotificationsEnabled = areMarketingNotificationsEnabled,
-            ),
-        )
+        // 白い熊 火狐 records nothing: this fork ships without Glean.
     }
 
     /**

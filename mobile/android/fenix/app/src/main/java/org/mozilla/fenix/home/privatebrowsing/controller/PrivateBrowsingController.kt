@@ -5,8 +5,6 @@
 package org.mozilla.fenix.home.privatebrowsing.controller
 
 import androidx.navigation.NavController
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Homepage
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
@@ -54,7 +52,6 @@ class DefaultPrivateBrowsingController(
     }
 
     override fun handlePrivateModeButtonClicked(newMode: BrowsingMode) {
-        Homepage.privateModeIconTapped.record(NoExtras())
 
         if (settings.enableHomepageAsNewTab) {
             fenixBrowserUseCases.addNewHomepageTab(private = newMode.isPrivate)

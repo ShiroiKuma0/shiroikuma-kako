@@ -16,7 +16,6 @@ import mozilla.components.lib.state.Store
 import mozilla.components.support.utils.RunWhenReadyQueue
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppState
-import org.mozilla.fenix.perf.ColdStartupDurationTelemetry
 import org.mozilla.fenix.perf.lazyMonitored
 
 private const val FIVE_SECONDS_MILLIS = 5000L
@@ -26,7 +25,6 @@ private const val FIVE_SECONDS_MILLIS = 5000L
  */
 class PerformanceComponent {
     val visualCompletenessQueue by lazyMonitored { RunWhenReadyQueue() }
-    val coldStartupDurationTelemetry by lazyMonitored { ColdStartupDurationTelemetry() }
 }
 
 /**

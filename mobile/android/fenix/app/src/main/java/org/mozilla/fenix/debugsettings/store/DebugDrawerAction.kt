@@ -6,7 +6,6 @@ package org.mozilla.fenix.debugsettings.store
 
 import mozilla.components.lib.state.Action
 import org.mozilla.fenix.debugsettings.autofill.AutofillTools
-import org.mozilla.fenix.debugsettings.gleandebugtools.ui.GleanDebugToolsScreen
 import org.mozilla.fenix.debugsettings.ui.DebugDrawerHome
 import org.mozilla.fenix.debugsettings.addresses.AddressesTools as AddressesScreen
 import org.mozilla.fenix.debugsettings.cfrs.CfrTools as CfrToolsScreen
@@ -76,9 +75,7 @@ sealed class DebugDrawerAction : Action {
         object CfrTools : NavigateTo()
 
         /**
-         * [NavigateTo] action fired when the debug drawer needs to navigate to [GleanDebugToolsScreen].
          */
-        object GleanDebugTools : NavigateTo()
 
         /**
          * [NavigateTo] action fired when the debug drawer needs to navigate to [RegionScreen].

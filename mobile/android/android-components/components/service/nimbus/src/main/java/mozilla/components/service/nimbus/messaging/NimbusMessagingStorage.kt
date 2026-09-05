@@ -15,7 +15,6 @@ import org.mozilla.experiments.nimbus.NimbusMessagingHelperInterface
 import org.mozilla.experiments.nimbus.NimbusMessagingInterface
 import org.mozilla.experiments.nimbus.internal.FeatureHolder
 import org.mozilla.experiments.nimbus.internal.NimbusException
-import mozilla.components.service.nimbus.GleanMetrics.Messaging as GleanMessaging
 
 /**
  * This ID must match the name given in the `messaging.fml.yaml` file, which
@@ -42,7 +41,6 @@ class NimbusMessagingStorage(
     private val context: Context,
     private val metadataStorage: MessageMetadataStorage,
     private val onMalformedMessage: (String) -> Unit = {
-        GleanMessaging.malformed.record(GleanMessaging.MalformedExtra(it))
     },
     private val nimbus: NimbusMessagingInterface,
     private val messagingFeature: FeatureHolder<Messaging>,

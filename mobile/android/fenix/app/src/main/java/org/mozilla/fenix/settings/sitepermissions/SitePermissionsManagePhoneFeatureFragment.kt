@@ -25,7 +25,6 @@ import mozilla.components.feature.sitepermissions.SitePermissionsRules
 import mozilla.components.feature.sitepermissions.SitePermissionsRules.Action.ALLOWED
 import mozilla.components.feature.sitepermissions.SitePermissionsRules.Action.BLOCKED
 import mozilla.components.support.utils.ext.pixelSizeFor
-import org.mozilla.fenix.GleanMetrics.Autoplay
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.FragmentManageSitePermissionsFeaturePhoneBinding
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
@@ -220,7 +219,6 @@ class SitePermissionsManagePhoneFeatureFragment : Fragment(), SystemInsetsPadded
         }
 
         autoplaySetting.toAutoplayMetricsExtraKey()?.let { extraKey ->
-            Autoplay.settingChanged.record(Autoplay.SettingChangedExtra(extraKey))
         }
 
         settings.setSitePermissionsPhoneFeatureAction(AUTOPLAY_AUDIBLE, audible)

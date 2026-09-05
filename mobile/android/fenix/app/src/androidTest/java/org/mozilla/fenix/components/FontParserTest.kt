@@ -3,8 +3,8 @@ package org.mozilla.fenix.components
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.mozilla.fenix.components.metrics.fonts.FontEnumerationWorker
-import org.mozilla.fenix.components.metrics.fonts.FontParser
+import org.mozilla.fenix.components.attribution.fonts.FontEnumerationWorker
+import org.mozilla.fenix.components.attribution.fonts.FontParser
 
 class FontParserTest {
     @Test

@@ -14,8 +14,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.components.fake.FakeMetricController
-import org.mozilla.fenix.components.metrics.MetricServiceType
-import org.mozilla.fenix.components.metrics.UTMParams
+import org.mozilla.fenix.components.attribution.MetricServiceType
+import org.mozilla.fenix.components.attribution.UTMParams
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.shadows.ShadowBuild

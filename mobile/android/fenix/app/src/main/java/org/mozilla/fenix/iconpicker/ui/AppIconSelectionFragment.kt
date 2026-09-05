@@ -23,7 +23,6 @@ import org.mozilla.fenix.iconpicker.AppIconMiddleware
 import org.mozilla.fenix.iconpicker.AppIconRepository
 import org.mozilla.fenix.iconpicker.AppIconState
 import org.mozilla.fenix.iconpicker.AppIconStore
-import org.mozilla.fenix.iconpicker.AppIconTelemetryMiddleware
 import org.mozilla.fenix.iconpicker.AppIconUpdater
 import org.mozilla.fenix.iconpicker.DefaultAppIconRepository
 import org.mozilla.fenix.iconpicker.DefaultPackageManagerWrapper
@@ -64,7 +63,6 @@ class AppIconSelectionFragment : Fragment(), UserInteractionHandler, SystemInset
                                 updateAppIcon = updateAppIcon(),
                                 updateSearchWidgets = updateSearchWidgets(),
                             ),
-                            AppIconTelemetryMiddleware(),
                         ),
                     )
                 },

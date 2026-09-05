@@ -31,7 +31,6 @@ import mozilla.components.browser.state.selector.privateTabs
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.lib.state.ext.flow
 import mozilla.components.lib.state.ext.flowScoped
-import org.mozilla.fenix.GleanMetrics.PrivateBrowsingLocked
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.AppStore
@@ -393,12 +392,10 @@ private fun handleVerificationSuccess(
     context: Context,
     onVerified: (() -> Unit)? = null,
 ) {
-    PrivateBrowsingLocked.authSuccess.record()
     context.components.useCases.privateBrowsingLockUseCases.authenticatedUseCase()
 
     onVerified?.invoke()
 }
 
 private fun handleVerificationFailure() {
-    PrivateBrowsingLocked.authFailure.record()
 }

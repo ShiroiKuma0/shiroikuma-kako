@@ -38,9 +38,6 @@ import mozilla.components.feature.accounts.push.SendTabUseCases
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.share.RecentAppsStorage
 import mozilla.components.support.ktx.kotlin.isExtensionUrl
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Events
-import org.mozilla.fenix.GleanMetrics.SyncAccount
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
@@ -131,12 +128,6 @@ class DefaultShareController(
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun handleShareToApp(app: AppShareOption) {
-        Events.shareToApp.record(
-            getShareToAppSafeExtra(
-                appPackage = app.packageName,
-                sentFromFirefoxEnabled = sentFromFirefoxManager.featureEnabled,
-            ),
-        )
         if (app.packageName == ACTION_COPY_LINK_TO_CLIPBOARD) {
             copyClipboard()
             dismiss(ShareController.Result.SUCCESS)
@@ -183,7 +174,6 @@ class DefaultShareController(
     }
 
     override fun handlePrint(tabId: String?) {
-        Events.shareMenuAction.record(Events.ShareMenuActionExtra("print"))
         handleShareClosed()
         printUseCase.invoke(tabId)
     }
@@ -194,7 +184,6 @@ class DefaultShareController(
     }
 
     override fun handleShareToDevice(device: Device) {
-        SyncAccount.sendTab.record(NoExtras())
         shareToDevicesWithRetry(listOf(device.id)) {
             sendTabUseCases.sendToDeviceAsync(device.id, shareData.toTabData())
         }
@@ -207,7 +196,6 @@ class DefaultShareController(
     }
 
     override fun handleSignIn() {
-        SyncAccount.signInToSendTab.record(NoExtras())
         val directions = ShareFragmentDirections.actionGlobalTurnOnSync(
             entrypoint = fxaEntrypoint as FenixFxAEntryPoint,
         )

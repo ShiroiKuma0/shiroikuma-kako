@@ -56,7 +56,6 @@ class SummarizationStoreViewModel(
         initialState = SummarizationState.Inert(initializedFromShake),
         reducer = ::summarizationReducer,
         middleware = listOf(
-            SummarizationTelemetryMiddleware(connectionType),
             SummarizationMiddleware(
                 isPageLoadingFlow = currentTab.asPageLoadingFlow(),
                 settings = settings,

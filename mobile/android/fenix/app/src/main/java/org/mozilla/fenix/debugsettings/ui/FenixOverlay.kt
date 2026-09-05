@@ -29,7 +29,6 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.integrity.IntegrityClient
 import mozilla.components.concept.storage.CreditCardsAddressesStorage
 import mozilla.components.concept.storage.LoginsStorage
-import mozilla.telemetry.glean.Glean
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.ClientUUID
 import org.mozilla.fenix.components.components
@@ -42,10 +41,6 @@ import org.mozilla.fenix.debugsettings.cfrs.CfrToolsPreferencesMiddleware
 import org.mozilla.fenix.debugsettings.cfrs.CfrToolsState
 import org.mozilla.fenix.debugsettings.cfrs.CfrToolsStore
 import org.mozilla.fenix.debugsettings.cfrs.DefaultCfrPreferencesRepository
-import org.mozilla.fenix.debugsettings.gleandebugtools.DefaultGleanDebugToolsStorage
-import org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsMiddleware
-import org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsState
-import org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsStore
 import org.mozilla.fenix.debugsettings.integrity.FakeClientUUID
 import org.mozilla.fenix.debugsettings.logins.FakeLoginsStorage
 import org.mozilla.fenix.debugsettings.logins.LoginsTools
@@ -53,7 +48,6 @@ import org.mozilla.fenix.debugsettings.navigation.DebugDrawerRoute
 import org.mozilla.fenix.debugsettings.store.DebugDrawerAction
 import org.mozilla.fenix.debugsettings.store.DebugDrawerNavigationMiddleware
 import org.mozilla.fenix.debugsettings.store.DebugDrawerStore
-import org.mozilla.fenix.debugsettings.store.DebugDrawerTelemetryMiddleware
 import org.mozilla.fenix.debugsettings.store.DrawerStatus
 import org.mozilla.fenix.debugsettings.tabs.TabGroupTools
 import org.mozilla.fenix.ext.components
@@ -96,28 +90,6 @@ fun FenixOverlay(
                 ),
             ),
         ),
-        gleanDebugToolsStore = GleanDebugToolsStore(
-            initialState = GleanDebugToolsState(
-                logPingsToConsoleEnabled = Glean.getLogPings(),
-                debugViewTag = Glean.getDebugViewTag() ?: "",
-            ),
-            middlewares = listOf(
-                GleanDebugToolsMiddleware(
-                    gleanDebugToolsStorage = DefaultGleanDebugToolsStorage(context.components.settings),
-                    clipboardHandler = context.components.clipboardHandler,
-                    openDebugView = { debugViewLink ->
-                        val intent = Intent(Intent.ACTION_VIEW)
-                        intent.data = debugViewLink.toUri()
-                        context.startActivity(intent)
-                    },
-                    showToast = stringResource(R.string.glean_debug_tools_send_ping_toast_message).let { template ->
-                        { pingType: String ->
-                            Toast.makeText(context, template.format(pingType), Toast.LENGTH_LONG).show()
-                        }
-                    },
-                ),
-            ),
-        ),
         loginsStorage = loginsStorage,
         addressesDebugRegionRepository =
             context.components.strictMode.allowViolation(StrictMode::allowThreadDiskReads) {
@@ -136,7 +108,6 @@ fun FenixOverlay(
  *
  * @param browserStore [BrowserStore] used to access [BrowserState].
  * @param cfrToolsStore [CfrToolsStore] used to access [CfrToolsState].
- * @param gleanDebugToolsStore [GleanDebugToolsStore] used to access [GleanDebugToolsState].
  * @param loginsStorage [LoginsStorage] used to access logins for [LoginsTools].
  * @param addressesDebugRegionRepository used to control storage for [AddressesTools].
  * @param creditCardsAddressesStorage used to access addresses for [AddressesTools].
@@ -150,7 +121,6 @@ fun FenixOverlay(
 private fun FenixOverlay(
     browserStore: BrowserStore,
     cfrToolsStore: CfrToolsStore,
-    gleanDebugToolsStore: GleanDebugToolsStore,
     loginsStorage: LoginsStorage,
     addressesDebugRegionRepository: AddressesDebugRegionRepository,
     creditCardsAddressesStorage: CreditCardsAddressesStorage,
@@ -169,7 +139,6 @@ private fun FenixOverlay(
                     navController = navController,
                     scope = coroutineScope,
                 ),
-                DebugDrawerTelemetryMiddleware(),
             ),
         )
     }
@@ -183,7 +152,6 @@ private fun FenixOverlay(
             debugDrawerStore = debugDrawerStore,
             browserStore = browserStore,
             cfrToolsStore = cfrToolsStore,
-            gleanDebugToolsStore = gleanDebugToolsStore,
             inactiveTabsEnabled = inactiveTabsEnabled,
             loginsStorage = loginsStorage,
             addressesDebugRegionRepository = addressesDebugRegionRepository,
@@ -247,18 +215,6 @@ private fun FenixOverlayPreview() {
             BrowserState(selectedTabId = selectedTab.id, tabs = listOf(selectedTab)),
         ),
         cfrToolsStore = CfrToolsStore(),
-        gleanDebugToolsStore = GleanDebugToolsStore(
-            initialState = GleanDebugToolsState(
-                logPingsToConsoleEnabled = false,
-                debugViewTag = "",
-                pingTypes = listOf(
-                    "metrics",
-                    "baseline",
-                    "ping type 3",
-                    "ping type 4",
-                ),
-            ),
-        ),
         inactiveTabsEnabled = true,
         loginsStorage = FakeLoginsStorage(),
         addressesDebugRegionRepository = FakeAddressesDebugRegionRepository(),

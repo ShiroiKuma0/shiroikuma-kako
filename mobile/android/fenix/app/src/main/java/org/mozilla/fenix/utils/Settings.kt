@@ -41,7 +41,6 @@ import org.mozilla.experiments.nimbus.NimbusEventStore
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.FeatureFlags
-import org.mozilla.fenix.GleanMetrics.TopSites
 import org.mozilla.fenix.R
 import org.mozilla.fenix.autofill.address.RegionAddressFeatureGate
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
@@ -543,7 +542,7 @@ class Settings(
 
     var contileContextId by stringPreference(
         appContext.getPreferenceKey(R.string.pref_key_contile_context_id),
-        default = { TopSites.contextId.generateAndSet().toString() },
+        default = { java.util.UUID.randomUUID().toString() },
         persistDefaultIfNotExists = true,
     )
 

@@ -25,7 +25,6 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.navigation.findNavController
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
-import org.mozilla.fenix.GleanMetrics.CustomizationSettings
 import org.mozilla.fenix.R
 import org.mozilla.fenix.iconpicker.AppIcon
 import org.mozilla.fenix.iconpicker.AppIconRepository
@@ -61,7 +60,6 @@ class AppIconPreference @JvmOverloads constructor(
         SelectAppIcon(
             appIcon = appIconRepository.selectedAppIcon,
             onClick = {
-                CustomizationSettings.appIconSelectionTapped.record()
                 view.findNavController().navigate(
                     CustomizationFragmentDirections.actionCustomizationFragmentAppIconSelectionFragment(),
                 )

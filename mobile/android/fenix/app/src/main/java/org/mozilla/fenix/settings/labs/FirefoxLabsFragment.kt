@@ -19,7 +19,6 @@ import org.mozilla.fenix.ext.hideToolbar
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.settings.labs.middleware.LabsMiddleware
-import org.mozilla.fenix.settings.labs.middleware.LabsTelemetryMiddleware
 import org.mozilla.fenix.settings.labs.store.LabsAction
 import org.mozilla.fenix.settings.labs.store.LabsState
 import org.mozilla.fenix.settings.labs.store.LabsStore
@@ -50,7 +49,6 @@ class FirefoxLabsFragment : Fragment(), SystemInsetsPaddedFragment {
                     onOpenFeedback = ::openFeedbackLink,
                     crashReporter = requireComponents.analytics.crashReporter,
                 ),
-                LabsTelemetryMiddleware(),
             ),
         )
     }

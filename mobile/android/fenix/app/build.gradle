@@ -406,15 +406,6 @@ android.buildTypes.debug.with {
     buildConfigField 'String', 'SECRET_SETTINGS_OVERRIDES', '"' + secretSettingsOverrides + '"'
 }
 
-// Generate Kotlin code for the Fenix Glean metrics.
-ext {
-    // Enable expiration by major version.
-    gleanExpireByVersion = Config.majorVersion(project)
-    gleanNamespace = "mozilla.telemetry.glean"
-    gleanPythonEnvDir = gradle.mozconfig.substs.GRADLE_GLEAN_PARSER_VENV
-}
-apply plugin: "org.mozilla.telemetry.glean-gradle-plugin"
-
 nimbus {
     // The path to the Nimbus feature manifest file
     manifestFile = "nimbus.fml.yaml"
@@ -504,7 +495,6 @@ dependencies {
     implementation project(':components:service-digitalassetlinks')
     implementation project(':components:service-firefox-accounts')
     implementation project(":components:service-firefox-relay")
-    implementation project(':components:service-glean')
     implementation project(':components:service-location')
     implementation project(':components:service-mars')
     implementation project(':components:service-merino-manifest')
@@ -593,7 +583,6 @@ dependencies {
     implementation libs.installreferrer
     implementation libs.kotlinx.coroutines
     implementation libs.kotlinx.serialization.json
-    implementation libs.mozilla.glean
     implementation libs.play.review
     implementation libs.play.review.ktx
     implementation libs.play.services.ads.id
@@ -625,7 +614,6 @@ dependencies {
     testImplementation libs.kotlin.test
     testImplementation libs.kotlinx.coroutines.test
     testImplementation libs.mockk
-    testImplementation libs.mozilla.glean.forUnitTests
     testImplementation libs.robolectric
 
     androidTestImplementation project(':components:support-android-test')

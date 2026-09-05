@@ -24,8 +24,6 @@ import mozilla.components.lib.state.ext.consumeFrom
 import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
 import mozilla.components.support.base.feature.UserInteractionHandler
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.RecentlyClosedTabs
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.databinding.FragmentRecentlyClosedTabsBinding
@@ -77,7 +75,6 @@ class RecentlyClosedFragment :
         return when (item.itemId) {
             R.id.close_history -> {
                 close()
-                RecentlyClosedTabs.menuClose.record(NoExtras())
                 true
             }
             R.id.share_history_multi_select -> {
@@ -103,7 +100,6 @@ class RecentlyClosedFragment :
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        RecentlyClosedTabs.opened.record(NoExtras())
     }
 
     override fun onCreateView(

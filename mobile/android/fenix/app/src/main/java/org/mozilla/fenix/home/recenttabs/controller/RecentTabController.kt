@@ -6,8 +6,6 @@ package org.mozilla.fenix.home.recenttabs.controller
 
 import androidx.navigation.NavController
 import mozilla.components.feature.tabs.TabsUseCases.SelectTabUseCase
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.RecentTabs
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
@@ -51,14 +49,12 @@ class DefaultRecentTabsController(
 ) : RecentTabController {
 
     override fun handleRecentTabClicked(tabId: String) {
-        RecentTabs.recentTabOpened.record(NoExtras())
 
         selectTabUseCase.invoke(tabId)
         navController.navigate(R.id.browserFragment)
     }
 
     override fun handleRecentTabShowAllClicked() {
-        RecentTabs.showAllClicked.record(NoExtras())
         navController.navigate(HomeFragmentDirections.actionGlobalTabManagementFragment())
     }
 

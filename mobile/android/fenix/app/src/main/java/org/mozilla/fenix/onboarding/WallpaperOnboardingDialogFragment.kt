@@ -20,8 +20,6 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import kotlinx.coroutines.launch
 import mozilla.components.lib.state.ext.observeAsComposableState
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Wallpapers
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.core.Action
@@ -68,17 +66,11 @@ class WallpaperOnboardingDialogFragment : BottomSheetDialogFragment() {
         super.onDismiss(dialog)
 
         val currentWallpaper = requireContext().components.appStore.state.wallpaperState.currentWallpaper
-        Wallpapers.onboardingClosed.record(
-            Wallpapers.OnboardingClosedExtra(
-                isSelected = currentWallpaper.name != Wallpaper.DEFAULT,
-            ),
-        )
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         requireComponents.settings.showWallpaperOnboarding = false
-        Wallpapers.onboardingOpened.record(NoExtras())
     }
 
     override fun onCreateView(
@@ -105,7 +97,6 @@ class WallpaperOnboardingDialogFragment : BottomSheetDialogFragment() {
                     onExploreMoreButtonClicked = {
                         val directions = NavGraphDirections.actionGlobalWallpaperSettingsFragment()
                         findNavController().navigate(directions)
-                        Wallpapers.onboardingExploreMoreClick.record(NoExtras())
                     },
                     loadWallpaperResource = { wallpaperUseCases.loadThumbnail(it) },
                     onSelectWallpaper = {
@@ -126,13 +117,6 @@ class WallpaperOnboardingDialogFragment : BottomSheetDialogFragment() {
     ) {
         when (result) {
             Wallpaper.ImageFileState.Downloaded -> {
-                Wallpapers.wallpaperSelected.record(
-                    Wallpapers.WallpaperSelectedExtra(
-                        name = wallpaper.name,
-                        source = "onboarding",
-                        themeCollection = wallpaper.collection.name,
-                    ),
-                )
             }
             Wallpaper.ImageFileState.Error -> {
                 Snackbar.make(

@@ -7,7 +7,7 @@ package org.mozilla.fenix.home.intent
 import android.content.Intent
 import androidx.navigation.NavController
 import org.mozilla.fenix.NavGraphDirections
-import org.mozilla.fenix.components.metrics.MetricsUtils
+import org.mozilla.fenix.components.attribution.MetricsUtils
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.utils.Settings
 

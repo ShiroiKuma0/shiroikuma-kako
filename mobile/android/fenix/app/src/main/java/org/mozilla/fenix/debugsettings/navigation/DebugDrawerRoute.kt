@@ -22,8 +22,6 @@ import org.mozilla.fenix.debugsettings.cfrs.CfrToolsStore
 import org.mozilla.fenix.debugsettings.crashtools.CrashTools
 import org.mozilla.fenix.debugsettings.creditcards.CreditCardsTools
 import org.mozilla.fenix.debugsettings.distributions.DistributionTools
-import org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsStore
-import org.mozilla.fenix.debugsettings.gleandebugtools.ui.GleanDebugToolsScreen
 import org.mozilla.fenix.debugsettings.integrity.IntegrityTools
 import org.mozilla.fenix.debugsettings.logins.LoginsTools
 import org.mozilla.fenix.debugsettings.region.RegionTools
@@ -73,10 +71,6 @@ enum class DebugDrawerRoute(
         route = "cfr_tools",
         title = R.string.debug_drawer_cfr_tools_title,
     ),
-    GleanDebugTools(
-        route = "glean_debug_tools",
-        title = R.string.glean_debug_tools_title,
-    ),
     RegionDebugTools(
         route = "region_debug_tools",
         title = R.string.debug_drawer_region_tools_title,
@@ -114,7 +108,6 @@ enum class DebugDrawerRoute(
          * @param debugDrawerStore [DebugDrawerStore] used to dispatch navigation actions.
          * @param browserStore [BrowserStore] used to access [BrowserState].
          * @param cfrToolsStore [CfrToolsStore] used to access [CfrToolsState].
-         * @param gleanDebugToolsStore [GleanDebugToolsStore] used to dispatch glean debug tools actions.
          * @param loginsStorage [LoginsStorage] used to access logins for [LoginsScreen].
          * @param addressesDebugRegionRepository used to control storage for [AddressesTools].
          * @param creditCardsAddressesStorage used to access addresses for [AddressesTools].
@@ -128,7 +121,6 @@ enum class DebugDrawerRoute(
             debugDrawerStore: DebugDrawerStore,
             browserStore: BrowserStore,
             cfrToolsStore: CfrToolsStore,
-            gleanDebugToolsStore: GleanDebugToolsStore,
             loginsStorage: LoginsStorage,
             addressesDebugRegionRepository: AddressesDebugRegionRepository,
             creditCardsAddressesStorage: CreditCardsAddressesStorage,
@@ -208,15 +200,6 @@ enum class DebugDrawerRoute(
                         }
                         content = {
                             CfrToolsScreen(cfrToolsStore = cfrToolsStore)
-                        }
-                    }
-
-                    GleanDebugTools -> {
-                        onClick = {
-                            debugDrawerStore.dispatch(DebugDrawerAction.NavigateTo.GleanDebugTools)
-                        }
-                        content = {
-                            GleanDebugToolsScreen(gleanDebugToolsStore = gleanDebugToolsStore)
                         }
                     }
 

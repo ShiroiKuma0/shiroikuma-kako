@@ -15,7 +15,6 @@ import org.mozilla.fenix.downloads.listscreen.middleware.BroadcastSender
 import org.mozilla.fenix.downloads.listscreen.middleware.DefaultBroadcastSender
 import org.mozilla.fenix.downloads.listscreen.middleware.DefaultFileItemDescriptionProvider
 import org.mozilla.fenix.downloads.listscreen.middleware.DownloadDeleteMiddleware
-import org.mozilla.fenix.downloads.listscreen.middleware.DownloadTelemetryMiddleware
 import org.mozilla.fenix.downloads.listscreen.middleware.DownloadUIMapperMiddleware
 import org.mozilla.fenix.downloads.listscreen.middleware.DownloadUIRenameMiddleware
 import org.mozilla.fenix.downloads.listscreen.middleware.DownloadUIShareMiddleware
@@ -38,7 +37,6 @@ internal object DownloadUIMiddlewareProvider {
     ): List<Middleware<DownloadUIState, DownloadUIAction>> = listOf(
         provideUIMapperMiddleware(applicationContext, coroutineScope),
         provideShareMiddleware(applicationContext),
-        provideTelemetryMiddleware(),
         provideDeleteMiddleware(applicationContext.components.settings.getUndoDelay(), applicationContext.components) {
             applicationContext.components.settings.deleteDownloadBehavior
         },
@@ -74,7 +72,6 @@ internal object DownloadUIMiddlewareProvider {
         ),
     )
 
-    private fun provideTelemetryMiddleware() = DownloadTelemetryMiddleware()
 
     private fun provideRenameMiddleware(
         applicationContext: Context,

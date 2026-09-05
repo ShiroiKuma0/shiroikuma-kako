@@ -4,9 +4,9 @@
  *  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package org.mozilla.fenix.components.metrics.fake
+package org.mozilla.fenix.components.attribution.fake
 
-import org.mozilla.fenix.components.metrics.GleanProfileId
+import org.mozilla.fenix.components.attribution.GleanProfileId
 import java.util.UUID
 
 class FakeGleanProfileId : GleanProfileId {

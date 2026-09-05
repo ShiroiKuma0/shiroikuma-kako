@@ -18,7 +18,6 @@ import android.widget.RemoteViews
 import androidx.annotation.Dimension
 import androidx.annotation.Dimension.Companion.DP
 import androidx.annotation.VisibleForTesting
-import org.mozilla.fenix.GleanMetrics.Metrics
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.IntentReceiverActivity
 import org.mozilla.fenix.R
@@ -43,7 +42,6 @@ class SearchWidgetProvider : AppWidgetProvider() {
 
     override fun onDisabled(context: Context) {
         context.components.settings.searchWidgetInstalled = false
-        Metrics.searchWidgetInstalled.set(false)
     }
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
@@ -88,7 +86,6 @@ class SearchWidgetProvider : AppWidgetProvider() {
     private fun recordWidgetIsInstalled(settings: Settings) {
         if (!settings.searchWidgetInstalled) {
             settings.searchWidgetInstalled = true
-            Metrics.searchWidgetInstalled.set(true)
         }
     }
 

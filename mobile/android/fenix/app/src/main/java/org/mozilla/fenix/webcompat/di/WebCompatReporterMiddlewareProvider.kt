@@ -16,7 +16,6 @@ import org.mozilla.fenix.webcompat.middleware.DefaultWebCompatReporterRetrievalS
 import org.mozilla.fenix.webcompat.middleware.WebCompatReporterNavigationMiddleware
 import org.mozilla.fenix.webcompat.middleware.WebCompatReporterStorageMiddleware
 import org.mozilla.fenix.webcompat.middleware.WebCompatReporterSubmissionMiddleware
-import org.mozilla.fenix.webcompat.middleware.WebCompatReporterTelemetryMiddleware
 
 /**
  * Provides middleware for the WebCompat Reporter store.
@@ -45,7 +44,6 @@ object WebCompatReporterMiddlewareProvider {
             nimbusApi = nimbusApi,
         ),
         provideNavigationMiddleware(),
-        provideTelemetryMiddleware(),
     )
 
     private fun provideStorageMiddleware(
@@ -79,7 +77,4 @@ object WebCompatReporterMiddlewareProvider {
 
     private fun provideNavigationMiddleware() =
         WebCompatReporterNavigationMiddleware()
-
-    private fun provideTelemetryMiddleware() =
-        WebCompatReporterTelemetryMiddleware()
 }

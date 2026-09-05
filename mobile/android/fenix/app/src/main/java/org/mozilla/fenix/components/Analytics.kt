@@ -14,21 +14,11 @@ import mozilla.components.lib.crash.runtimetagproviders.EnvironmentRuntimeProvid
 import mozilla.components.lib.crash.runtimetagproviders.ExperimentDataRuntimeTagProvider
 import mozilla.components.lib.crash.runtimetagproviders.VersionInfoProvider
 import mozilla.components.lib.crash.service.CrashReporterService
-import mozilla.components.lib.crash.service.GleanCrashReporterService
 import mozilla.components.lib.crash.service.socorro.MozillaSocorroService
 import mozilla.components.lib.crash.store.CrashReportOption
-import mozilla.components.support.utils.Browsers
 import mozilla.components.support.utils.ext.packageManagerCompatHelper
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
-import org.mozilla.fenix.components.metrics.DefaultMetricsStorage
-import org.mozilla.fenix.components.metrics.FirstSessionMetricsService
-import org.mozilla.fenix.components.metrics.GleanMetricsService
-import org.mozilla.fenix.components.metrics.GleanProfileIdPreferenceStore
-import org.mozilla.fenix.components.metrics.GleanUsageReportingMetricsService
-import org.mozilla.fenix.components.metrics.InstallReferrerMetricsService
-import org.mozilla.fenix.components.metrics.MetricController
-import org.mozilla.fenix.components.metrics.MetricsStorage
 import org.mozilla.fenix.crashes.CrashFactCollector
 import org.mozilla.fenix.crashes.NimbusExperimentDataProvider
 import org.mozilla.fenix.crashes.ReleaseRuntimeTagProvider
@@ -41,7 +31,8 @@ import org.mozilla.geckoview.BuildConfig.MOZ_APP_VERSION
 import org.mozilla.geckoview.BuildConfig.MOZ_UPDATE_CHANNEL
 
 /**
- * Component group for all functionality related to analytics e.g. crash reporting and telemetry.
+ * Component group for crash reporting. 白い熊 火狐 collects no telemetry, so there is no
+ * metrics controller here.
  */
 class Analytics(
     private val context: Context,
@@ -81,15 +72,8 @@ class Analytics(
         CrashReporter(
             context = context,
             services = services,
-            telemetryServices = listOf(
-                GleanCrashReporterService(
-                    context,
-                    appChannel = MOZ_UPDATE_CHANNEL,
-                    appVersion = MOZ_APP_VERSION,
-                    appBuildId = MOZ_APP_BUILDID,
-                    isUploadEnabled = settings.isTelemetryEnabled,
-                ),
-            ),
+            // 白い熊 火狐 ships without Glean, so there is no telemetry crash service.
+            telemetryServices = emptyList(),
             shouldPrompt = CrashReporter.Prompt.ALWAYS,
             promptConfiguration = CrashReporter.PromptConfiguration(
                 appName = context.getString(R.string.app_name),
@@ -115,30 +99,6 @@ class Analytics(
         CrashFactCollector(crashReporter)
     }
 
-    val metricsStorage: MetricsStorage by lazyMonitored {
-        DefaultMetricsStorage(
-            context = context,
-            settings = settings,
-            checkDefaultBrowser = { Browsers.isDefaultBrowser(context) },
-        )
-    }
-
-    val metrics: MetricController by lazyMonitored {
-        MetricController.create(
-            listOf(
-                GleanMetricsService(context),
-                FirstSessionMetricsService(context),
-                InstallReferrerMetricsService(context, settings),
-                GleanUsageReportingMetricsService(gleanProfileIdStore = GleanProfileIdPreferenceStore(context)),
-            ),
-            isDataTelemetryEnabled = { settings.isTelemetryEnabled },
-            isMarketingDataTelemetryEnabled = {
-                settings.isMarketingTelemetryEnabled && settings.hasMadeMarketingTelemetrySelection
-            },
-            isUsageTelemetryEnabled = { settings.isDailyUsagePingEnabled },
-            settings,
-        )
-    }
 }
 
 private val Context.versionInfoProvider: VersionInfoProvider

@@ -12,7 +12,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
-import org.mozilla.fenix.GleanMetrics.Addresses
 
 /**
  * Middleware that handles [AddressStore] side-effects.
@@ -38,16 +37,13 @@ class AddressMiddleware(
             is SaveTapped -> runAndNavigateBack {
                 store.state.guidToUpdate?.let {
                     environment.updateAddress(it, store.state.address)
-                    Addresses.updated.add()
                 } ?: run {
                     environment.createAddress(store.state.address)
-                    Addresses.saved.add()
                 }
             }
             is DeleteDialogAction.DeleteTapped -> runAndNavigateBack {
                 store.state.guidToUpdate?.also {
                     environment.deleteAddress(it)
-                    Addresses.deleted.add()
                 }
             }
             BackTapped, CancelTapped -> environment.navigateBack()

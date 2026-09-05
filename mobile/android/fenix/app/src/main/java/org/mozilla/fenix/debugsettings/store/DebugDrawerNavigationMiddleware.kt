@@ -59,8 +59,6 @@ class DebugDrawerNavigationMiddleware(
                 navController.navigate(route = DebugDrawerRoute.Autofill.route)
             is DebugDrawerAction.NavigateTo.CfrTools ->
                 navController.navigate(route = DebugDrawerRoute.CfrTools.route)
-            is DebugDrawerAction.NavigateTo.GleanDebugTools ->
-                navController.navigate(route = DebugDrawerRoute.GleanDebugTools.route)
             is DebugDrawerAction.NavigateTo.RegionDebugTools ->
                 navController.navigate(route = DebugDrawerRoute.RegionDebugTools.route)
             is DebugDrawerAction.NavigateTo.AddonsDebugTools ->

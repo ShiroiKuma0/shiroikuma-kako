@@ -1,4 +1,4 @@
-package org.mozilla.fenix.components.metrics
+package org.mozilla.fenix.components.attribution
 
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

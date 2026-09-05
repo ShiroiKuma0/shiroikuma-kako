@@ -5,8 +5,6 @@
 package org.mozilla.fenix.tabstray
 
 import androidx.annotation.VisibleForTesting
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.TabsTray
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import org.mozilla.fenix.tabstray.ui.TabManagementFragment
@@ -35,7 +33,6 @@ class TabManagerCfrController(
     fun onInactiveTabsCfrClick() {
         settings.shouldShowInactiveTabsOnboardingPopup = false
         settings.lastCfrShownTimeInMillis = currentTimeProvider()
-        TabsTray.inactiveTabsCfrSettings.record(NoExtras())
     }
 
     /**
@@ -44,7 +41,6 @@ class TabManagerCfrController(
     fun onInactiveTabsCfrDismiss() {
         settings.shouldShowInactiveTabsOnboardingPopup = false
         settings.lastCfrShownTimeInMillis = currentTimeProvider()
-        TabsTray.inactiveTabsCfrDismissed.record(NoExtras())
     }
 
     /**

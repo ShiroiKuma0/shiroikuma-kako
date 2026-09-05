@@ -29,8 +29,6 @@ import mozilla.components.support.utils.ext.bottom
 import mozilla.components.support.utils.ext.getWindowInsets
 import mozilla.components.support.utils.ext.isKeyboardVisible
 import mozilla.components.support.utils.ext.mandatorySystemGestureInsets
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.SwipeGestureListener
 import org.mozilla.fenix.browser.TabPreview
@@ -273,7 +271,6 @@ class ToolbarHorizontalGesturesHandler(
                         object : AnimatorListenerAdapter() {
                             override fun onAnimationEnd(animation: Animator) {
                                 tabPreview.isVisible = false
-                                Events.toolbarTabSwipe.record(NoExtras())
                             }
                         },
                     )

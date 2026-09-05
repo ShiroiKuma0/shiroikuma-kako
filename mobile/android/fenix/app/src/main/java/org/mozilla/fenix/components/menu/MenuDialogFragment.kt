@@ -71,9 +71,6 @@ import mozilla.components.support.utils.ext.getWindowInsets
 import mozilla.components.support.utils.ext.isLandscape
 import mozilla.components.support.utils.ext.pixelSizeFor
 import mozilla.components.support.utils.ext.top
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Events
-import org.mozilla.fenix.GleanMetrics.Vpn
 import org.mozilla.fenix.R
 import org.mozilla.fenix.automotive.isAndroidAutomotiveAvailable
 import org.mozilla.fenix.components.Components
@@ -88,7 +85,6 @@ import org.mozilla.fenix.components.menu.compose.MenuHandleState
 import org.mozilla.fenix.components.menu.compose.MoreSettingsSubmenu
 import org.mozilla.fenix.components.menu.middleware.MenuDialogMiddleware
 import org.mozilla.fenix.components.menu.middleware.MenuNavigationMiddleware
-import org.mozilla.fenix.components.menu.middleware.MenuTelemetryMiddleware
 import org.mozilla.fenix.components.menu.store.BrowserMenuState
 import org.mozilla.fenix.components.menu.store.ExtensionMenuState
 import org.mozilla.fenix.components.menu.store.IPProtectionMenuState
@@ -176,7 +172,6 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        Events.toolbarMenuVisible.record(NoExtras())
 
         return object : BottomSheetDialog(requireContext(), theme) {
             override fun onKeyDown(
@@ -642,7 +637,6 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                         handleIPProtectionClick(ipProtectionMenuState, components, menuStore)
                                     },
                                     onIPProtectionNavigate = {
-                                        Vpn.settingsPageTapped.record(Vpn.SettingsPageTappedExtra(entrypoint = "Menu"))
                                         menuStore.dispatch(MenuAction.Navigate.IPProtectionSettings)
                                     },
                                     moreSettingsSubmenu = {
@@ -740,11 +734,6 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                                 menuStore.dispatch(MenuAction.Navigate.DiscoverMoreExtensions)
                                             },
                                             onWebExtensionMenuItemClick = {
-                                                Events.browserMenuAction.record(
-                                                    Events.BrowserMenuActionExtra(
-                                                        item = "web_extension_browser_action_clicked",
-                                                    ),
-                                                )
                                             },
                                         )
                                     },
@@ -842,11 +831,6 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                                         CustomTabAddons(
                                             webExtensionMenuItems = webExtensionMenuItems,
                                             onWebExtensionMenuItemClick = {
-                                                Events.browserMenuAction.record(
-                                                    Events.BrowserMenuActionExtra(
-                                                        item = "web_extension_browser_action_clicked",
-                                                    ),
-                                                )
                                             },
                                         )
                                     },
@@ -868,7 +852,6 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
                 middleware = listOf(
                     createMenuDialogMiddleware(),
                     createMenuNavigationMiddleware(),
-                    createMenuTelemetryMiddleware(),
                 ),
             )
         }.value
@@ -1013,12 +996,6 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
         )
     }
 
-    private fun createMenuTelemetryMiddleware(): MenuTelemetryMiddleware {
-        return MenuTelemetryMiddleware(
-            accessPoint = args.accesspoint,
-        )
-    }
-
     private fun handleIPProtectionClick(
         ipProtectionMenuState: IPProtectionMenuState,
         components: Components,
@@ -1026,18 +1003,15 @@ class MenuDialogFragment : BottomSheetDialogFragment() {
     ) {
         when (ipProtectionMenuState.status) {
             IPProtectionMenuStatus.Disabled -> {
-                Vpn.menuTurnedOn.record()
                 components.ipProtection.store.dispatch(IPProtectionAction.Toggle)
             }
 
             IPProtectionMenuStatus.Enabled -> {
-                Vpn.menuTurnedOff.record()
                 components.ipProtection.store.dispatch(IPProtectionAction.Toggle)
             }
 
             IPProtectionMenuStatus.AuthRequired -> {
                 // If authorization is required, the user clicked the "Try it" button.
-                Vpn.menuTryItTapped.record(NoExtras())
                 store.dispatch(MenuAction.Navigate.IPProtectionSettings)
             }
 

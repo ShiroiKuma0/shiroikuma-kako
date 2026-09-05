@@ -150,13 +150,8 @@ import mozilla.components.support.utils.DefaultDownloadFileUtils
 import mozilla.components.support.utils.ext.pixelSizeFor
 import mozilla.components.ui.widgets.behavior.EngineViewClippingBehavior
 import mozilla.components.ui.widgets.withCenterAlignedButtons
-import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.FeatureFlags
-import org.mozilla.fenix.GleanMetrics.EmailMask
-import org.mozilla.fenix.GleanMetrics.MediaState
-import org.mozilla.fenix.GleanMetrics.PullToRefreshInBrowser
-import org.mozilla.fenix.GleanMetrics.Vpn
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.IntentReceiverActivity
 import org.mozilla.fenix.NavGraphDirections
@@ -641,7 +636,6 @@ abstract class BaseBrowserFragment :
             feature = IPProtectionWarningBinding(
                 store = requireComponents.ipProtection.store,
                 proxyUnavailable = {
-                    Vpn.proxyUnavailable.record()
                     findNavController().navigate(
                         BrowserFragmentDirections.actionGlobalIpProtectionUnavailableDialog(),
                     )
@@ -995,7 +989,6 @@ abstract class BaseBrowserFragment :
             },
             onShow = {
                 onAutocompleteBarShow()
-                EmailMask.promptShown.record()
             },
         )
 
@@ -1085,7 +1078,6 @@ abstract class BaseBrowserFragment :
                     }
 
                     override suspend fun onEmailMaskClick(generatedFor: String) = withContext(Dispatchers.IO) {
-                        EmailMask.promptClicked.record()
 
                         val relay = requireComponents.relayFeatureIntegration
                         // For this phase, we'll also use the generatedFor value for the description.
@@ -1093,7 +1085,6 @@ abstract class BaseBrowserFragment :
 
                         if (created == null) {
                             // Record failure telemetry
-                            EmailMask.getOrCreateFailed.record()
                             // Log failure
                             val errorMessage =
                                 getString(R.string.email_masks_error_retrieving_masks)
@@ -1102,7 +1093,6 @@ abstract class BaseBrowserFragment :
                             return@withContext null
                         }
 
-                        EmailMask.autofillSuccess.record()
 
                         created.fullAddress
                     }
@@ -1353,7 +1343,7 @@ abstract class BaseBrowserFragment :
                     requireComponents.core.store,
                     context.components.useCases.sessionUseCases.reload,
                     binding.swipeRefresh,
-                    { PullToRefreshInBrowser.executed.record(NoExtras()) },
+                    { },
                     customTabSessionId,
                 ),
                 owner = this,
@@ -2189,7 +2179,6 @@ abstract class BaseBrowserFragment :
     }
 
     final override fun onPictureInPictureModeChanged(isInPipMode: Boolean) {
-        if (isInPipMode) MediaState.pictureInPicture.record(NoExtras())
         pipFeature?.onPictureInPictureModeChanged(isInPipMode)
     }
 
@@ -2223,7 +2212,6 @@ abstract class BaseBrowserFragment :
             (view as? SwipeGestureLayout)?.isSwipeEnabled = false
             expandBrowserView()
 
-            MediaState.fullscreen.record(NoExtras())
         } else {
             activity.exitImmersiveMode(
                 unregisterOnApplyWindowInsetsListener = binding.engineView::removeWindowInsetsListener,

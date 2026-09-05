@@ -22,7 +22,6 @@ import org.mozilla.fenix.termsofuse.store.TermsOfUsePromptAction
 import org.mozilla.fenix.termsofuse.store.TermsOfUsePromptPreferencesMiddleware
 import org.mozilla.fenix.termsofuse.store.TermsOfUsePromptState
 import org.mozilla.fenix.termsofuse.store.TermsOfUsePromptStore
-import org.mozilla.fenix.termsofuse.store.TermsOfUsePromptTelemetryMiddleware
 import org.mozilla.fenix.theme.FirefoxTheme
 import com.google.android.material.R as materialR
 
@@ -42,7 +41,6 @@ class TermsOfUseBottomSheetFragment : BottomSheetDialogFragment() {
                 TermsOfUsePromptPreferencesMiddleware(
                     repository = requireComponents.termsOfUsePromptRepository,
                 ),
-                TermsOfUsePromptTelemetryMiddleware(),
             ),
         )
     }

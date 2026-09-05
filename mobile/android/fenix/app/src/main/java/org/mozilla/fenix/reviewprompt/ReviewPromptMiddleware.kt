@@ -12,7 +12,6 @@ import mozilla.components.service.nimbus.evalJexlSafe
 import mozilla.components.service.nimbus.messaging.use
 import org.mozilla.experiments.nimbus.NimbusEventStore
 import org.mozilla.experiments.nimbus.NimbusMessagingHelperInterface
-import org.mozilla.fenix.GleanMetrics.CustomReviewPrompt
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppAction.ReviewPromptAction.CheckIfEligibleForReviewPrompt
 import org.mozilla.fenix.components.appstate.AppAction.ReviewPromptAction.DoNotShowReviewPrompt
@@ -135,10 +134,6 @@ class ReviewPromptMiddleware(
      * Send telemetry for a result of [NimbusEventStore.recordEventOrThrow].
      */
     private fun recordResult(result: String) {
-        CustomReviewPrompt.nimbusEventRecorded.record(
-            CustomReviewPrompt.NimbusEventRecordedExtra(result),
-        )
-        CustomReviewPrompt.recordNimbusEventAttempts[result].add(1)
     }
 }
 

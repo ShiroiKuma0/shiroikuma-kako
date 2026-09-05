@@ -15,8 +15,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.compose.content
 import androidx.navigation.fragment.navArgs
 import kotlinx.coroutines.launch
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.GenaiAiControls
 import org.mozilla.fenix.R
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.requireComponents
@@ -57,45 +55,23 @@ class AIControlsFragment : Fragment(), SystemInsetsPaddedFragment {
                 isBlocked = isBlocked.value,
                 itemToScrollTo = args.preferenceToScrollTo,
                 onDialogDismiss = {
-                    GenaiAiControls.globalPrefConfirmationClick.record(
-                        GenaiAiControls.GlobalPrefConfirmationClickExtra(element = "cancel"),
-                    )
                     aiBlockUiController.onDialogDismiss()
                 },
                 onDialogConfirm = {
-                    GenaiAiControls.globalPrefConfirmationClick.record(
-                        GenaiAiControls.GlobalPrefConfirmationClickExtra(element = "block"),
-                    )
                     aiBlockUiController.onDialogConfirm()
                 },
                 onToggle = { currentlyBlocked ->
-                    GenaiAiControls.globalPrefToggle.record(
-                        GenaiAiControls.GlobalPrefToggleExtra(block = !currentlyBlocked),
-                    )
                     if (!currentlyBlocked) {
-                        GenaiAiControls.globalPrefConfirmationShown.record(NoExtras())
                     }
                     aiBlockUiController.onToggle(currentlyBlocked)
                 },
                 onFeatureToggle = { feature, enabled ->
-                    GenaiAiControls.featurePrefChange.record(
-                        GenaiAiControls.FeaturePrefChangeExtra(
-                            feature = feature.id.value,
-                            selection = if (enabled) "enabled" else "blocked",
-                        ),
-                    )
                     scope.launch { feature.set(enabled) }
                 },
                 onFeatureNavLinkClick = { destination, featureId ->
-                    GenaiAiControls.featureLinkClick.record(
-                        GenaiAiControls.FeatureLinkClickExtra(link = featureId),
-                    )
                     destination.nav(this)
                 },
                 onBannerLearnMoreClick = {
-                    GenaiAiControls.featureLinkClick.record(
-                        GenaiAiControls.FeatureLinkClickExtra(link = "global_control"),
-                    )
                     openAiControlsSumoPage()
                 },
             )

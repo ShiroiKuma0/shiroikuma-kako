@@ -34,7 +34,6 @@ import mozilla.components.support.ktx.android.content.res.getSpanned
 import mozilla.components.support.ktx.android.net.isHttpOrHttps
 import mozilla.components.support.ktx.kotlin.toNormalizedUrl
 import mozilla.components.ui.widgets.withCenterAlignedButtons
-import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.appstate.AppAction.QrScannerAction
 import org.mozilla.fenix.ext.components
@@ -141,7 +140,6 @@ class QrScanFenixFeature(
             }
         }
         appStore.dispatch(QrScannerAction.QrScannerInputConsumed)
-        Events.browserToolbarQrScanCompleted.record()
     }
 
     override fun onPermissionsResult(

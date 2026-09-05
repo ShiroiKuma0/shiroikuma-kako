@@ -15,10 +15,7 @@ import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import mozilla.components.service.nimbus.NimbusApi
 import org.mozilla.fenix.R
-import org.mozilla.fenix.components.metrics.MetricController
-import org.mozilla.fenix.components.metrics.MetricServiceType
 import org.mozilla.fenix.crashes.SettingsCrashReportCache
-import org.mozilla.fenix.debugsettings.gleandebugtools.DefaultGleanDebugToolsStorage
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.utils.Settings
@@ -28,7 +25,6 @@ internal class DataChoicesMiddleware(
     private val settings: Settings,
     private val nimbusSdk: NimbusApi,
     private val engine: Engine,
-    private val metrics: MetricController,
     private val crashReporter: CrashReporter,
     private val learnMoreClicked: (sumoTopic: SupportUtils.SumoTopic) -> Unit,
     private val navController: NavController?,
@@ -96,9 +92,7 @@ internal class DataChoicesMiddleware(
         val newValue = !settings.isMarketingTelemetryEnabled
         settings.isMarketingTelemetryEnabled = newValue
         if (newValue) {
-            metrics.start(MetricServiceType.Marketing)
         } else {
-            metrics.stop(MetricServiceType.Marketing)
         }
     }
 
@@ -106,7 +100,6 @@ internal class DataChoicesMiddleware(
         val newValue = !settings.isTelemetryEnabled
         settings.isTelemetryEnabled = newValue
         if (newValue) {
-            metrics.start(MetricServiceType.Data)
             crashReporter.setTelemetryEnabled(true)
             if (!settings.hasUserDisabledExperimentation) {
                 settings.isExperimentationEnabled = true
@@ -114,12 +107,10 @@ internal class DataChoicesMiddleware(
             }
             engine.notifyTelemetryPrefChanged(true)
         } else {
-            metrics.stop(MetricServiceType.Data)
             crashReporter.setTelemetryEnabled(false)
             settings.isExperimentationEnabled = false
             nimbusSdk.experimentParticipation = false
             engine.notifyTelemetryPrefChanged(false)
-            DefaultGleanDebugToolsStorage(settings).clearPersistedDebugViewTag()
         }
         // Reset experiment identifiers on both opt-in and opt-out; it's likely
         // that in future we will need to pass in the new telemetry client_id
@@ -130,13 +121,6 @@ internal class DataChoicesMiddleware(
     private fun updateUsageChoice() {
         val newValue = !settings.isDailyUsagePingEnabled
         settings.isDailyUsagePingEnabled = newValue
-        with(metrics) {
-            if (newValue) {
-                start(MetricServiceType.UsageReporting)
-            } else {
-                stop(MetricServiceType.UsageReporting)
-            }
-        }
     }
 
     private suspend fun updateCrashChoice(newValue: CrashReportOption) {

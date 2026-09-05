@@ -9,14 +9,8 @@ import android.os.Build
 import androidx.annotation.VisibleForTesting
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.ext.PackageManagerWrapper
-import mozilla.telemetry.glean.Glean
-import mozilla.telemetry.glean.internal.DistributionMetrics
 import org.mozilla.fenix.Config
-import org.mozilla.fenix.GleanMetrics.Metrics
-import org.mozilla.fenix.GleanMetrics.Partnerships
-import org.mozilla.fenix.components.metrics.MetricController
-import org.mozilla.fenix.components.metrics.MetricServiceType
-import org.mozilla.fenix.components.metrics.UTMParams
+import org.mozilla.fenix.components.attribution.UTMParams
 import java.io.File
 import java.util.Locale
 
@@ -46,7 +40,6 @@ private val logger = Logger(DistributionIdManager::class.simpleName)
  * @param browserStoreProvider used to update and fetch the stored distribution Id
  * @param distributionProviderChecker used for checking content providers for a distribution provider
  * @param distributionSettings used to persist and retrieve the distribution ID
- * @param metricController a controller used to start Adjust.
  * @param appPreinstalledOnVivoDevice checks if the vivo preinstalled file exists.
  * @param isDtTelefonicaInstalled checks if the DT telefonica app is installed on the device
  * @param isDtUsaInstalled checks if one of the DT USA carrier apps is installed on the device
@@ -56,7 +49,6 @@ class DistributionIdManager(
     private val browserStoreProvider: DistributionBrowserStoreProvider,
     private val distributionProviderChecker: DistributionProviderChecker,
     private val distributionSettings: DistributionSettings,
-    private val metricController: MetricController,
     private val appPreinstalledOnVivoDevice: () -> Boolean = { wasAppPreinstalledOnVivoDevice() },
     private val isDtTelefonicaInstalled: () -> Boolean = { isDtTelefonicaInstalled(packageManager) },
     private val isDtUsaInstalled: () -> Boolean = { isDtUsaInstalled(packageManager) },
@@ -114,12 +106,10 @@ class DistributionIdManager(
         when {
             utmParams.campaign.contains(VIVO_INDIA_UTM_CAMPAIGN) -> {
                 setDistribution(Distribution.VIVO_001)
-                Metrics.distributionId.set(Distribution.VIVO_001.id)
             }
 
             utmParams.campaign.contains(Distribution.XIAOMI_001.id) -> {
                 setDistribution(Distribution.XIAOMI_001)
-                Metrics.distributionId.set(Distribution.XIAOMI_001.id)
             }
         }
     }
@@ -188,18 +178,6 @@ class DistributionIdManager(
         }
     }
 
-    /**
-     * Sets the proper marketing telemetry preferences and starts Adjust if the
-     * current distribution is one that should skip the marketing data sharing
-     * consent screen.
-     */
-    suspend fun startAdjustIfSkippingConsentScreen() {
-        if (shouldSkipMarketingConsentScreen()) {
-            distributionSettings.setMarketingTelemetryPreferences()
-            metricController.start(MetricServiceType.Marketing)
-        }
-    }
-
     private fun isDeviceVivo(): Boolean {
         return Build.MANUFACTURER?.lowercase(Locale.getDefault())?.contains(VIVO_MANUFACTURER)
             ?: false
@@ -237,7 +215,6 @@ class DistributionIdManager(
         this.distribution = distribution
         browserStoreProvider.updateDistributionId(distribution.id)
         distributionSettings.saveDistributionId(distribution.id)
-        Glean.updateDistribution(DistributionMetrics(name = distribution.id))
     }
 }
 
@@ -268,7 +245,6 @@ private fun wasAppPreinstalledOnVivoDevice(): Boolean {
         File(VIVO_PREINSTALLED_FIREFOX_FILE_PATH).exists()
     } catch (e: SecurityException) {
         logger.error("File access denied", e)
-        Partnerships.vivoFileCheckError.record()
         false
     }
 }

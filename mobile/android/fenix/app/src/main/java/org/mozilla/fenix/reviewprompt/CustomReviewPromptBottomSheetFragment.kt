@@ -41,7 +41,6 @@ class CustomReviewPromptBottomSheetFragment : BottomSheetDialogFragment() {
             initialState = it,
             middleware = listOf(
                 CustomReviewPromptNavigationMiddleware(storeProvider.viewModelScope),
-                CustomReviewPromptTelemetryMiddleware(),
             ),
         )
     }

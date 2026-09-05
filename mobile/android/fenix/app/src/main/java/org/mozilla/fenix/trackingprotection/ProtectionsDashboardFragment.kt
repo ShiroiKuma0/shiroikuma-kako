@@ -21,7 +21,6 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
-import org.mozilla.fenix.GleanMetrics.TrackingProtection
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
@@ -97,9 +96,6 @@ class ProtectionsDashboardFragment : BottomSheetDialogFragment() {
     @VisibleForTesting
     internal fun recordPrivacyReportTapped() {
         val source = arguments?.getString(ARG_SOURCE) ?: SOURCE_HOME
-        TrackingProtection.privacyReportTapped.record(
-            TrackingProtection.PrivacyReportTappedExtra(source = source),
-        )
     }
 
     companion object {

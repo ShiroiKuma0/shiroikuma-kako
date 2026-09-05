@@ -47,7 +47,6 @@ dependencies {
     implementation libs.androidx.datastore.core
     implementation libs.androidx.datastore.preferences
     implementation libs.google.material
-    implementation libs.mozilla.glean
     testImplementation libs.junit4
     testImplementation platform(libs.androidx.compose.bom)
     testImplementation libs.androidx.compose.ui.test
@@ -61,13 +60,3 @@ dependencies {
     debugImplementation libs.androidx.compose.ui.test.manifest
 }
 
-// Generate Kotlin code for the Longfox module's Glean metrics.
-ext {
-    gleanExpireByVersion = Config.majorVersion(project)
-    gleanNamespace = "mozilla.telemetry.glean"
-    gleanPythonEnvDir = gradle.mozconfig.substs.GRADLE_GLEAN_PARSER_VENV
-    gleanYamlFiles = [
-            "${project.projectDir}/metrics.yaml",
-    ]
-}
-apply plugin: "org.mozilla.telemetry.glean-gradle-plugin"

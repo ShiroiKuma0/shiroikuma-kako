@@ -22,8 +22,8 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.R
-import org.mozilla.fenix.components.metrics.MetricController
-import org.mozilla.fenix.components.metrics.MetricServiceType
+import org.mozilla.fenix.components.attribution.MetricController
+import org.mozilla.fenix.components.attribution.MetricServiceType
 import org.mozilla.fenix.crashes.SettingsCrashReportCache
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.settings.datachoices.ChoiceAction

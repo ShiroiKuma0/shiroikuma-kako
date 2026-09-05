@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-package org.mozilla.fenix.components.metrics
+package org.mozilla.fenix.components.attribution
 
 import io.mockk.MockKAnnotations
 import io.mockk.every
@@ -58,8 +58,8 @@ import org.mozilla.fenix.GleanMetrics.ProgressiveWebApp
 import org.mozilla.fenix.GleanMetrics.SitePermissions
 import org.mozilla.fenix.GleanMetrics.SyncedTabs
 import org.mozilla.fenix.GleanMetrics.TrackingProtection
-import org.mozilla.fenix.components.metrics.ReleaseMetricController.Companion
-import org.mozilla.fenix.components.metrics.ReleaseMetricController.Companion.SHARE_LINK_CONTEXT_MENU_ITEM_ID
+import org.mozilla.fenix.components.attribution.ReleaseMetricController.Companion
+import org.mozilla.fenix.components.attribution.ReleaseMetricController.Companion.SHARE_LINK_CONTEXT_MENU_ITEM_ID
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.RobolectricTestRunner

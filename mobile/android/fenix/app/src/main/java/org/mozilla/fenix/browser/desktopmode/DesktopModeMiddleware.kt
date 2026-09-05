@@ -13,8 +13,6 @@ import mozilla.components.browser.state.action.InitAction
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.DesktopMode
 
 /**
  * [Middleware] for handling side effects related to the Desktop Mode feature.
@@ -59,9 +57,6 @@ class DesktopModeMiddleware(
                             ),
                         )
                     } else if (updatedDesktopMode) {
-                        DesktopMode.settingsAlwaysRequestDesktopSite.record(
-                            NoExtras(),
-                        )
                     }
                 }
             }

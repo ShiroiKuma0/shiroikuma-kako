@@ -20,7 +20,6 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.translate.initialFromLanguage
 import mozilla.components.concept.engine.translate.initialToLanguage
 import mozilla.components.lib.state.helpers.AbstractBinding
-import org.mozilla.fenix.GleanMetrics.Translations
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.store.BrowserScreenAction.PageTranslationStatusUpdated
 import org.mozilla.fenix.browser.store.BrowserScreenStore
@@ -192,6 +191,5 @@ class TranslationsBinding(
 
     @VisibleForTesting
     internal fun recordTranslationStartTelemetry() {
-        Translations.action.record(Translations.ActionExtra("main_flow_toolbar"))
     }
 }

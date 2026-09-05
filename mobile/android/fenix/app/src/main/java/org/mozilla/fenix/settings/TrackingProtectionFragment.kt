@@ -19,7 +19,6 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import org.mozilla.fenix.GleanMetrics.TrackingProtection
 import org.mozilla.fenix.R
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
@@ -167,7 +166,6 @@ class TrackingProtectionFragment : PreferenceFragmentCompat(), SystemInsetsPadde
             updateStrictOptionsVisibility()
             updateCustomOptionsVisibility()
             updateTrackingProtectionPolicy()
-            TrackingProtection.etpSettingChanged.record(TrackingProtection.EtpSettingChangedExtra(mode.name))
         }
 
         radio.onInfoClickListener {

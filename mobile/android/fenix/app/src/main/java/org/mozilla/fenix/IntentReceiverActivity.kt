@@ -20,7 +20,6 @@ import mozilla.components.support.utils.EXTRA_ACTIVITY_REFERRER_PACKAGE
 import mozilla.components.support.utils.INTENT_TYPE_PDF
 import mozilla.components.support.utils.ext.packageManagerCompatHelper
 import mozilla.components.support.utils.toSafeIntent
-import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.HomeActivity.Companion.PRIVATE_BROWSING_MODE
 import org.mozilla.fenix.components.IntentProcessorType
 import org.mozilla.fenix.components.getType
@@ -83,16 +82,13 @@ class IntentReceiverActivity : Activity() {
         }
         intent.putExtra(PRIVATE_BROWSING_MODE, private)
         if (private) {
-            Events.openedLink.record(Events.OpenedLinkExtra("PRIVATE"))
         } else {
-            Events.openedLink.record(Events.OpenedLinkExtra("NORMAL"))
         }
 
         addReferrerInformation(intent)
 
         if (intent.type == INTENT_TYPE_PDF) {
             val referrerIsFenix = this.isIntentInternal()
-            Events.openedExtPdf.record(Events.OpenedExtPdfExtra(referrerIsFenix))
             if (!referrerIsFenix) {
                 intent.toSafeIntent().data?.let(::persistUriReadPermission)
             }

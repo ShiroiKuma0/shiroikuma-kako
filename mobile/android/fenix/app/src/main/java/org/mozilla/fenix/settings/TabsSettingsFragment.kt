@@ -10,9 +10,6 @@ import androidx.navigation.fragment.navArgs
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Events
-import org.mozilla.fenix.GleanMetrics.Tabs
 import org.mozilla.fenix.R
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
@@ -41,7 +38,6 @@ class TabsSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragm
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        Tabs.settingOpened.record(NoExtras())
     }
 
     override fun onResume() {
@@ -115,9 +111,7 @@ class TabsSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragm
 
     private fun sendTabViewTelemetry() {
         if (listRadioButton.isChecked && !gridRadioButton.isChecked) {
-            Events.tabViewChanged.record(Events.TabViewChangedExtra("list"))
         } else {
-            Events.tabViewChanged.record(Events.TabViewChangedExtra("grid"))
         }
     }
 

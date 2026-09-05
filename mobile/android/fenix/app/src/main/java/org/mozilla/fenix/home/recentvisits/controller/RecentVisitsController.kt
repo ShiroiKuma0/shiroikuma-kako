@@ -11,8 +11,6 @@ import mozilla.components.browser.state.action.HistoryMetadataAction
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.storage.HistoryMetadataStorage
 import mozilla.components.feature.tabs.TabsUseCases.SelectOrAddUseCase
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.RecentSearches
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
@@ -116,7 +114,6 @@ class DefaultRecentVisitsController(
         scope.launch {
             storage.deleteHistoryMetadata(groupTitle)
         }
-        RecentSearches.groupDeleted.record(NoExtras())
     }
 
     /**

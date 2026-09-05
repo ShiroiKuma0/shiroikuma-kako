@@ -63,10 +63,6 @@ import mozilla.components.lib.state.ext.flow
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.utils.NamedThreadFactory
 import mozilla.components.support.ktx.kotlin.isUrl
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Events
-import org.mozilla.fenix.GleanMetrics.Toolbar
-import org.mozilla.fenix.GleanMetrics.ToolbarGoogleLensButton
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.BrowserFragmentDirections
@@ -81,7 +77,7 @@ import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchEngine
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchStarted
 import org.mozilla.fenix.components.appstate.VoiceSearchAction.VoiceInputRequestCleared
 import org.mozilla.fenix.components.appstate.VoiceSearchAction.VoiceInputRequested
-import org.mozilla.fenix.components.metrics.MetricsUtils
+import org.mozilla.fenix.components.attribution.MetricsUtils
 import org.mozilla.fenix.components.search.BOOKMARKS_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.search.HISTORY_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.search.TABS_SEARCH_ENGINE_ID
@@ -244,12 +240,6 @@ class BrowserToolbarSearchMiddleware(
                 browserStore.dispatch(EngagementFinished(abandoned = false))
             }
 
-            "about:glean" -> {
-                navController.navigate(
-                    NavGraphDirections.actionGlobalGleanDebugToolsFragment(),
-                )
-            }
-
             "moz://a" -> openSearchOrUrl(
                 SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.MANIFESTO),
                 navController,
@@ -267,13 +257,6 @@ class BrowserToolbarSearchMiddleware(
 
     private fun recordButtonTapped(item: String) {
         val surface = if (appStore.state.searchState.sourceTabId == null) SURFACE_HOME else SURFACE_BROWSER
-        Toolbar.buttonTapped.record(
-            Toolbar.ButtonTappedExtra(
-                source = SOURCE_ADDRESS_BAR,
-                item = item,
-                surface = surface,
-            ),
-        )
     }
 
     private fun handleToolbarButtonsActions(
@@ -322,7 +305,6 @@ class BrowserToolbarSearchMiddleware(
 
         is LensButtonClicked -> {
             recordButtonTapped(ACTION_LENS_CLICKED)
-            ToolbarGoogleLensButton.tapped.record(NoExtras())
             observeLensInput()
             // The Lens camera screen lets the user toggle to QR scanning; observe both
             // result streams so a QR string returned from the Lens flow still lands in
@@ -369,7 +351,6 @@ class BrowserToolbarSearchMiddleware(
         )
 
         if (text.isUrl() || searchEngine == null) {
-            Events.enteredUrl.record(Events.EnteredUrlExtra(autocomplete = false))
         } else {
             val searchAccessPoint = when (appStore.state.searchState.searchAccessPoint) {
                 MetricsUtils.Source.NONE -> MetricsUtils.Source.ACTION

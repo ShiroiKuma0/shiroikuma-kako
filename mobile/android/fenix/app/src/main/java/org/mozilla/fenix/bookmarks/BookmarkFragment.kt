@@ -113,7 +113,6 @@ class BookmarkFragment : Fragment(), SystemInsetsPaddedFragment {
                                 verifyUser(fallbackVerification = verificationResultLauncher)
                             },
                         ),
-                        BookmarksTelemetryMiddleware(),
                         BookmarksSyncMiddleware(
                             requireComponents.backgroundServices.syncStore,
                             lifecycleScope,
