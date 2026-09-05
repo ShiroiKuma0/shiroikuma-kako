@@ -324,26 +324,14 @@ androidComponents {
 
 android.defaultConfig.with {
     buildConfigField 'boolean', 'CRASH_REPORTING', 'true'
-    buildConfigField 'boolean', 'TELEMETRY', 'true'
-
-    // Reading the sentry token from a local file (if it exists). In a release task on taskcluster it will be available.
-    buildConfigField 'String', 'SENTRY_TOKEN', 'null'
-    try {
-        def token = new File("${rootDir}/.sentry_token").text.trim()
-        buildConfigField 'String', 'SENTRY_TOKEN', '"' + token + '"'
-    } catch (FileNotFoundException ignored) {}
+    // 白い熊 火狐 collects no telemetry on any channel: this keeps MetricController on the
+    // no-op DebugMetricController, so no metrics service is ever started.
+    buildConfigField 'boolean', 'TELEMETRY', 'false'
 
     // Setting buildDate with every build ID changes the generated BuildConfig and slows down the
     // build, so debug builds (overridden below) use a fixed string instead.
     def buildDate = LocalDateTime.parse(getBuildId(gradle.mozconfig.topobjdir, providers.environmentVariable("MOZ_BUILD_DATE").getOrNull()), DateTimeFormatter.ofPattern("yyyyMMddHHmmss")).toString()
     buildConfigField 'String', 'BUILD_DATE', '"' + buildDate + '"'
-
-    try {
-        def token = new File("${rootDir}/.adjust_token").text.trim()
-        buildConfigField 'String', 'ADJUST_TOKEN', '"' + token + '"'
-    } catch (FileNotFoundException ignored) {
-        buildConfigField 'String', 'ADJUST_TOKEN', 'null'
-    }
 
     try {
         def url = new File("${rootDir}/.nimbus").text.trim()
@@ -395,8 +383,6 @@ android.buildTypes.debug.with {
     buildConfigField 'boolean', 'CRASH_REPORTING', 'false'
     buildConfigField 'boolean', 'TELEMETRY', 'false'
     buildConfigField 'String', 'BUILD_DATE', '"debug build"'
-    buildConfigField 'String', 'SENTRY_TOKEN', 'null'
-    buildConfigField 'String', 'ADJUST_TOKEN', 'null'
 
     if (gradle.hasProperty("localProperties.nimbus.remote-settings.url")) {
         def url = gradle.getProperty("localProperties.nimbus.remote-settings.url")
@@ -545,7 +531,6 @@ dependencies {
     implementation project(':components:lib-bookmark-parser-jsoup')
     implementation project(':components:lib-passwords-file')
     implementation project(':components:lib-crash')
-    implementation project(':components:lib-crash-sentry')
     implementation project(':components:lib-dataprotect')
     implementation project(':components:lib-push-firebase')
     implementation project(':components:lib-state')
@@ -559,7 +544,6 @@ dependencies {
     implementation ComponentsDependencies.mozilla_appservices_merino
 
     implementation libs.accompanist.drawablepainter
-    implementation libs.adjust
     implementation libs.androidx.activity
     implementation libs.androidx.annotation
     implementation libs.androidx.appcompat
@@ -614,7 +598,6 @@ dependencies {
     implementation libs.play.review.ktx
     implementation libs.play.services.ads.id
     implementation libs.protobuf.javalite
-    implementation libs.sentry
     implementation libs.androidx.documentfile
     implementation libs.zxing
 

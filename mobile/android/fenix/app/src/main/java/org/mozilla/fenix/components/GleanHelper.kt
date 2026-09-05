@@ -29,7 +29,10 @@ import org.mozilla.fenix.nimbus.FxNimbus
  * [client] an instance of [Client] used to upload metrics.
  */
 fun initializeGlean(applicationContext: Context, logger: Logger, isTelemetryUploadEnabled: Boolean, client: Client) {
-    logger.debug("Initializing Glean (uploadEnabled=$isTelemetryUploadEnabled})")
+    logger.debug(
+        "Initializing Glean with uploading disabled " +
+            "(telemetry is removed from this fork; the preference reads $isTelemetryUploadEnabled)",
+    )
 
     // for performance reasons, this is only available in Nightly or Debug builds
     val customEndpoint = if (Config.channel.isNightlyOrDebug) {
@@ -59,10 +62,13 @@ fun initializeGlean(applicationContext: Context, logger: Logger, isTelemetryUplo
     // Set the metric configuration from Nimbus.
     Glean.applyServerKnobsConfig(FxNimbus.features.glean.value().gleanMetricConfiguration.toJSONObject().toString())
 
+    // 白い熊 火狐 uploads no telemetry. The Glean SDK itself cannot be taken out of the APK --
+    // the prebuilt GeckoView we build against ships it -- so the upload path is closed here
+    // instead: Glean starts disabled and stays disabled, whatever the preference says.
     Glean.initialize(
         applicationContext = applicationContext,
         configuration = configuration.setCustomEndpointIfAvailable(customEndpoint),
-        uploadEnabled = isTelemetryUploadEnabled,
+        uploadEnabled = false,
         buildInfo = GleanBuildInfo.buildInfo,
     )
 
