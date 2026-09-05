@@ -20,7 +20,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import mozilla.components.support.base.log.logger.Logger
-import org.mozilla.fenix.GleanMetrics.ReviewPrompt
 import org.mozilla.fenix.components.ReviewPromptAttemptResult.Displayed
 import org.mozilla.fenix.components.ReviewPromptAttemptResult.Error
 import org.mozilla.fenix.components.ReviewPromptAttemptResult.NotDisplayed
@@ -162,11 +161,5 @@ fun recordReviewPromptEvent(
             Unknown -> "error"
         }
 
-    ReviewPrompt.promptAttempt.record(
-        ReviewPrompt.PromptAttemptExtra(
-            promptWasDisplayed = promptWasDisplayed,
-            localDatetime = formattedLocalDatetime,
-            numberOfAppLaunches = numberOfAppLaunches,
-        )
-    )
+
 }

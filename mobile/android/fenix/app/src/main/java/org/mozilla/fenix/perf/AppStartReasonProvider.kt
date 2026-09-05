@@ -14,7 +14,6 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import mozilla.components.support.base.android.ProcessInfoProvider
 import mozilla.components.support.base.log.logger.Logger
-import org.mozilla.fenix.GleanMetrics.Metrics
 import org.mozilla.fenix.android.DefaultActivityLifecycleCallbacks
 
 private val logger = Logger("AppStartReasonProvider")
@@ -103,7 +102,6 @@ class AppStartReasonProvider(private val processInfoProvider: ProcessInfoProvide
                     StartReason.TO_BE_DETERMINED -> StartReason.ACTIVITY
                     StartReason.NON_ACTIVITY -> reason // the start reason is already known: do nothing.
                     StartReason.ACTIVITY -> {
-                        Metrics.startReasonActivityError.set(true)
                         logger.error("AppStartReasonProvider.Activity...onCreate unexpectedly called twice")
                         reason
                     }

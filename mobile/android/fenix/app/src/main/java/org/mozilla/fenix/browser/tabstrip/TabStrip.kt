@@ -69,7 +69,6 @@ import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.ui.icons.R as iconsR
-import org.mozilla.fenix.GleanMetrics.TabStrip as TabStripMetrics
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.components
@@ -159,7 +158,6 @@ fun TabStrip(
         colors = tabStripColors,
         onAddTabClick = {
             onAddTabClick()
-            TabStripMetrics.newTabTapped.record()
         },
         onCloseTabClick = { tabId, isPrivate ->
             closeTab(
@@ -174,7 +172,6 @@ fun TabStrip(
         onSelectedTabClick = { tabId, url ->
             tabsUseCases.selectTab(tabId)
             onSelectedTabClick(url)
-            TabStripMetrics.selectTab.record()
         },
         onMove = { tabId, targetId, placeAfter ->
             if (tabId != targetId) {
@@ -515,7 +512,6 @@ private fun closeTab(
     }
     tabsUseCases.removeTab(tabId)
     onCloseTabClick(isPrivate)
-    TabStripMetrics.closeTab.record()
 }
 
 private class TabUIStateParameterProvider :

@@ -30,11 +30,6 @@ import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.lib.state.DelicateAction
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.support.base.log.logger.Logger
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Collections
-import org.mozilla.fenix.GleanMetrics.Events
-import org.mozilla.fenix.GleanMetrics.TabsTray
-import org.mozilla.fenix.GleanMetrics.TrackingProtection
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
@@ -73,7 +68,6 @@ import org.mozilla.fenix.utils.Settings
 
 internal const val INACTIVE_TABS_FEATURE_NAME = "Inactive tabs"
 
-@VisibleForTesting internal const val TABS_TRAY_TELEMETRY_SOURCE = "tabs_tray"
 
 /** Controller for handling any actions in the tab manager. */
 interface TabManagerController : SyncedTabsController, InactiveTabsController, TabsTrayFabController {
@@ -289,7 +283,6 @@ class DefaultTabManagerController(
             )
         }
 
-        TabsTray.closed.record(NoExtras())
         profiler?.addMarker(
             "DefaultTabManagerController.onNewTabTapped",
             startTime,
@@ -300,10 +293,10 @@ class DefaultTabManagerController(
     override fun handleTabPageClicked(page: Page) {
         if (page != tabsTrayStore.state.selectedPage) {
             when (page) {
-                Page.NormalTabs -> TabsTray.normalModeTapped.record(NoExtras())
-                Page.PrivateTabs -> TabsTray.privateModeTapped.record(NoExtras())
-                Page.TabGroups -> TabsTray.tabGroupModeTapped.record(NoExtras())
-                Page.SyncedTabs -> TabsTray.syncedModeTapped.record(NoExtras())
+                Page.NormalTabs -> Unit
+                Page.PrivateTabs -> Unit
+                Page.TabGroups -> Unit
+                Page.SyncedTabs -> Unit
             }
         }
         tabsTrayStore.dispatch(TabsTrayAction.PageSelected(page))
@@ -361,7 +354,6 @@ class DefaultTabManagerController(
                 dismissTabManagerAndNavigateHome(tab.id)
             }
         }
-        TabsTray.closedExistingTab.record(TabsTray.ClosedExistingTabExtra(source ?: "unknown"))
         tabsTrayStore.dispatch(TabsTrayAction.ExitSelectMode)
     }
 
@@ -406,7 +398,6 @@ class DefaultTabManagerController(
     override fun handleDeleteSelectedTabsClicked() {
         val tabs = tabsTrayStore.state.mode.selectedTabs
 
-        TabsTray.closeSelectedTabs.record(TabsTray.CloseSelectedTabsExtra(tabCount = tabs.size))
 
         deleteMultipleTabs(tabs)
 
@@ -481,8 +472,6 @@ class DefaultTabManagerController(
     override fun handleAddSelectedTabsToCollectionClicked() {
         val tabs = tabsTrayStore.state.mode.selectedTabs
 
-        TabsTray.selectedTabsToCollection.record(TabsTray.SelectedTabsToCollectionExtra(tabCount = tabs.size))
-        TabsTray.saveToCollection.record(NoExtras())
 
         tabsTrayStore.dispatch(TabsTrayAction.ExitSelectMode)
 
@@ -500,19 +489,7 @@ class DefaultTabManagerController(
 
                     // If collection is null, a new one was created.
                     if (isNewCollection) {
-                        Collections.saved.record(
-                            Collections.SavedExtra(
-                                tabsTrayStore.state.normalTabsState.tabCount.toString(),
-                                tabs.size.toString(),
-                            )
-                        )
                     } else {
-                        Collections.tabsAdded.record(
-                            Collections.TabsAddedExtra(
-                                tabsTrayStore.state.normalTabsState.tabCount.toString(),
-                                tabs.size.toString(),
-                            )
-                        )
                     }
                     id?.apply {
                         showCollectionSnackbar(tabs.size, isNewCollection)
@@ -526,7 +503,6 @@ class DefaultTabManagerController(
     override fun handleShareSelectedTabsClicked() {
         val tabs = tabsTrayStore.state.mode.selectedTabs
 
-        TabsTray.shareSelectedTabs.record(TabsTray.ShareSelectedTabsExtra(tabCount = tabs.size))
 
         val data = tabs.map {
             ShareData(url = it.url, title = it.title, private = it.private)
@@ -550,7 +526,6 @@ class DefaultTabManagerController(
         @ColorInt dotColor: Int,
         thumbnailUri: Uri?,
     ) {
-        TabsTray.shareTabGroup.record(TabsTray.ShareTabGroupExtra(tabCount = group.tabs.size))
 
         val data =
             group.tabs.map {
@@ -579,9 +554,7 @@ class DefaultTabManagerController(
     @VisibleForTesting
     internal fun sendNewTabEvent(isPrivateModeSelected: Boolean) {
         if (isPrivateModeSelected) {
-            TabsTray.newPrivateTabTapped.record(NoExtras())
         } else {
-            TabsTray.newTabTapped.record(NoExtras())
         }
     }
 
@@ -592,7 +565,6 @@ class DefaultTabManagerController(
     }
 
     override fun handleSyncedTabClicked(tab: Tab) {
-        Events.syncedTabOpened.record(NoExtras())
 
         navController.openToBrowser()
 
@@ -615,7 +587,6 @@ class DefaultTabManagerController(
         val selected = tabsTrayStore.state.mode.selectedTabs
         when {
             selected.isEmpty() && tabsTrayStore.state.mode.isSelect().not() -> {
-                TabsTray.openedExistingTab.record(TabsTray.OpenedExistingTabExtra(source ?: "unknown"))
                 tabsUseCases.selectTab(tab.id)
                 val mode = BrowsingMode.fromBoolean(tab.private)
                 browsingModeManager.mode = mode
@@ -654,12 +625,10 @@ class DefaultTabManagerController(
     }
 
     override fun handleInactiveTabClicked(tab: TabsTrayItem.Tab) {
-        TabsTray.openInactiveTab.add()
         handleTabSelected(tab, INACTIVE_TABS_FEATURE_NAME)
     }
 
     override fun handleCloseInactiveTabClicked(tab: TabsTrayItem.Tab) {
-        TabsTray.closeInactiveTab.add()
         handleTabDeletion(tab, INACTIVE_TABS_FEATURE_NAME)
     }
 
@@ -667,14 +636,13 @@ class DefaultTabManagerController(
         appStore.dispatch(AppAction.UpdateInactiveExpanded(expanded))
 
         when (expanded) {
-            true -> TabsTray.inactiveTabsExpanded.record(NoExtras())
-            false -> TabsTray.inactiveTabsCollapsed.record(NoExtras())
+            true -> Unit
+            false -> Unit
         }
     }
 
     override fun handleInactiveTabsAutoCloseDialogDismiss() {
         markDialogAsShown()
-        TabsTray.autoCloseDimissed.record(NoExtras())
     }
 
     override fun handleEnableInactiveTabsAutoCloseClicked() {
@@ -683,12 +651,10 @@ class DefaultTabManagerController(
         settings.closeTabsAfterOneWeek = false
         settings.closeTabsAfterOneDay = false
         settings.manuallyCloseTabs = false
-        TabsTray.autoCloseTurnOnClicked.record(NoExtras())
     }
 
     override fun handleDeleteAllInactiveTabsClicked() {
         val numTabs: Int
-        TabsTray.closeAllInactiveTabs.record(NoExtras())
         browserStore.state.potentialInactiveTabs
             .map { it.id }
             .let {
@@ -732,13 +698,9 @@ class DefaultTabManagerController(
 
     override fun onOpenRecentlyClosedClicked() {
         navController.navigate(TabManagementFragmentDirections.actionGlobalRecentlyClosed())
-        Events.recentlyClosedTabsOpened.record(NoExtras())
     }
 
     override fun onPrivacyReportTapped() {
-        TrackingProtection.privacyReportTapped.record(
-            TrackingProtection.PrivacyReportTappedExtra(TABS_TRAY_TELEMETRY_SOURCE)
-        )
 
         val currentSessionId = browserStore.state.selectedTabId
         navController.nav(

@@ -10,7 +10,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.fenix.components.metrics.MozillaProductDetector
+import org.mozilla.fenix.components.attribution.MozillaProductDetector
 import org.mozilla.fenix.customtabs.EXTRA_IS_SANDBOX_CUSTOM_TAB
 import org.robolectric.RobolectricTestRunner
 

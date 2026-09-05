@@ -21,10 +21,6 @@ import mozilla.components.feature.tab.collections.TabCollection
 import mozilla.components.feature.tab.collections.ext.invoke
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.service.nimbus.messaging.Message
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Collections
-import org.mozilla.fenix.GleanMetrics.HomeBookmarks
-import org.mozilla.fenix.GleanMetrics.RecentTabs
 import org.mozilla.fenix.R
 import org.mozilla.fenix.collections.SaveCollectionStep
 import org.mozilla.fenix.components.AppStore
@@ -152,7 +148,6 @@ class DefaultSessionControlController(
     }
 
     override fun handleCollectionAddTabTapped(collection: TabCollection) {
-        Collections.addTabButton.record(NoExtras())
         showCollectionCreationFragment(
             step = SaveCollectionStep.SelectTabs,
             selectedTabCollectionId = collection.id,
@@ -179,7 +174,6 @@ class DefaultSessionControlController(
             },
         )
 
-        Collections.tabRestored.record(NoExtras())
     }
 
     override fun handleCollectionOpenTabsTapped(collection: TabCollection) {
@@ -193,14 +187,12 @@ class DefaultSessionControlController(
         )
 
         callback?.showTabTray()
-        Collections.allTabsRestored.record(NoExtras())
     }
 
     override fun handleCollectionRemoveTab(
         collection: TabCollection,
         tab: ComponentTab,
     ) {
-        Collections.tabRemoved.record(NoExtras())
 
         // collection tabs hold a reference to the initial collection that could have changed since
         val updatedCollection =
@@ -222,12 +214,10 @@ class DefaultSessionControlController(
             collection.title,
             collection.tabs.map { ShareData(url = it.url, title = it.title, private = false) },
         )
-        Collections.shared.record(NoExtras())
     }
 
     override fun handleDeleteCollectionTapped(collection: TabCollection) {
         callback?.removeCollection(collection)
-        Collections.removed.record(NoExtras())
     }
 
     override fun handleRenameCollectionTapped(collection: TabCollection) {
@@ -235,7 +225,6 @@ class DefaultSessionControlController(
             step = SaveCollectionStep.RenameCollection,
             selectedTabCollectionId = collection.id,
         )
-        Collections.renameButton.record(NoExtras())
     }
 
     override fun handleShowWallpapersOnboardingDialog(state: WallpaperState): Boolean {
@@ -328,12 +317,9 @@ class DefaultSessionControlController(
 
     override fun handleReportSessionMetrics(state: AppState) {
         if (state.recentTabs.isEmpty()) {
-            RecentTabs.sectionVisible.set(false)
         } else {
-            RecentTabs.sectionVisible.set(true)
         }
 
-        HomeBookmarks.bookmarksCount.set(state.bookmarks.size.toLong())
     }
 
     override fun onChecklistItemClicked(item: ChecklistItem) {

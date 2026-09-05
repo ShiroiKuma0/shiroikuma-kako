@@ -23,7 +23,6 @@ import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.support.base.feature.UserInteractionHandler
-import org.mozilla.fenix.GleanMetrics.Translations
 import org.mozilla.fenix.R
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.requireComponents
@@ -81,7 +80,6 @@ class TranslationSettingsFragment : Fragment(), UserInteractionHandler, SystemIn
                         }
                         .value,
                 onAutomaticTranslationClicked = {
-                    Translations.action.record(Translations.ActionExtra("global_lang_settings"))
                     findNavController()
                         .navigate(
                             TranslationSettingsFragmentDirections
@@ -89,7 +87,6 @@ class TranslationSettingsFragment : Fragment(), UserInteractionHandler, SystemIn
                         )
                 },
                 onNeverTranslationClicked = {
-                    Translations.action.record(Translations.ActionExtra("global_site_settings"))
                     findNavController()
                         .navigate(
                             TranslationSettingsFragmentDirections
@@ -97,7 +94,6 @@ class TranslationSettingsFragment : Fragment(), UserInteractionHandler, SystemIn
                         )
                 },
                 onDownloadLanguageClicked = {
-                    Translations.action.record(Translations.ActionExtra("downloads"))
                     findNavController()
                         .navigate(
                             TranslationSettingsFragmentDirections

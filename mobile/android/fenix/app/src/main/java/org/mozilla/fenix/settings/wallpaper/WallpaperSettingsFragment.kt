@@ -17,8 +17,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import kotlinx.coroutines.launch
 import mozilla.components.lib.state.ext.observeAsComposableState
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Wallpapers
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.core.Action
 import org.mozilla.fenix.compose.snackbar.Snackbar
@@ -46,7 +44,6 @@ class WallpaperSettingsFragment : Fragment(), SystemInsetsPaddedFragment {
         container: ViewGroup?,
         savedInstanceState: Bundle?,
     ): View {
-        Wallpapers.wallpaperSettingsOpened.record(NoExtras())
         val wallpaperSettings =
             ComposeView(requireContext()).apply {
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
@@ -87,12 +84,6 @@ class WallpaperSettingsFragment : Fragment(), SystemInsetsPaddedFragment {
                                     searchTermOrURL = url,
                                     newTab = true,
                                 )
-                                Wallpapers.learnMoreLinkClick.record(
-                                    Wallpapers.LearnMoreLinkClickExtra(
-                                        url = url,
-                                        collectionName = collectionName,
-                                    )
-                                )
                             },
                         )
                     }
@@ -113,13 +104,7 @@ class WallpaperSettingsFragment : Fragment(), SystemInsetsPaddedFragment {
     ) {
         when (result) {
             Wallpaper.ImageFileState.Downloaded -> {
-                Wallpapers.wallpaperSelected.record(
-                    Wallpapers.WallpaperSelectedExtra(
-                        name = wallpaper.name,
-                        source = "settings",
-                        themeCollection = wallpaper.collection.name,
-                    )
-                )
+
             }
             Wallpaper.ImageFileState.Error -> {
                 Snackbar.make(

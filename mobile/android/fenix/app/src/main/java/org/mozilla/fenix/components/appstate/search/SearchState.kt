@@ -5,7 +5,7 @@
 package org.mozilla.fenix.components.appstate.search
 
 import mozilla.components.browser.state.search.SearchEngine
-import org.mozilla.fenix.components.metrics.MetricsUtils
+import org.mozilla.fenix.components.attribution.MetricsUtils
 
 /**
  * Current search state of the application.
