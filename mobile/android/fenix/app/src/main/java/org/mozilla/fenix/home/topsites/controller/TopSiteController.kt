@@ -34,16 +34,12 @@ import mozilla.components.support.ktx.kotlin.isUrl
 import mozilla.components.support.ktx.kotlin.toNormalizedUrl
 import mozilla.components.ui.icons.R as iconsR
 import mozilla.components.ui.widgets.withCenterAlignedButtons
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Pings
-import org.mozilla.fenix.GleanMetrics.ShortcutsLibrary
-import org.mozilla.fenix.GleanMetrics.TopSites
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppAction.ShortcutAction
-import org.mozilla.fenix.components.metrics.MetricsUtils
+import org.mozilla.fenix.components.attribution.MetricsUtils
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.nav
@@ -134,9 +130,9 @@ class DefaultTopSiteController(
 
     override fun handleOpenInPrivateTabClicked(topSite: TopSite) {
         if (topSite is TopSite.Provided) {
-            TopSites.openContileInPrivateTab.record(TopSites.OpenContileInPrivateTabExtra(source = source.sourceName))
+
         } else {
-            TopSites.openInPrivateTab.record(TopSites.OpenInPrivateTabExtra(source = source.sourceName))
+
         }
 
         appStore.dispatch(AppAction.BrowsingModeManagerModeChanged(BrowsingMode.Private))
@@ -232,11 +228,9 @@ class DefaultTopSiteController(
     }
 
     override fun handleRemoveTopSiteClicked(topSite: TopSite) {
-        TopSites.remove.record(TopSites.RemoveExtra(source = source.sourceName))
 
         when (topSite.url) {
-            SupportUtils.GOOGLE_URL ->
-                TopSites.googleTopSiteRemoved.record(TopSites.GoogleTopSiteRemovedExtra(source = source.sourceName))
+            SupportUtils.GOOGLE_URL -> Unit
         }
 
         viewLifecycleScope.launch {
@@ -248,23 +242,18 @@ class DefaultTopSiteController(
 
     override fun handleSelectTopSite(topSite: TopSite, position: Int) {
         when (topSite) {
-            is TopSite.Default -> TopSites.openDefault.record(TopSites.OpenDefaultExtra(source = source.sourceName))
-            is TopSite.Frecent -> TopSites.openFrecency.record(TopSites.OpenFrecencyExtra(source = source.sourceName))
-            is TopSite.Pinned -> TopSites.openPinned.record(TopSites.OpenPinnedExtra(source = source.sourceName))
+            is TopSite.Default -> Unit
+            is TopSite.Frecent -> Unit
+            is TopSite.Pinned -> Unit
             is TopSite.Provided -> {
                 sendMozAdsClickInteraction(clickUrl = topSite.clickUrl)
 
-                TopSites.openContileTopSite.record(TopSites.OpenContileTopSiteExtra(source = source.sourceName)).also {
-                    recordTopSitesClickTelemetry(topSite, position)
-                }
+
             }
         }
 
         when (topSite.url) {
-            SupportUtils.GOOGLE_URL ->
-                TopSites.openGoogleSearchAttribution.record(
-                    TopSites.OpenGoogleSearchAttributionExtra(source = source.sourceName)
-                )
+            SupportUtils.GOOGLE_URL -> Unit
         }
 
         val availableEngines: List<SearchEngine> = getAvailableSearchEngines()
@@ -301,7 +290,7 @@ class DefaultTopSiteController(
                 }
 
             if (existingTabForUrl == null) {
-                TopSites.openInNewTab.record(TopSites.OpenInNewTabExtra(source = source.sourceName))
+
 
                 addTabUseCase.invoke(
                     url = appendSearchAttributionToUrlIfNeeded(topSite.url),
@@ -322,33 +311,17 @@ class DefaultTopSiteController(
 
     @VisibleForTesting
     internal fun recordTopSitesClickTelemetry(topSite: TopSite.Provided, position: Int) {
-        TopSites.contileClick.record(
-            TopSites.ContileClickExtra(
-                position = position + 1,
-                source = source.sourceName,
-            )
-        )
 
-        topSite.id?.let { TopSites.contileTileId.set(it) }
-        topSite.title?.let { TopSites.contileAdvertiser.set(it.lowercase()) }
 
-        Pings.topsitesImpression.submit()
+
     }
 
     override fun handleTopSiteImpression(topSite: TopSite.Provided, position: Int) {
         sendMozAdsImpressionInteraction(impressionUrl = topSite.impressionUrl)
 
-        TopSites.contileImpression.record(
-            TopSites.ContileImpressionExtra(
-                position = position + 1,
-                source = source.sourceName,
-            )
-        )
 
-        topSite.id?.let { TopSites.contileTileId.set(it) }
-        topSite.title?.let { TopSites.contileAdvertiser.set(it.lowercase()) }
 
-        Pings.topsitesImpression.submit()
+
     }
 
     private fun sendMozAdsClickInteraction(clickUrl: String) {
@@ -364,12 +337,12 @@ class DefaultTopSiteController(
     }
 
     override fun handleTopSiteSettingsClicked() {
-        TopSites.contileSettings.record(TopSites.ContileSettingsExtra(source = source.sourceName))
+
         navController.navigate(R.id.homeSettingsFragment)
     }
 
     override fun handleSponsorPrivacyClicked() {
-        TopSites.contileSponsorsAndPrivacy.record(TopSites.ContileSponsorsAndPrivacyExtra(source = source.sourceName))
+
 
         if (navController.currentDestination?.id == R.id.shortcutsFragment) {
             navController.navigate(ShortcutsFragmentDirections.actionShortcutsFragmentToBrowserFragment())
@@ -385,7 +358,7 @@ class DefaultTopSiteController(
     }
 
     override fun handleTopSiteLongClicked(topSite: TopSite) {
-        TopSites.longPress.record(TopSites.LongPressExtra(type = topSite.type, source = source.sourceName))
+
     }
 
     override fun handleShowAllTopSitesClicked() {
@@ -396,15 +369,9 @@ class DefaultTopSiteController(
     }
 
     override fun handleExpandToggleClicked(isExpanded: Boolean) {
-        if (isExpanded) {
-            TopSites.showMore.record(NoExtras())
-        } else {
-            TopSites.showLess.record(NoExtras())
-        }
     }
 
     override fun handleShortcutsLibraryViewed() {
-        ShortcutsLibrary.viewed.record(NoExtras())
     }
 
     override fun handleSaveShortcut(

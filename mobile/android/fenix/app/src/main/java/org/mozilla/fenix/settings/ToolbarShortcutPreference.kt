@@ -18,7 +18,6 @@ import androidx.preference.PreferenceViewHolder
 import com.google.android.material.R as materialR
 import com.google.android.material.color.MaterialColors
 import mozilla.components.support.ktx.android.content.pixelSizeFor
-import org.mozilla.fenix.GleanMetrics.CustomizationSettings
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.isWideWindow
 import org.mozilla.fenix.utils.view.addToRadioGroup
@@ -143,12 +142,6 @@ constructor(
             isEnabled = isOptionEnabled(newOption)
             setCheckedWithoutClickListener(newOption == selectedOption)
             onClickListener {
-                CustomizationSettings.toolbarShortcutSelection.record(
-                    CustomizationSettings.ToolbarShortcutSelectionExtra(
-                        toolbarType = getTelemetryToolbarType(),
-                        item = newOption.key.value,
-                    )
-                )
                 writeSelectedKey(newOption.key.value)
                 notifyChanged()
             }

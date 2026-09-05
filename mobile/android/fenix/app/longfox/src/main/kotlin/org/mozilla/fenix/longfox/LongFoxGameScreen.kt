@@ -48,12 +48,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import mozilla.telemetry.glean.GleanTimerId
 import org.mozilla.fenix.longfox.GameState.Companion.CELL_SIZE_DP
 import org.mozilla.fenix.longfox.GameState.Companion.GAME_INTERVAL_TIME_MS
 import org.mozilla.fenix.longfox.GameState.Companion.MAX_JUST_EATEN_COUNTDOWN
 import org.mozilla.fenix.longfox.GameState.Companion.MAX_SCORE_CELEBRATION_COUNTDOWN
-import org.mozilla.fenix.longfox.GleanMetrics.Longfox
 
 // Minimum drag distance (in dp) for a gesture to count as a swipe rather than a tap. Kept well
 // above the platform touch slop so ordinary taps with a little finger movement are not misread as
@@ -68,7 +66,7 @@ private const val MIN_SWIPE_DISTANCE_DP = 16
 fun LongFoxGameScreen() {
     var celebrationShown by remember { mutableStateOf(false) }
     var celebrationSeed by remember { mutableIntStateOf(0) }
-    var gleanTimerId: GleanTimerId? by remember { mutableStateOf(null) }
+    var gameStarted by remember { mutableStateOf(false) }
     GameBackground(celebrationShown, celebrationSeed) {
         // Make a square game grid that fits on the screen
         val density = LocalDensity.current.density
@@ -78,7 +76,7 @@ fun LongFoxGameScreen() {
             mutableStateOf(GameState(numCells = numCells, size = Size(canvasSizePx, canvasSizePx), isGameOver = true))
         }
         val startGame = {
-            gleanTimerId = Longfox.gamePlayedLength.start()
+            gameStarted = true
             gameState = GameState(numCells = numCells, size = Size(canvasSizePx, canvasSizePx))
         }
         SideEffect {
@@ -115,11 +113,8 @@ fun LongFoxGameScreen() {
             onDispose { soundEffectsPlayer.release() }
         }
         LaunchedEffect(gameState.isGameOver) {
-            gleanTimerId?.also {
-                if (gameState.isGameOver) {
-                    soundEffectsPlayer.playSound(R.raw.sadwobble)
-                    Longfox.gamePlayedLength.stopAndAccumulate(it)
-                }
+            if (gameStarted && gameState.isGameOver) {
+                soundEffectsPlayer.playSound(R.raw.sadwobble)
             }
         }
         // This is the main game loop:

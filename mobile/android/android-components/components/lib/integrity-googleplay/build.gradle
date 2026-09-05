@@ -8,7 +8,6 @@ buildscript {
     }
 
     dependencies {
-        classpath libs.mozilla.glean.gradle.plugin
     }
 }
 
@@ -34,7 +33,6 @@ dependencies {
 
     // We only compile against Glean. It's up to the app to add those dependencies
     // if it wants to collect GeckoView telemetry through the Glean SDK.
-    compileOnly libs.mozilla.glean
 
     implementation libs.kotlinx.coroutines.play.services
     implementation libs.play.integrity
@@ -44,16 +42,9 @@ dependencies {
     testImplementation libs.kotlin.test
     testImplementation libs.kotlinx.coroutines.test
     testImplementation libs.androidx.work.testing
-    testImplementation libs.mozilla.glean
-    testImplementation libs.mozilla.glean.forUnitTests
     testImplementation libs.robolectric
 }
 
-ext {
-    gleanNamespace = "mozilla.telemetry.glean"
-    gleanPythonEnvDir = gradle.mozconfig.substs.GRADLE_GLEAN_PARSER_VENV
-}
-apply plugin: "org.mozilla.telemetry.glean-gradle-plugin"
 apply from: '../../../common-config.gradle'
 apply from: '../../../publish.gradle'
 ext.configurePublish(config.componentsGroupId, project.name, project.ext.description)

@@ -28,7 +28,6 @@ import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.base.log.logger.Logger
-import org.mozilla.fenix.GleanMetrics.GoogleLens
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.appstate.AppAction.LensAction
 import org.mozilla.fenix.components.lens.LensCameraActivity
@@ -222,13 +221,7 @@ class LensFeature(
     }
 
     private fun recordSearchCompleted(succeeded: Boolean, source: String, httpStatusCode: Int? = null) {
-        GoogleLens.searchCompleted.record(
-            GoogleLens.SearchCompletedExtra(
-                succeeded = succeeded,
-                httpStatusCode = httpStatusCode,
-                source = source,
-            )
-        )
+
     }
 
     companion object {

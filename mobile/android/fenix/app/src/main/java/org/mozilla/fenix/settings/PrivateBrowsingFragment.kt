@@ -14,7 +14,6 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
-import org.mozilla.fenix.GleanMetrics.PrivateBrowsingLocked
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.DefaultPendingIntentFactory
@@ -47,7 +46,7 @@ class PrivateBrowsingFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
         setPreferencesFromResource(R.xml.private_browsing_preferences, rootKey)
         startForResult =
             registerForActivityResult(
-                onFailure = { PrivateBrowsingLocked.authFailure.record() },
+                onFailure = { },
                 onSuccess = { onSuccessfulAuthenticationUsingFallbackPrompt() },
             )
         updatePreferences()
@@ -129,10 +128,9 @@ class PrivateBrowsingFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
                             preference = preference,
                         )
                     },
-                    onAuthFailure = { PrivateBrowsingLocked.authFailure.record() },
+                    onAuthFailure = { },
                 )
 
-                PrivateBrowsingLocked.promptShown.record()
 
                 // Cancel toggle change until biometric is successful
                 false
@@ -153,7 +151,6 @@ class PrivateBrowsingFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
     }
 
     private fun onSuccessfulAuthenticationUsingFallbackPrompt() {
-        PrivateBrowsingLocked.authSuccess.record()
 
         val newValue = !requireComponents.settings.privateBrowsingModeLocked
         recordPbmLockFeatureEnabledStateTelemetry(newValue)
@@ -169,7 +166,6 @@ class PrivateBrowsingFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
         pbmLockEnabled: Boolean,
         preference: Preference,
     ) {
-        PrivateBrowsingLocked.authSuccess.record()
 
         recordPbmLockFeatureEnabledStateTelemetry(pbmLockEnabled)
         requireComponents.settings.privateBrowsingModeLocked = pbmLockEnabled
@@ -180,9 +176,7 @@ class PrivateBrowsingFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
 
     private fun recordPbmLockFeatureEnabledStateTelemetry(pbmLockEnabled: Boolean) {
         if (pbmLockEnabled) {
-            PrivateBrowsingLocked.featureEnabled.record()
         } else {
-            PrivateBrowsingLocked.featureDisabled.record()
         }
     }
 

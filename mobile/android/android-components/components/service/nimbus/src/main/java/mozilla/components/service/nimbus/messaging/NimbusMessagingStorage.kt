@@ -38,7 +38,6 @@ class NimbusMessagingStorage(
     private val context: Context,
     private val metadataStorage: MessageMetadataStorage,
     private val onMalformedMessage: (String) -> Unit = {
-        GleanMessaging.malformed.record(GleanMessaging.MalformedExtra(it))
     },
     private val nimbus: NimbusMessagingInterface,
     private val messagingFeature: FeatureHolder<Messaging>,

@@ -6,7 +6,6 @@ package org.mozilla.fenix.home.recentsyncedtabs.controller
 
 import androidx.navigation.NavController
 import mozilla.components.feature.tabs.TabsUseCases
-import org.mozilla.fenix.GleanMetrics.RecentSyncedTabs
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
@@ -54,7 +53,6 @@ class DefaultRecentSyncedTabController(
     private val settings: Settings,
 ) : RecentSyncedTabController {
     override fun handleRecentSyncedTabClick(tab: RecentSyncedTab) {
-        RecentSyncedTabs.recentSyncedTabOpened[tab.deviceType.name.lowercase()].add()
 
         if (settings.enableHomepageAsNewTab) {
             fenixBrowserUseCases.loadUrlOrSearch(
@@ -70,7 +68,6 @@ class DefaultRecentSyncedTabController(
     }
 
     override fun handleSyncedTabShowAllClicked() {
-        RecentSyncedTabs.showAllSyncedTabsClicked.add()
         navController.navigate(
             HomeFragmentDirections.actionGlobalTabManagementFragment(
                 page = Page.SyncedTabs,

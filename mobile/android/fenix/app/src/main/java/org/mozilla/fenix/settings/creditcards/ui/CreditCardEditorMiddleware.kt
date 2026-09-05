@@ -17,8 +17,6 @@ import mozilla.components.concept.storage.UpdatableCreditCardFields
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import mozilla.components.support.utils.creditCardIIN
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.CreditCards
 import org.mozilla.fenix.settings.creditcards.last4Digits
 import org.mozilla.fenix.settings.creditcards.ui.CreditCardEditorAction.DeleteDialogAction
 
@@ -68,7 +66,6 @@ internal class CreditCardEditorMiddleware(
                     withContext(mainDispatcher) {
                         navigateBack()
                     }
-                    CreditCards.deleted.add()
                 }
             }
 
@@ -113,7 +110,6 @@ internal class CreditCardEditorMiddleware(
             withContext(mainDispatcher) {
                 navigateBack()
             }
-            CreditCards.modified.record(NoExtras())
         }
     }
 
@@ -134,7 +130,6 @@ internal class CreditCardEditorMiddleware(
             withContext(mainDispatcher) {
                 navigateBack()
             }
-            CreditCards.saved.add()
         }
     }
 

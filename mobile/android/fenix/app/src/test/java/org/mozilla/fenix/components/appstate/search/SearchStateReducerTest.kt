@@ -14,7 +14,7 @@ import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchEngine
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchStarted
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.AppStoreReducer
-import org.mozilla.fenix.components.metrics.MetricsUtils
+import org.mozilla.fenix.components.attribution.MetricsUtils
 
 class SearchStateReducerTest {
     @Test

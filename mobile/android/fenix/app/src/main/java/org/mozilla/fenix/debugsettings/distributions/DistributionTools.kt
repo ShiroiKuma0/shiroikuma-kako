@@ -26,7 +26,7 @@ import kotlinx.coroutines.launch
 import mozilla.components.compose.base.button.FilledButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.components
-import org.mozilla.fenix.components.metrics.InstallReferrerHandlingService
+import org.mozilla.fenix.components.attribution.InstallReferrerHandlingService
 import org.mozilla.fenix.distributions.DefaultDistributionProviderChecker
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider

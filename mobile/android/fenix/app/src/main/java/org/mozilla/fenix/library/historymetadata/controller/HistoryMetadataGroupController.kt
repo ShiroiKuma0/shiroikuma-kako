@@ -14,8 +14,6 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.storage.sync.PlacesHistoryStorage
 import mozilla.components.concept.engine.prompt.ShareData
 import mozilla.components.feature.tabs.TabsUseCases
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.History as GleanHistory
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
@@ -118,7 +116,6 @@ class DefaultHistoryMetadataGroupController(
         }
 
         navController.navigate(R.id.browserFragment)
-        GleanHistory.searchTermGroupOpenTab.record(NoExtras())
     }
 
     override fun handleSelect(item: History.Metadata) {
@@ -178,7 +175,6 @@ class DefaultHistoryMetadataGroupController(
                 items.forEach {
                     store.dispatch(HistoryMetadataGroupFragmentAction.Delete(it))
                     context.components.core.historyStorage.deleteVisitsFor(it.url)
-                    GleanHistory.searchTermGroupRemoveTab.record(NoExtras())
                 }
                 // The method is called for both single and multiple items.
                 // In case all items have been deleted, we have to disband the search group.
@@ -202,7 +198,6 @@ class DefaultHistoryMetadataGroupController(
             }
             store.dispatch(HistoryMetadataGroupFragmentAction.DeleteAll)
             browserStore.dispatch(HistoryMetadataAction.DisbandSearchGroupAction(searchTerm = searchTerm))
-            GleanHistory.searchTermGroupRemoveAll.record(NoExtras())
             allDeletedSnackbar.invoke()
             launch(Main) {
                 navController.popBackStack(R.id.historyFragment, false)

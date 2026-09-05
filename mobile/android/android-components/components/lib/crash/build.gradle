@@ -8,7 +8,6 @@ buildscript {
     }
 
     dependencies {
-        classpath libs.mozilla.glean.gradle.plugin
     }
 }
 
@@ -64,7 +63,6 @@ androidComponents {
 dependencies {
     // We only compile against GeckoView and Glean. It's up to the app to add those dependencies if it wants to
     // send crash reports to Socorro (GV).
-    compileOnly libs.mozilla.glean
 
     implementation project(':components:support-base')
     implementation project(':components:support-ktx')
@@ -87,8 +85,6 @@ dependencies {
     testImplementation libs.kotlin.test
     testImplementation libs.kotlinx.coroutines.test
     testImplementation libs.mockwebserver
-    testImplementation libs.mozilla.glean
-    testImplementation libs.mozilla.glean.forUnitTests
     testImplementation libs.okhttp
     testImplementation libs.okio
     testImplementation libs.robolectric
@@ -96,18 +92,12 @@ dependencies {
     androidTestImplementation project(':components:support-android-test')
     androidTestImplementation libs.androidx.test.junit
     androidTestImplementation libs.kotlin.test
-    androidTestImplementation libs.mozilla.glean
 
     // Depend on browser-engine-gecko to get the libcrashtools.so binary for tests. We don't use jniLibs because it
     // is only available as part of the geckoview APK artifact in CI.
     androidTestRuntimeOnly project(':components:browser-engine-gecko')
 }
 
-ext {
-    gleanNamespace = "mozilla.telemetry.glean"
-    gleanPythonEnvDir = gradle.mozconfig.substs.GRADLE_GLEAN_PARSER_VENV
-}
-apply plugin: "org.mozilla.telemetry.glean-gradle-plugin"
 apply from: '../../../common-config.gradle'
 apply from: '../../../publish.gradle'
 ext.configurePublish(config.componentsGroupId, project.name, project.ext.description)

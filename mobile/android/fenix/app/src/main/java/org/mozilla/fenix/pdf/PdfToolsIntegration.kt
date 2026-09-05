@@ -25,8 +25,6 @@ import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.theme.layout.AcornWindowSize
 import mozilla.components.support.base.feature.LifecycleAwareFeature
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.PdfViewer
 import org.mozilla.fenix.components.share.createPdfShareAction
 import org.mozilla.fenix.pdf.ui.PdfTools
 import org.mozilla.fenix.pdf.ui.SignatureDialog
@@ -104,24 +102,17 @@ class PdfToolsIntegration(
     /** Opens the dialog for adding a signature to the PDF. */
     internal fun handleSignClick() {
         isSigning = true
-        PdfViewer.signTapped.record(NoExtras())
     }
 
     /** Erases the signature that was typed. */
     internal fun handleSignClearClick() {
         signature.clearText()
-        PdfViewer.signDialogClearTapped.record(
-            PdfViewer.SignDialogClearTappedExtra(signatureType = SignatureType.Typed.telemetryName)
-        )
     }
 
     /** Adds the typed signature to the PDF and closes the dialog. */
     internal fun handleSignAddClick() {
         isSigning = false
         signature.clearText()
-        PdfViewer.signDialogAddTapped.record(
-            PdfViewer.SignDialogAddTappedExtra(signatureType = SignatureType.Typed.telemetryName)
-        )
         // Bug 2061298 will make the behavior available.
     }
 
@@ -129,9 +120,6 @@ class PdfToolsIntegration(
     internal fun handleSignCloseClick() {
         isSigning = false
         signature.clearText()
-        PdfViewer.signDialogCloseTapped.record(
-            PdfViewer.SignDialogCloseTappedExtra(signatureType = SignatureType.Typed.telemetryName)
-        )
     }
 
     /** Clears out the state if the user navigates away. */
@@ -142,7 +130,6 @@ class PdfToolsIntegration(
 
     /** Saves the PDF the selected tab is displaying to the device. */
     internal fun handleDownloadClick() {
-        PdfViewer.downloadTapped.record(NoExtras())
         browserStore.state.selectedTabId?.let {
             browserStore.dispatch(EngineAction.SaveToPdfAction(it))
         }
@@ -150,7 +137,6 @@ class PdfToolsIntegration(
 
     /** Prints the PDF the selected tab is displaying. */
     internal fun handlePrintClick() {
-        PdfViewer.printTapped.record(NoExtras())
         browserStore.state.selectedTabId?.let {
             browserStore.dispatch(EngineAction.PrintContentAction(it))
         }
@@ -158,7 +144,6 @@ class PdfToolsIntegration(
 
     /** Shares the PDF the selected tab is displaying. */
     internal fun handleShareClick() {
-        PdfViewer.shareTapped.record(NoExtras())
         val tab = browserStore.state.selectedTab ?: return
         browserStore.createPdfShareAction(tabId = tab.id, url = tab.content.url)?.let {
             browserStore.dispatch(it)

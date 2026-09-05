@@ -59,7 +59,6 @@ import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.ClipboardHandler
 import mozilla.components.ui.icons.R as iconsR
 import mozilla.components.ui.tabcounter.R as tabcounterR
-import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
@@ -234,7 +233,6 @@ class BrowserToolbarMiddleware(
             }
 
             is OriginClicked -> {
-                Events.searchBarTapped.record(Events.SearchBarTappedExtra("HOME"))
                 appStore.dispatch(SearchStarted())
             }
             is VoiceSearchClicked -> {

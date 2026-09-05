@@ -92,8 +92,6 @@ import mozilla.components.support.ktx.android.content.getColorFromAttr
 import mozilla.components.support.ktx.android.view.hideKeyboard
 import mozilla.components.support.utils.ext.pixelSizeFor
 import mozilla.components.ui.widgets.withCenterAlignedButtons
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.History as GleanHistory
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.NavHostActivity
 import org.mozilla.fenix.R
@@ -103,7 +101,7 @@ import org.mozilla.fenix.components.QrScanFenixFeature
 import org.mozilla.fenix.components.VoiceSearchFeature
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.history.DefaultPagedHistoryProvider
-import org.mozilla.fenix.components.metrics.MetricsUtils
+import org.mozilla.fenix.components.attribution.MetricsUtils
 import org.mozilla.fenix.components.search.HISTORY_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.share.ShareSheetChooserAction
 import org.mozilla.fenix.components.share.ShareSource
@@ -119,7 +117,6 @@ import org.mozilla.fenix.kako.createKako
 import org.mozilla.fenix.library.LibraryPageFragment
 import org.mozilla.fenix.library.history.HistoryFragmentAction.SearchClicked
 import org.mozilla.fenix.library.history.HistoryFragmentAction.SearchDismissed
-import org.mozilla.fenix.library.history.state.HistoryTelemetryMiddleware
 import org.mozilla.fenix.library.history.state.bindings.MenuBinding
 import org.mozilla.fenix.pbmlock.registerForVerification
 import org.mozilla.fenix.pbmlock.verifyUser
@@ -216,9 +213,6 @@ class HistoryFragment :
                         initialState = it,
                         middleware =
                             listOf(
-                                HistoryTelemetryMiddleware(
-                                    isInPrivateMode = requireComponents.appStore.state.mode == BrowsingMode.Private
-                                )
                             ),
                     )
                 }
@@ -266,7 +260,6 @@ class HistoryFragment :
 
         historyProvider = DefaultPagedHistoryProvider(requireComponents.core.historyStorage)
 
-        GleanHistory.opened.record(NoExtras())
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -382,7 +375,6 @@ class HistoryFragment :
             }
             R.id.open_history_in_new_tabs_multi_select -> {
                 openItemsInNewTab { selectedItem ->
-                    GleanHistory.openedItemsInNewTabs.record(NoExtras())
                     (selectedItem as? History.Regular)?.url ?: (selectedItem as? History.Metadata)?.url
                 }
 
@@ -555,7 +547,6 @@ class HistoryFragment :
 
     private fun openHistoryInPrivate() {
         openItemsInNewTab(private = true) { selectedItem ->
-            GleanHistory.openedItemsInNewTabs.record(NoExtras())
             (selectedItem as? History.Regular)?.url ?: (selectedItem as? History.Metadata)?.url
         }
 
@@ -641,7 +632,6 @@ class HistoryFragment :
     }
 
     private fun share(data: List<ShareData>) {
-        GleanHistory.shared.record(NoExtras())
 
         requireComponents.useCases.shareUseCases.shareItems(
             items = data,
@@ -744,7 +734,6 @@ class HistoryFragment :
                     setView(layout)
 
                     setNegativeButton(R.string.delete_browsing_data_prompt_cancel) { dialog: DialogInterface, _ ->
-                        GleanHistory.removePromptCancelled.record(NoExtras())
                         dialog.cancel()
                     }
                     setPositiveButton(R.string.delete_browsing_data_prompt_allow) { dialog: DialogInterface, _ ->
@@ -759,7 +748,6 @@ class HistoryFragment :
                         dialog.dismiss()
                     }
 
-                    GleanHistory.removePromptOpened.record(NoExtras())
                 }
                 .createKako()
                 .withCenterAlignedButtons()

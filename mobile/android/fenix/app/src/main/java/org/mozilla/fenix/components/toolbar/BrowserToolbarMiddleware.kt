@@ -101,10 +101,6 @@ import mozilla.components.support.ktx.util.URLStringUtils
 import mozilla.components.support.utils.ClipboardHandler
 import mozilla.components.ui.icons.R as iconsR
 import mozilla.components.ui.tabcounter.R as tabcounterR
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Events
-import org.mozilla.fenix.GleanMetrics.ReaderMode
-import org.mozilla.fenix.GleanMetrics.Translations
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.BrowserFragmentDirections
@@ -129,7 +125,7 @@ import org.mozilla.fenix.components.appstate.AppAction.URLCopiedToClipboard
 import org.mozilla.fenix.components.appstate.SupportedMenuNotifications.NotDefaultBrowser
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState
 import org.mozilla.fenix.components.menu.MenuAccessPoint
-import org.mozilla.fenix.components.metrics.MetricsUtils
+import org.mozilla.fenix.components.attribution.MetricsUtils
 import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.toolbar.BrowserToolbarTestTags.SITE_INFO_INSECURE_CONNECTION
 import org.mozilla.fenix.components.toolbar.BrowserToolbarTestTags.SITE_INFO_LOCAL_FILE
@@ -493,7 +489,6 @@ class BrowserToolbarMiddleware(
             }
 
             is OriginClicked -> {
-                Events.searchBarTapped.record(Events.SearchBarTappedExtra("BROWSER"))
 
                 val selectedTab = browserStore.state.selectedTab ?: return
                 val searchTerms = selectedTab.content.searchTerms
@@ -510,7 +505,6 @@ class BrowserToolbarMiddleware(
                 }
             }
             is CopyToClipboardClicked -> {
-                Events.copyUrlTapped.record(NoExtras())
 
                 val selectedTab = browserStore.state.selectedTab
                 val url = selectedTab?.readerState?.activeUrl ?: selectedTab?.content?.url
@@ -546,7 +540,6 @@ class BrowserToolbarMiddleware(
                                 "",
                             )
                         )
-                        Events.enteredUrl.record(Events.EnteredUrlExtra(autocomplete = false))
                     } else {
                         browserStore.dispatch(
                             ContentAction.UpdateSearchTermsAction(
@@ -623,11 +616,9 @@ class BrowserToolbarMiddleware(
             is ReaderModeClicked -> {
                 when (action.isActive) {
                     true -> {
-                        ReaderMode.closed.record(NoExtras())
                         readerModeController.hideReaderView()
                     }
                     false -> {
-                        ReaderMode.opened.record(NoExtras())
                         readerModeController.showReaderView()
                     }
                 }
@@ -636,7 +627,6 @@ class BrowserToolbarMiddleware(
             }
 
             is TranslateClicked -> {
-                Translations.action.record(Translations.ActionExtra("main_flow_toolbar"))
 
                 appStore.dispatch(SnackbarDismissed)
                 navController.navigateSafe(

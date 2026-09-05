@@ -67,7 +67,7 @@ import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.ShowSnackbar
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.TranslationInProgress
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.UserAccountAuthenticated
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.WebCompatReportSent
-import org.mozilla.fenix.components.metrics.MetricsUtils.BookmarkAction.Source
+import org.mozilla.fenix.components.attribution.MetricsUtils.BookmarkAction.Source
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.tabClosedUndoMessage
 import org.mozilla.fenix.home.topsites.AddShortcutEntryPoint

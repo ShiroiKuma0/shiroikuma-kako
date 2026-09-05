@@ -17,7 +17,6 @@ import androidx.core.content.edit
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import org.mozilla.fenix.GleanMetrics.AppExitInfo
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.getPreferenceKey
 import org.mozilla.fenix.perf.ApplicationExitInfoMetrics.recordProcessExits
@@ -120,16 +119,7 @@ object ApplicationExitInfoMetrics {
                 //
                 // This metric focuses on actionable tab reload causes (e.g., low memory),
                 // while crashes/ANRs are covered by dedicated tooling.
-                AppExitInfo.processExited.record(
-                    AppExitInfo.ProcessExitedExtra(
-                        date = historicalExit.timestamp.toSimpleDateFormat(),
-                        importance = historicalExit.importance.toProcessImportance(),
-                        processType = historicalExit.processName.toProcessType(),
-                        pss = historicalExit.pss.toValueInMB(),
-                        rss = historicalExit.rss.toValueInMB(),
-                        reason = historicalExit.toProcessExitReason(),
-                    )
-                )
+
             }
         }
 

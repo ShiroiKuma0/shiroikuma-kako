@@ -16,7 +16,7 @@ import mozilla.components.concept.ai.controls.AIFeatureRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.mozilla.fenix.components.metrics.fake.FakeLifecycleOwner
+import org.mozilla.fenix.components.attribution.fake.FakeLifecycleOwner
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TranslationsAIControllableFeatureRegistrarTest {

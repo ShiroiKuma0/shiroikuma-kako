@@ -30,7 +30,6 @@ import org.mozilla.fenix.settings.logins.ui.LoginsMiddleware
 import org.mozilla.fenix.settings.logins.ui.LoginsSortOrder
 import org.mozilla.fenix.settings.logins.ui.LoginsState
 import org.mozilla.fenix.settings.logins.ui.LoginsStore
-import org.mozilla.fenix.settings.logins.ui.LoginsTelemetryMiddleware
 import org.mozilla.fenix.settings.logins.ui.SavedLoginsScreen
 import org.mozilla.fenix.theme.FirefoxTheme
 
@@ -83,7 +82,6 @@ class SavedLoginsFragment : SecureFragment(), SystemInsetsPaddedFragment {
                                     tag = "LoginsStore",
                                     shouldIncludeDetailedData = { Config.channel.isDebug },
                                 ),
-                                LoginsTelemetryMiddleware(),
                                 LoginsMiddleware(
                                     loginsStorage = requireContext().components.core.passwordsStorage,
                                     getNavController = { composeNavController },
