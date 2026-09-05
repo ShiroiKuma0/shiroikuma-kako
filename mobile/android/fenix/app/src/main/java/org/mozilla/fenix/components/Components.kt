@@ -61,7 +61,6 @@ import org.mozilla.fenix.components.ipprotection.IPProtectionAuthSources
 import org.mozilla.fenix.components.listentopage.ListenToPage
 import org.mozilla.fenix.components.llm.Llm
 import org.mozilla.fenix.components.llm.ext.accessTokenProvider
-import org.mozilla.fenix.components.metrics.MetricsMiddleware
 import org.mozilla.fenix.crashes.CrashReportingAppMiddleware
 import org.mozilla.fenix.crashes.SettingsCrashReportCache
 import org.mozilla.fenix.datastore.pocketStoriesSelectedCategoriesDataStore
@@ -79,10 +78,8 @@ import org.mozilla.fenix.home.blocklist.BlocklistHandler
 import org.mozilla.fenix.home.blocklist.BlocklistMiddleware
 import org.mozilla.fenix.home.collections.migration.CollectionsMigrationRepository
 import org.mozilla.fenix.home.collections.migration.DefaultCollectionsMigrationRepository
-import org.mozilla.fenix.home.middleware.HomeTelemetryMiddleware
 import org.mozilla.fenix.home.setup.store.DefaultSetupChecklistRepository
 import org.mozilla.fenix.home.setup.store.SetupChecklistPreferencesMiddleware
-import org.mozilla.fenix.home.setup.store.SetupChecklistTelemetryMiddleware
 import org.mozilla.fenix.ipprotection.store.DefaultIPProtectionPromptRepository
 import org.mozilla.fenix.messaging.state.MessagingMiddleware
 import org.mozilla.fenix.nimbus.FxNimbus
@@ -340,10 +337,6 @@ class Components(
                             controller = nimbus.messaging,
                             settings = settings,
                         ),
-                        MetricsMiddleware(
-                            metrics = analytics.metrics,
-                            nimbusEventStore = nimbus.events,
-                        ),
                         CrashReportingAppMiddleware(
                             CrashMiddleware(
                                 cache = SettingsCrashReportCache(settings),
@@ -351,10 +344,8 @@ class Components(
                                 currentTimeInMillis = currentTimeMillis,
                             )
                         ),
-                        HomeTelemetryMiddleware(),
-                        SetupChecklistPreferencesMiddleware(DefaultSetupChecklistRepository(context, settings)),
-                        SetupChecklistTelemetryMiddleware(),
-                        ReviewPromptMiddleware(
+                                SetupChecklistPreferencesMiddleware(DefaultSetupChecklistRepository(context, settings)),
+                                ReviewPromptMiddleware(
                                 continuousOnboardingInProgress = {
                                     val continuousOnboardingCompleted =
                                         settings.seventhDayOnboardingCompletedTimestamp != -1L
@@ -402,7 +393,6 @@ class Components(
             browserStoreProvider = DefaultDistributionBrowserStoreProvider(core.store),
             distributionProviderChecker = DefaultDistributionProviderChecker(context),
             distributionSettings = DefaultDistributionSettings(settings),
-            metricController = analytics.metrics,
         )
     }
 

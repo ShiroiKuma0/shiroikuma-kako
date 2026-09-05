@@ -128,9 +128,6 @@
     <action
         android:id="@+id/action_global_crashListFragment"
         app:destination="@id/crashListFragment" />
-    <action
-        android:id="@+id/action_global_gleanDebugToolsFragment"
-        app:destination="@id/gleanDebugToolsFragment" />
 
     <action
         android:id="@+id/action_global_downloadsFragment"
@@ -279,7 +276,7 @@
         <argument
             android:name="search_access_point"
             android:defaultValue="NONE"
-            app:argType="org.mozilla.fenix.components.metrics.MetricsUtils$Source" />
+            app:argType="org.mozilla.fenix.components.attribution.MetricsUtils$Source" />
         <argument
             android:name="focusOnAddressBar"
             android:defaultValue="false"
@@ -1341,9 +1338,6 @@
             app:argType="mozilla.components.feature.addons.Addon" />
     </fragment>
 
-    <fragment
-        android:id="@+id/gleanDebugToolsFragment"
-        android:name="org.mozilla.fenix.debugsettings.gleandebugtools.GleanDebugToolsFragment" />
 
     <fragment
         android:id="@+id/unlockPrivateTabsFragment"

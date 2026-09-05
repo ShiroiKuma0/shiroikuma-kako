@@ -41,11 +41,6 @@ import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
 import mozilla.components.lib.state.ext.flow
 import mozilla.components.support.utils.ClipboardHandler
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.BookmarksManagement
-import org.mozilla.fenix.GleanMetrics.Events
-import org.mozilla.fenix.GleanMetrics.History
-import org.mozilla.fenix.GleanMetrics.Toolbar
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
@@ -55,7 +50,7 @@ import org.mozilla.fenix.components.NimbusComponents
 import org.mozilla.fenix.components.UseCases
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchEngineSelected
 import org.mozilla.fenix.components.appstate.AppAction.URLCopiedToClipboard
-import org.mozilla.fenix.components.metrics.MetricsUtils
+import org.mozilla.fenix.components.attribution.MetricsUtils
 import org.mozilla.fenix.components.search.BOOKMARKS_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.search.HISTORY_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.search.TABS_SEARCH_ENGINE_ID
@@ -179,10 +174,8 @@ class FenixSearchMiddleware(
                 val suggestion = action.suggestion
                 when {
                     suggestion.flags.contains(AwesomeBar.Suggestion.Flag.HISTORY) -> {
-                        History.searchResultTapped.record(NoExtras())
                     }
                     suggestion.flags.contains(AwesomeBar.Suggestion.Flag.BOOKMARK) -> {
-                        BookmarksManagement.searchResultTapped.record(NoExtras())
                     }
                 }
                 browserStore.dispatch(AwesomeBarAction.SuggestionClicked(suggestion))
@@ -355,7 +348,7 @@ class FenixSearchMiddleware(
                     flags = flags,
                 )
 
-                Events.enteredUrl.record(Events.EnteredUrlExtra(autocomplete = false))
+
 
                 browserStore.dispatch(AwesomeBarAction.EngagementFinished(abandoned = false))
             }
@@ -450,14 +443,7 @@ class FenixSearchMiddleware(
     ) {
         handleSearchShortcutEngineSelected(store, searchEngine)
 
-        Toolbar.buttonTapped.record(
-            Toolbar.ButtonTappedExtra(
-                source = SOURCE_ADDRESS_BAR,
-                item = ACTION_SEARCH_ENGINE_SELECTED,
-                extra = searchEngine.telemetryName(),
-                surface = if (store.state.tabId == null) SURFACE_HOME else SURFACE_BROWSER,
-            )
-        )
+
     }
 
     /**

@@ -12,7 +12,6 @@ import org.mozilla.fenix.utils.Settings
 
 /** Default implementation for [OnboardingTermsOfServiceEventHandler]. */
 class DefaultOnboardingTermsOfServiceEventHandler(
-    private val telemetryRecorder: OnboardingTelemetryRecorder,
     private val openLink: (String) -> Unit,
     private val showManagePrivacyPreferencesDialog: () -> Unit,
     private val settings: Settings,
@@ -21,7 +20,6 @@ class DefaultOnboardingTermsOfServiceEventHandler(
 ) : OnboardingTermsOfServiceEventHandler {
 
     override fun onTermsOfServiceLinkClicked(url: String) {
-        telemetryRecorder.onTermsOfServiceLinkClick()
         openLink(
             url.trim().ifNullOrEmpty {
                 SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.TERMS_OF_SERVICE)
@@ -30,7 +28,6 @@ class DefaultOnboardingTermsOfServiceEventHandler(
     }
 
     override fun onPrivacyNoticeLinkClicked(url: String) {
-        telemetryRecorder.onTermsOfServicePrivacyNoticeLinkClick()
         openLink(
             url.trim().ifNullOrEmpty {
                 SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.PRIVACY_NOTICE)
@@ -39,12 +36,10 @@ class DefaultOnboardingTermsOfServiceEventHandler(
     }
 
     override fun onManagePrivacyPreferencesLinkClicked() {
-        telemetryRecorder.onTermsOfServiceManagePrivacyPreferencesLinkClick()
         showManagePrivacyPreferencesDialog()
     }
 
     override fun onAcceptTermsButtonClicked() {
-        telemetryRecorder.onTermsOfServiceManagerAcceptTermsButtonClick()
         settings.hasAcceptedTermsOfService = true
         settings.termsOfUseAcceptedVersion = TOU_VERSION
         settings.termsOfUseAcceptedTimeInMillis = currentTimeMillis()

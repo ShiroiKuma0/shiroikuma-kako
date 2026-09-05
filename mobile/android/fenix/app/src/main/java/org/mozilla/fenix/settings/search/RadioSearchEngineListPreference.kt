@@ -29,7 +29,6 @@ import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.lib.state.ext.flow
 import mozilla.components.support.ktx.android.view.toScope
-import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.SearchEngineRadioButtonBinding
 import org.mozilla.fenix.ext.components
@@ -210,12 +209,7 @@ constructor(
 
         if (isForPrivateBrowsing && searchEngineId == USE_DEFAULT_TAG) {
             context.components.useCases.searchUseCases.clearPrivateSearchEngine()
-            Events.defaultEngineSelected.record(
-                Events.DefaultEngineSelectedExtra(
-                    engine = "default",
-                    isPrivateDefault = true,
-                )
-            )
+
             return
         }
 
@@ -232,12 +226,7 @@ constructor(
             context.components.useCases.searchUseCases.selectSearchEngine(engine)
         }
 
-        Events.defaultEngineSelected.record(
-            Events.DefaultEngineSelectedExtra(
-                engine = engine.telemetryName(),
-                isPrivateDefault = isForPrivateBrowsing,
-            )
-        )
+
     }
 
     private fun editCustomSearchEngine(view: View, engine: SearchEngine) {

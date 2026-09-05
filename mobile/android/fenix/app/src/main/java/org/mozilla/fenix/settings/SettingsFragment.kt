@@ -56,16 +56,8 @@ import mozilla.components.support.utils.DefaultDateTimeProvider
 import mozilla.components.support.utils.ext.navigateToDefaultBrowserAppsSettings
 import mozilla.components.ui.icons.R as iconsR
 import mozilla.components.ui.widgets.withCenterAlignedButtons
-import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.FeatureFlags
-import org.mozilla.fenix.GleanMetrics.Addons
-import org.mozilla.fenix.GleanMetrics.Events
-import org.mozilla.fenix.GleanMetrics.Settings as SettingsMetrics
-import org.mozilla.fenix.GleanMetrics.SettingsSearch
-import org.mozilla.fenix.GleanMetrics.TrackingProtection
-import org.mozilla.fenix.GleanMetrics.Translations
-import org.mozilla.fenix.GleanMetrics.Vpn
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.Components
@@ -196,7 +188,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
             try {
                 if (key in booleanPreferenceTelemetryAllowList) {
                     val enabled = sharedPreferences.getBoolean(key, false)
-                    Events.preferenceToggled.record(Events.PreferenceToggledExtra(enabled, key))
                 }
             } catch (e: ClassCastException) {
                 // The setting is not a boolean, not tracked
@@ -265,7 +256,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
                 contentDescription = getString(R.string.settings_search_button_content_description),
                 iconResId = iconsR.drawable.mozac_ic_search_24,
                 onClick = {
-                    SettingsSearch.opened.record()
                     findNavController().navigate(R.id.action_settingsFragment_to_settingsSearchFragment)
                 },
             )
@@ -365,7 +355,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
                 /* Top level account preferences.
                 Note: Only ONE of these preferences is visible at a time. */
                 resources.getString(R.string.pref_key_sign_in) -> {
-                    SettingsMetrics.signIntoSync.add()
                     SettingsFragmentDirections.actionSettingsFragmentToTurnOnSyncFragment(
                         entrypoint = FenixFxAEntryPoint.SettingsMenu
                     )
@@ -403,7 +392,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
                 }
 
                 resources.getString(R.string.pref_key_passwords) -> {
-                    SettingsMetrics.passwords.record()
                     SettingsFragmentDirections.actionSettingsFragmentToSavedLoginsAuthFragment()
                 }
 
@@ -412,7 +400,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
                 }
 
                 resources.getString(R.string.pref_key_credit_cards) -> {
-                    SettingsMetrics.autofill.record()
                     SettingsFragmentDirections.actionSettingsFragmentToAutofillSettingFragment()
                 }
 
@@ -425,7 +412,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
                 }
 
                 resources.getString(R.string.pref_key_translation) -> {
-                    Translations.action.record(Translations.ActionExtra("global_settings_from_preferences"))
                     SettingsFragmentDirections.actionSettingsFragmentToTranslationsSettingsFragment()
                 }
 
@@ -447,14 +433,12 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
                 }
 
                 resources.getString(R.string.pref_key_ip_protection_settings) -> {
-                    Vpn.settingsPageTapped.record(Vpn.SettingsPageTappedExtra(entrypoint = "Settings"))
                     SettingsFragmentDirections.actionSettingsFragmentToIpProtectionFragment(
                         entrypoint = FenixFxAEntryPoint.IPProtectionSettings
                     )
                 }
 
                 resources.getString(R.string.pref_key_tracking_protection_settings) -> {
-                    TrackingProtection.etpSettings.record(NoExtras())
                     SettingsFragmentDirections.actionSettingsFragmentToTrackingProtectionFragment()
                 }
 
@@ -490,7 +474,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
 
                 // Advanced preferences
                 resources.getString(R.string.pref_key_addons) -> {
-                    Addons.openAddonsInSettings.record(NoExtras())
                     SettingsFragmentDirections.actionSettingsFragmentToAddonsFragment()
                 }
 
@@ -564,7 +547,6 @@ class SettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment 
                 }
 
                 resources.getString(R.string.pref_key_firefox_labs) -> {
-                    SettingsMetrics.firefoxLabs.record()
                     SettingsFragmentDirections.actionSettingsFragmentToFirefoxLabsFragment()
                 }
 

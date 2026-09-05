@@ -42,7 +42,6 @@ class DataChoicesFragment : Fragment(), SystemInsetsPaddedFragment {
                                     learnMoreClicked = ::learnMoreClicked,
                                     nimbusSdk = context.components.nimbus.sdk,
                                     engine = context.components.core.engine,
-                                    metrics = context.components.analytics.metrics,
                                     crashReporter = context.components.analytics.crashReporter,
                                     navController = view?.findNavController(),
                                 )

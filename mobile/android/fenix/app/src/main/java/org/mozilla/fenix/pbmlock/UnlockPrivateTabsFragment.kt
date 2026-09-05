@@ -23,7 +23,6 @@ import kotlinx.coroutines.launch
 import mozilla.components.browser.state.selector.normalTabs
 import mozilla.components.feature.customtabs.isCustomTabIntent
 import mozilla.components.support.base.feature.UserInteractionHandler
-import org.mozilla.fenix.GleanMetrics.PrivateBrowsingLocked
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
@@ -60,7 +59,6 @@ class UnlockPrivateTabsFragment : Fragment(), UserInteractionHandler, SystemInse
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        PrivateBrowsingLocked.promptShown.record()
 
         val appStore = requireComponents.appStore
         val isCustomPrivateTab = isCustomTabIntent(requireActivity().intent) && appStore.state.mode.isPrivate
@@ -70,7 +68,6 @@ class UnlockPrivateTabsFragment : Fragment(), UserInteractionHandler, SystemInse
                 UnlockPrivateTabsScreen(
                     onUnlockClicked = { requestPrompt() },
                     onLeaveClicked = {
-                        PrivateBrowsingLocked.seeOtherTabsClicked.record()
                         closeFragment()
                     },
                     showNegativeButton = !isCustomPrivateTab,
@@ -149,7 +146,6 @@ class UnlockPrivateTabsFragment : Fragment(), UserInteractionHandler, SystemInse
     }
 
     private fun onAuthSuccess() {
-        PrivateBrowsingLocked.authSuccess.record()
 
         requireComponents.useCases.privateBrowsingLockUseCases.authenticatedUseCase()
 
@@ -162,7 +158,6 @@ class UnlockPrivateTabsFragment : Fragment(), UserInteractionHandler, SystemInse
     }
 
     private fun onAuthFailure() {
-        PrivateBrowsingLocked.authFailure.record()
     }
 }
 

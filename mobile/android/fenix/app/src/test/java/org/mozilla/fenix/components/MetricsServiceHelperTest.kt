@@ -15,8 +15,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.mozilla.fenix.components.fake.FakeMetricController
-import org.mozilla.fenix.components.metrics.Event
-import org.mozilla.fenix.components.metrics.MetricServiceType
+import org.mozilla.fenix.components.attribution.Event
+import org.mozilla.fenix.components.attribution.MetricServiceType
 
 class MetricsServiceHelperTest {
 

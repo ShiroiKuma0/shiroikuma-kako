@@ -42,7 +42,6 @@ dependencies {
     testImplementation libs.kotlin.reflect
     testImplementation libs.kotlin.test
     testImplementation libs.kotlinx.coroutines.test
-    testImplementation libs.mozilla.glean.forUnitTests
     testImplementation libs.robolectric
     testRuntimeOnly libs.okhttp
 }
