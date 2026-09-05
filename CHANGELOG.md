@@ -5,6 +5,88 @@ Everything built on top of stock Firefox (release channel) — the Android brows
 `<upstream-base>+<build>`; the fork commits live on `custom`, rebased onto each
 adopted `FIREFOX_*_RELEASE` tag, and one tag covers both products.
 
+## 155.0.1+001 — 2026-09-05
+
+The base moves to Firefox **155.0.1** (`FIREFOX_155_0_1_RELEASE`), the first point
+release on the 155 branch. Both products are rebuilt on it and carry the same
+version. The fork gains nothing of its own this time — what follows is what
+upstream moved, what it cost the patches sitting on top of it, and the one place
+the build fought back.
+
+### What the point release brings
+
+Twenty-two upstream commits, and it is a quiet set: of the 189 files they touch
+under `mobile/android`, 170 are translations.
+
+Two land on the phone. A private-browsing session that ends while Android is
+refusing to start foreground services no longer takes the browser down with it —
+the notification service catches the refusal and stops cleanly instead of
+throwing (bug 2065344). And on ARM, a NEON specialisation used when loading the
+remainder of an RGB row is switched off after being found wrong (bug 2068308),
+which is image decoding: a fast path that is subtly incorrect is worse than the
+slow one it replaced.
+
+Shared by both, and quietly the most useful: the cookie database's write-ahead
+log is capped at **512 KiB instead of 2 MiB**, with two new prefs
+(`network.cookie.db.maxWalBytes`, `network.cookie.db.journalOverheadBytes`)
+governing when sqlite checkpoints it and how far past the cap it may drift (bug
+2066155). A write-ahead log is not a cache you can ignore — it is read back at
+startup, and a smaller one is a shorter wait before cookies are usable.
+
+Going the other way, **Happy Eyeballs is pulled back to Nightly on both
+products** (bug 2067488). Racing an IPv6 connection against an IPv4 one had been
+on for desktop release builds; it is now Nightly-only everywhere, so the desktop
+build loses it in this release. And a WebRender change from earlier in the cycle
+— reordering backdrop-filter sub-graph content ahead of the tasks sampling it —
+is **reverted for freezing the browser** (bug 2011747).
+
+The rest is desktop repair. The sidebar comes back after a restart when 「Hide
+tabs and sidebar」 is on, instead of staying hidden (bug 2065431); the FxA menu
+stops listing the device you are reading it on among your connected devices (bug
+2059763); the sign-in promo is no longer clipped on a short window (bug 2065727);
+profile avatars in the app menu get their size right and drop to 16-pixel icons
+(bugs 2067734, 2064729); the VPN location list refreshes after the default
+browser changes (bug 2068547); and the Linux crash reporter goes back to
+tolerating a failure to read floating-point registers rather than abandoning the
+minidump (bug 2068333).
+
+### What it cost the fork
+
+Nothing. All ninety-six fork commits replayed untouched — not one conflict.
+
+Only one file is touched by both sides, and the two changes never meet. Upstream's
+connected-devices fix edits the merge that builds the device list; the fork's
+change to that same file is the render loop sixty lines above it, where the
+account menu takes the app menu's inline branch so every device shows its open
+tabs in place instead of behind a subpanel. Upstream's fix lands underneath
+untouched, and the inline list simply stops naming the device you are holding —
+which is what the fix was for.
+
+The near miss worth naming is automation, because upstream has now built some.
+Firefox 155.0.1 adds an `automationtest` intent extra that lets WebDriver skip
+onboarding (bug 2064671), moving a hundred-odd lines out of the performance code
+to do it. That arrives in `org.mozilla.fenix.automation`; the fork's sister-app
+backup contract lives in `org.mozilla.fenix.kako` and references none of what
+moved, so the two automation paths now sit side by side without touching. In the
+same spirit, upstream moved the wordmark drawables into a density-independent
+folder (bug 2066693) — the fork names them by resource id, which does not care
+which folder they live in.
+
+The clobber marker is unchanged between the two tags, so neither build directory
+needed wiping, and the toolchain floor is the one 155.0 already set.
+
+### The build fought back once, and not over fork code
+
+Worth recording because the error accuses the innocent. Upstream added a third
+body line to the marketing onboarding card's Nimbus manifest (bug 2065552), and
+its own mapper reads the field that manifest generates. But the Gradle task that
+generates it declared itself up to date against a manifest that had just changed,
+so the generated source kept its **previous** contents and the field never
+existed — and the Android build died on an unresolved reference inside upstream's
+own Kotlin, in a file this fork has never touched. Deleting the generated Nimbus
+sources forces the task to run and the build goes straight through. The next
+adoption whose upstream delta includes an `.fml.yaml` should expect it.
+
 ## 155.0+004 — 2026-09-04
 
 Still built on Firefox **155.0** (`FIREFOX_155_0_RELEASE`). Android only this
