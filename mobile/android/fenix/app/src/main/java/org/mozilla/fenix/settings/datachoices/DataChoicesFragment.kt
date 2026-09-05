@@ -18,7 +18,8 @@ import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
- * Lets the user toggle telemetry on/off.
+ * Lets the user choose how crashes are reported and whether to take part in studies.
+ * 白い熊 火狐 sends no telemetry, so there is nothing here to switch it on or off.
  */
 class DataChoicesFragment : Fragment(), SystemInsetsPaddedFragment {
     private val args by navArgs<DataChoicesFragmentArgs>()
