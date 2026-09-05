@@ -16,7 +16,6 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
-import org.mozilla.fenix.longfox.GleanMetrics.Longfox
 
 /**
  * Defines the api for using Long Fox.
@@ -49,7 +48,6 @@ class LongFoxFeature : LongFoxFeatureApi {
      *  @param context an activity [Context] the game should be shown over.
      */
     override fun start(context: Context) {
-        Longfox.gameLaunched.record()
 
         val dialog = ComponentDialog(context, android.R.style.Theme_Translucent_NoTitleBar)
         dialog.window?.apply {
@@ -88,10 +86,9 @@ class LongFoxFeature : LongFoxFeatureApi {
     }
 
     /**
-     * When the entry point is shown, send a glean telemetry event.
+     * Called when the entry point is shown.
      */
     override fun onEntryPointShown() {
-        Longfox.entryPointShown.record()
     }
 }
 

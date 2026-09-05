@@ -28,7 +28,7 @@ import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.ktx.android.content.isPermissionGranted
 import mozilla.components.support.ktx.android.net.isHttpOrHttps
 import mozilla.components.support.ktx.kotlin.toNormalizedUrl
-import org.mozilla.fenix.GleanMetrics.Events
+
 import org.mozilla.fenix.components.appstate.AppAction.QrScannerAction
 import org.mozilla.fenix.ext.components
 
@@ -116,7 +116,6 @@ class QrScanFenixFeature(
             }
         }
         appStore.dispatch(QrScannerAction.QrScannerInputConsumed)
-        Events.browserToolbarQrScanCompleted.record()
     }
 
     override fun onPermissionsResult(

@@ -19,7 +19,6 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.isTallWindow
 import org.mozilla.fenix.ext.isWideWindow
 import org.mozilla.fenix.home.toolbar.BrowserToolbarMiddleware
-import org.mozilla.fenix.home.toolbar.BrowserToolbarTelemetryMiddleware
 import org.mozilla.fenix.search.BrowserToolbarSearchMiddleware
 import org.mozilla.fenix.search.BrowserToolbarSearchStatusSyncMiddleware
 import org.mozilla.fenix.translations.TranslationsEnabledSettings
@@ -79,10 +78,6 @@ object HomeToolbarStoreBuilder {
                             browsingModeManager = browsingModeManager,
                             settings = context.components.settings,
                             scope = lifecycleScope,
-                        ),
-                        BrowserToolbarTelemetryMiddleware(
-                            appStore = appStore,
-                            settings = context.components.settings,
                         ),
                     ),
             )

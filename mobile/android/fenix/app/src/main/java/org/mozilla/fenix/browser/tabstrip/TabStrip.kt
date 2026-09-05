@@ -78,7 +78,6 @@ import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.support.utils.KeyboardState
 import mozilla.components.support.utils.keyboardAsState
 import mozilla.components.ui.icons.R as iconsR
-import org.mozilla.fenix.GleanMetrics.TabStrip as TabStripMetrics
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.components
@@ -204,7 +203,6 @@ fun TabStrip(
 
 private fun createAddTabClickHandler(onAddTabClick: () -> Unit): () -> Unit = {
     onAddTabClick()
-    TabStripMetrics.newTabTapped.record()
 }
 
 private fun createCloseTabClickHandler(
@@ -229,7 +227,6 @@ private fun createSelectedTabClickHandler(
 ): (tabId: String, url: String) -> Unit = { tabId, url ->
     tabsUseCases.selectTab(tabId)
     onSelectedTabClick(url)
-    TabStripMetrics.selectTab.record()
 }
 
 private fun createMoveTabHandler(
@@ -565,7 +562,6 @@ private fun closeTab(
     if (!isLastTab) {
         onCloseTabClick(isPrivate)
     }
-    TabStripMetrics.closeTab.record()
 }
 
 private class TabUIStateParameterProvider :

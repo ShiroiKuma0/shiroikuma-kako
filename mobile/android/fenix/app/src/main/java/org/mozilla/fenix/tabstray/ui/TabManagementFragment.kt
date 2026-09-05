@@ -73,10 +73,7 @@ import mozilla.components.support.ktx.android.view.setNavigationBarTheme
 import mozilla.components.support.ktx.android.view.setStatusBarTheme
 import mozilla.components.support.utils.BuildManufacturerChecker
 import mozilla.components.support.utils.ext.pixelSizeFor
-import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.Config
-import org.mozilla.fenix.GleanMetrics.PrivateBrowsingLocked
-import org.mozilla.fenix.GleanMetrics.TabsTray
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.appstate.AppAction
@@ -108,7 +105,6 @@ import org.mozilla.fenix.tabgroups.UngroupTabGroupConfirmationDialog
 import org.mozilla.fenix.tabstray.InactiveTabsBinding
 import org.mozilla.fenix.tabstray.PbmLockStatusBinding
 import org.mozilla.fenix.tabstray.TabManagerCfrController
-import org.mozilla.fenix.tabstray.TabsTrayTelemetryMiddleware
 import org.mozilla.fenix.tabstray.binding.SecureTabManagerBinding
 import org.mozilla.fenix.tabstray.controller.DefaultTabManagerController
 import org.mozilla.fenix.tabstray.controller.DefaultTabManagerInteractor
@@ -213,12 +209,9 @@ class TabManagementFragment : Fragment() {
         enablePbmPinLauncher =
             registerForActivityResult(
                 onSuccess = {
-                    PrivateBrowsingLocked.authSuccess.record()
-                    PrivateBrowsingLocked.featureEnabled.record()
                     requireComponents.settings.privateBrowsingModeLocked = true
                 },
                 onFailure = {
-                    PrivateBrowsingLocked.authFailure.record()
                 },
             )
     }
@@ -658,7 +651,6 @@ class TabManagementFragment : Fragment() {
             onTabsTrayPbmLockedClick = ::onTabsTrayPbmLockedClick,
             onTabsTrayPbmLockedDismiss = {
                 requireComponents.settings.shouldShowLockPbmBanner = false
-                PrivateBrowsingLocked.bannerNegativeClicked.record()
             },
             onTabAutoCloseBannerViewOptionsClick = {
                 tabManagerCfrController.onTabAutoCloseBannerDismiss()
@@ -667,7 +659,7 @@ class TabManagementFragment : Fragment() {
             onTabAutoCloseBannerDismiss = tabManagerCfrController::onTabAutoCloseBannerDismiss,
             onTabAutoCloseBannerShown = {},
             itemInteractionHandler = itemInteractionHandler,
-            onInactiveTabsCFRShown = { TabsTray.inactiveTabsCfrVisible.record(NoExtras()) },
+            onInactiveTabsCFRShown = {},
             onInactiveTabsCFRClick = {
                 tabManagerCfrController.onInactiveTabsCfrClick()
                 tabManagerController.onTabSettingsClicked()
@@ -714,7 +706,6 @@ class TabManagementFragment : Fragment() {
         args.accessPoint
             .takeIf { it != AccessPoint.None }
             ?.let {
-                TabsTray.accessPoint[it.name.lowercase()].add()
             }
 
         return storeProvider.get { restoredState ->
@@ -730,7 +721,6 @@ class TabManagementFragment : Fragment() {
                     ) ?: createInitialState(args, settings),
                 middlewares =
                     listOf(
-                        TabsTrayTelemetryMiddleware(requireComponents.nimbus.events),
                         TabSearchMiddleware(),
                         TabSearchNavigationMiddleware(onSearchResultClicked = ::performTabClick),
                         TabStorageMiddleware(
@@ -905,7 +895,6 @@ class TabManagementFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        TabsTray.opened.record(NoExtras())
 
         inactiveTabsBinding.set(
             feature =
@@ -1202,14 +1191,10 @@ class TabManagementFragment : Fragment() {
                 view = requireView(),
                 onShowPinVerification = { intent -> enablePbmPinLauncher.launch(intent) },
                 onAuthSuccess = {
-                    PrivateBrowsingLocked.bannerPositiveClicked.record()
-                    PrivateBrowsingLocked.authSuccess.record()
-                    PrivateBrowsingLocked.featureEnabled.record()
                     requireComponents.settings.privateBrowsingModeLocked = true
                     requireComponents.settings.shouldShowLockPbmBanner = false
                 },
                 onAuthFailure = {
-                    PrivateBrowsingLocked.authFailure.record()
                 },
             )
         }
@@ -1217,7 +1202,6 @@ class TabManagementFragment : Fragment() {
 
     private fun onTabsTrayDismissed() {
         recordBreadcrumb("TabManagementFragment onTabsTrayDismissed")
-        TabsTray.closed.record(NoExtras())
         dismissTabManager()
     }
 

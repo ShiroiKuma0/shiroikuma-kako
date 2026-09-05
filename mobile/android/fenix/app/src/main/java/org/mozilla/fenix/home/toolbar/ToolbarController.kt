@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.home.toolbar
 
-import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchStarted
 
@@ -18,6 +17,5 @@ interface ToolbarController {
 class DefaultToolbarController(private val appStore: AppStore) : ToolbarController {
     override fun handleNavigateSearch() {
         appStore.dispatch(SearchStarted())
-        Events.searchBarTapped.record(Events.SearchBarTappedExtra("HOME"))
     }
 }

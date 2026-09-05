@@ -13,9 +13,6 @@ import mozilla.components.service.pocket.PocketStory.ContentRecommendation
 import mozilla.components.service.pocket.PocketStory.PocketRecommendedStory
 import mozilla.components.service.pocket.PocketStory.SponsoredContent
 import mozilla.components.service.pocket.ext.getCurrentFlightImpressions
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Pocket
-import org.mozilla.fenix.GleanMetrics.StoriesLibrary
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.ContentRecommendationsAction
@@ -127,12 +124,7 @@ internal class DefaultPocketStoriesController(
 
         when (storyShown) {
             is SponsoredContent -> {
-                Pocket.homeRecsSpocShown.record(
-                    Pocket.HomeRecsSpocShownExtra(
-                        position = "${storyPosition.first}x${storyPosition.second}",
-                        timesShown = storyShown.getCurrentFlightImpressions().size.inc().toString(),
-                    )
-                )
+
 
                 viewLifecycleScope.launch {
                     marsUseCases.recordInteraction(storyShown.callbacks.impressionUrl)
@@ -162,7 +154,7 @@ internal class DefaultPocketStoriesController(
             )
         )
 
-        Pocket.homeRecsShown.record(Pocket.HomeRecsShownExtra(source = source.sourceName))
+
     }
 
     override fun handleCategoryClick(categoryClicked: PocketRecommendedStoriesCategory) {
@@ -171,13 +163,7 @@ internal class DefaultPocketStoriesController(
         // First check whether the category is clicked to be deselected.
         if (initialCategoriesSelections.map { it.name }.contains(categoryClicked.name)) {
             appStore.dispatch(ContentRecommendationsAction.DeselectPocketStoriesCategory(categoryClicked.name))
-            Pocket.homeRecsCategoryClicked.record(
-                Pocket.HomeRecsCategoryClickedExtra(
-                    categoryName = categoryClicked.name,
-                    newState = "deselected",
-                    selectedTotal = initialCategoriesSelections.size.toString(),
-                )
-            )
+
             return
         }
 
@@ -196,13 +182,7 @@ internal class DefaultPocketStoriesController(
         // Finally update the selection.
         appStore.dispatch(ContentRecommendationsAction.SelectPocketStoriesCategory(categoryClicked.name))
 
-        Pocket.homeRecsCategoryClicked.record(
-            Pocket.HomeRecsCategoryClickedExtra(
-                categoryName = categoryClicked.name,
-                newState = "selected",
-                selectedTotal = initialCategoriesSelections.size.toString(),
-            )
-        )
+
     }
 
     override fun handleStoryClicked(
@@ -226,13 +206,7 @@ internal class DefaultPocketStoriesController(
 
         when (storyClicked) {
             is PocketRecommendedStory -> {
-                Pocket.homeRecsStoryClicked.record(
-                    Pocket.HomeRecsStoryClickedExtra(
-                        position = "${storyPosition.first}x${storyPosition.second}",
-                        timesShown = storyClicked.timesShown.inc().toString(),
-                        source = source.sourceName,
-                    )
-                )
+
             }
 
             is ContentRecommendation -> {
@@ -246,12 +220,7 @@ internal class DefaultPocketStoriesController(
             }
 
             is SponsoredContent -> {
-                Pocket.homeRecsSpocClicked.record(
-                    Pocket.HomeRecsSpocClickedExtra(
-                        position = "${storyPosition.first}x${storyPosition.second}",
-                        timesShown = storyClicked.getCurrentFlightImpressions().size.inc().toString(),
-                    )
-                )
+
 
                 viewLifecycleScope.launch {
                     marsUseCases.recordInteraction(storyClicked.callbacks.clickUrl)
@@ -272,6 +241,5 @@ internal class DefaultPocketStoriesController(
     }
 
     override fun handleDiscoverMoreScreenViewed() {
-        StoriesLibrary.viewed.record(NoExtras())
     }
 }

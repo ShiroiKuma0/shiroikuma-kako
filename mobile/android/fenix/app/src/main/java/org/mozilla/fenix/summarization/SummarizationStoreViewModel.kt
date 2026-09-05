@@ -63,7 +63,6 @@ class SummarizationStoreViewModel(
             reducer = ::summarizationReducer,
             middleware =
                 listOf(
-                    SummarizationTelemetryMiddleware(connectionType),
                     SummarizationMiddleware(
                         isPageLoadingFlow = currentTab.asPageLoadingFlow(),
                         settings = settings,

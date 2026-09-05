@@ -7,7 +7,6 @@ package org.mozilla.fenix.components.usecases
 import android.net.Uri
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.prompt.ShareData
-import org.mozilla.fenix.GleanMetrics.NativeShareSheet
 import org.mozilla.fenix.components.share.ShareSheetChooserAction
 import org.mozilla.fenix.components.share.ShareSheetLauncher
 import org.mozilla.fenix.components.share.ShareSource
@@ -61,7 +60,6 @@ class ShareUseCases(
 
         when {
             settings.nativeShareSheetEnabled && isSystemShareSheetSupported && url != null -> {
-                NativeShareSheet.shown.record(NativeShareSheet.ShownExtra(source = source.value))
                 shareSheetLauncher.showSystemShareSheet(
                     id = id,
                     url = url,
@@ -103,7 +101,6 @@ class ShareUseCases(
         navigateToShareFragment: () -> Unit,
     ) {
         if (settings.nativeShareSheetEnabled && isSystemShareSheetSupported) {
-            NativeShareSheet.shown.record(NativeShareSheet.ShownExtra(source = source.value))
             shareSheetLauncher.showSystemShareSheet(
                 items = items,
                 isPrivate = isPrivate,

@@ -26,7 +26,7 @@ import org.mozilla.fenix.components.appstate.blockedtrackers.BlockedTrackersStat
 import org.mozilla.fenix.components.appstate.search.SearchState
 import org.mozilla.fenix.components.appstate.search.SelectedSearchEngine
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState
-import org.mozilla.fenix.components.metrics.MetricsUtils
+import org.mozilla.fenix.components.attribution.MetricsUtils
 
 class AppStoreReducerTest {
     @Test

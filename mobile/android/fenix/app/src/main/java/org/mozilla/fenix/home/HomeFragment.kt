@@ -86,10 +86,7 @@ import mozilla.components.support.utils.ColorUtils.isDark
 import mozilla.components.support.utils.DateTimeProvider
 import mozilla.components.support.utils.DefaultDateTimeProvider
 import mozilla.components.support.utils.ext.navigateToDefaultBrowserAppsSettings
-import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.BrowserDirection
-import org.mozilla.fenix.GleanMetrics.HomeScreen
-import org.mozilla.fenix.GleanMetrics.Vpn
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.OnLongPressedListener
@@ -117,7 +114,7 @@ import org.mozilla.fenix.components.appstate.AppAction.MessagingAction.Microsurv
 import org.mozilla.fenix.components.appstate.AppAction.ReviewPromptAction.CheckIfEligibleForReviewPrompt
 import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.components
-import org.mozilla.fenix.components.metrics.installSourcePackage
+import org.mozilla.fenix.components.attribution.installSourcePackage
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.components.toolbar.TopDividerColumn
 import org.mozilla.fenix.compose.snackbar.SnackbarState
@@ -179,7 +176,6 @@ import org.mozilla.fenix.microsurvey.ui.ext.MicrosurveyUIData
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.onboarding.OnboardingFragmentDirections
 import org.mozilla.fenix.onboarding.OnboardingReason
-import org.mozilla.fenix.onboarding.OnboardingTelemetryRecorder
 import org.mozilla.fenix.onboarding.continuous.ContinuousOnboardingFeature
 import org.mozilla.fenix.pbmlock.NavigationOrigin
 import org.mozilla.fenix.pbmlock.observePrivateModeLock
@@ -201,7 +197,6 @@ import org.mozilla.fenix.termsofuse.store.PrivacyNoticeBannerAction
 import org.mozilla.fenix.termsofuse.store.PrivacyNoticeBannerMiddleware
 import org.mozilla.fenix.termsofuse.store.PrivacyNoticeBannerState
 import org.mozilla.fenix.termsofuse.store.PrivacyNoticeBannerStore
-import org.mozilla.fenix.termsofuse.store.PrivacyNoticeBannerTelemetryMiddleware
 import org.mozilla.fenix.termsofuse.store.Surface
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.trackingprotection.TrackersBlockedFeature
@@ -360,19 +355,7 @@ class HomeFragment : Fragment(), UserInteractionHandler, OnLongPressedListener {
         }
 
     private val telemetryRecorder by lazy {
-        OnboardingTelemetryRecorder(
-            onboardingReason =
-                if (requireComponents.settings.enablePersistentOnboarding) {
-                    OnboardingReason.EXISTING_USER
-                } else {
-                    OnboardingReason.NEW_USER
-                },
-            installSource =
-                installSourcePackage(
-                    packageManager = requireContext().application.packageManager,
-                    packageName = requireContext().application.packageName,
-                ),
-        )
+
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -611,7 +594,6 @@ class HomeFragment : Fragment(), UserInteractionHandler, OnLongPressedListener {
                 middleware =
                     listOf(
                         PrivacyNoticeBannerMiddleware(repository = privacyNoticeBannerRepository),
-                        PrivacyNoticeBannerTelemetryMiddleware(),
                     ),
             )
 
@@ -1623,7 +1605,6 @@ class HomeFragment : Fragment(), UserInteractionHandler, OnLongPressedListener {
                 IPProtectionWarningBinding(
                     store = requireComponents.ipProtection.store,
                     proxyUnavailable = {
-                        Vpn.proxyUnavailable.record()
                         findNavController().navigate(HomeFragmentDirections.actionGlobalIpProtectionUnavailableDialog())
                     },
                 ),
@@ -1637,7 +1618,6 @@ class HomeFragment : Fragment(), UserInteractionHandler, OnLongPressedListener {
             fragment = this,
             binding = continuousOnboardingFeature,
             launcher = continuousOnboardingDefaultBrowserLauncher,
-            telemetryRecorder = telemetryRecorder,
             navigateToSyncSignIn = {
                 findNavController()
                     .nav(
@@ -1801,7 +1781,6 @@ class HomeFragment : Fragment(), UserInteractionHandler, OnLongPressedListener {
     }
 
     private fun recordHomepageTelemetry() {
-        HomeScreen.homeScreenDisplayed.record(NoExtras())
 
         with(requireContext()) {
             if (components.settings.isExperimentationEnabled) {
@@ -1809,10 +1788,8 @@ class HomeFragment : Fragment(), UserInteractionHandler, OnLongPressedListener {
             }
         }
 
-        HomeScreen.homeScreenViewCount.add()
 
         if (!browsingModeManager.mode.isPrivate) {
-            HomeScreen.standardHomepageViewCount.add()
         }
 
         FxNimbus.features.homescreen.recordExposure()

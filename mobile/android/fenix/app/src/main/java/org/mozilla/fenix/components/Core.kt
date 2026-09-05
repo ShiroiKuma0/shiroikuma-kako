@@ -148,7 +148,6 @@ import org.mozilla.fenix.summarization.eligibility.SummarizationEligibilityCheck
 import org.mozilla.fenix.summarization.onboarding.FenixSummarizationFeatureConfiguration
 import org.mozilla.fenix.summarization.onboarding.SummarizationFeatureDiscoveryConfiguration
 import org.mozilla.fenix.tabgroups.middleware.TabGroupMiddleware
-import org.mozilla.fenix.telemetry.TelemetryMiddleware
 import org.mozilla.fenix.translations.TranslationsEnabledSettings
 import org.mozilla.fenix.utils.Settings.DeleteDownloadBehavior
 import org.mozilla.fenix.utils.getUndoDelay
@@ -375,7 +374,6 @@ class Core(
                         ),
                 ),
                 ReaderViewMiddleware(),
-                TelemetryMiddleware(context, context.components.settings, metrics, crashReporter),
                 ThumbnailsMiddleware(thumbnailStorage),
                 UndoMiddleware(context.components.settings.getUndoDelay()),
                 RegionMiddleware(context, locationService, applicationScope = applicationScope),
@@ -499,10 +497,6 @@ class Core(
             httpClient = client,
             manifestProvider = merinoManifestProvider,
         )
-    }
-
-    val metrics by lazyMonitored {
-        context.components.analytics.metrics
     }
 
     val adsTelemetry by lazyMonitored {

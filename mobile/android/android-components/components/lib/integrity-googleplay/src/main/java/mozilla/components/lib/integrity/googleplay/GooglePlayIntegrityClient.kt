@@ -12,7 +12,6 @@ import com.google.android.play.core.integrity.model.StandardIntegrityErrorCode.I
 import mozilla.components.concept.integrity.IntegrityClient
 import mozilla.components.concept.integrity.IntegrityToken
 import mozilla.components.concept.integrity.RequestHashProvider
-import mozilla.components.lib.integrity.googleplay.GleanMetrics.Integrity
 import mozilla.components.lib.integrity.googleplay.ext.prepare
 
 /**
@@ -161,12 +160,7 @@ internal constructor(
         if (tokenProvider == null) {
             val start = currentTimeMillis()
             refreshTokenProvider()
-            Integrity.warmedUp.record(
-                Integrity.WarmedUpExtra(
-                    success = tokenProvider?.isSuccess == true,
-                    durationMs = (currentTimeMillis() - start).toInt(),
-                )
-            )
+
         }
         return tokenProvider?.isSuccess == true
     }
@@ -211,13 +205,7 @@ internal constructor(
                 }
             }
             .also { result ->
-                Integrity.tokenRequest.record(
-                    Integrity.TokenRequestExtra(
-                        retries = retries,
-                        requestSuccess = result.isSuccess,
-                        consumer = consumer.value,
-                    )
-                )
+
             }
     }
 

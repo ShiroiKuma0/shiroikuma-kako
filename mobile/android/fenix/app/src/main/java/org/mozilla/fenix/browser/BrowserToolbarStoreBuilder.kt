@@ -26,7 +26,6 @@ import org.mozilla.fenix.browser.store.BrowserScreenStore
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.toolbar.BrowserToolbarMiddleware
-import org.mozilla.fenix.components.toolbar.BrowserToolbarTelemetryMiddleware
 import org.mozilla.fenix.components.toolbar.CustomTabBrowserToolbarMiddleware
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.isTallWindow
@@ -137,10 +136,6 @@ object BrowserToolbarStoreBuilder {
                                     browsingModeManager = browsingModeManager,
                                     settings = components.settings,
                                     scope = lifecycleScope,
-                                ),
-                                BrowserToolbarTelemetryMiddleware(
-                                    appStore = appStore,
-                                    settings = components.settings,
                                 ),
                             )
 

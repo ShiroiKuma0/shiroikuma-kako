@@ -31,7 +31,6 @@ import mozilla.components.concept.engine.translate.TranslationError
 import mozilla.components.feature.downloads.FileSizeFormatter
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
-import org.mozilla.fenix.GleanMetrics.Translations
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
@@ -140,7 +139,6 @@ class TranslationsDialogFragment : BottomSheetDialogFragment() {
                                     showPageSettings = FxNimbus.features.translations.value().pageSettingsEnabled,
                                     translationsDialogState = translationsDialogState,
                                     onSettingClicked = {
-                                        Translations.action.record(Translations.ActionExtra("page_settings"))
                                         translationsVisibility = false
                                     },
                                     onShowDownloadLanguageFileDialog = {
@@ -394,7 +392,6 @@ class TranslationsDialogFragment : BottomSheetDialogFragment() {
             },
             onBackClicked = onBackClicked,
             onTranslationSettingsClicked = {
-                Translations.action.record(Translations.ActionExtra("global_settings"))
                 findNavController()
                     .navigate(
                         TranslationsDialogFragmentDirections

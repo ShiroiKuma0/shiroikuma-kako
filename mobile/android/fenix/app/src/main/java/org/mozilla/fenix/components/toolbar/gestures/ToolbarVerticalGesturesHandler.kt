@@ -13,8 +13,6 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.NavController
 import kotlin.math.abs
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.SwipeGestureListener
@@ -91,7 +89,6 @@ class ToolbarVerticalGesturesHandler(
         }
 
         if (isSwipeValid()) {
-            Events.toolbarTabstraySwipe.record(NoExtras())
 
             navController.nav(
                 navController.currentDestination?.id,

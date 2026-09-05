@@ -27,9 +27,6 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ipprotection.store.IPProtectionOnboardingPrompt
 import org.mozilla.fenix.ipprotection.store.IPProtectionPromptRepository
-import org.mozilla.fenix.onboarding.DismissedMethod
-import org.mozilla.fenix.onboarding.OnboardingTelemetryRecorder
-import org.mozilla.fenix.onboarding.OnboardingTelemetryRecorder.Companion.ET_CARD_CLOSE_BUTTON
 import org.mozilla.fenix.onboarding.view.Action
 import org.mozilla.fenix.onboarding.view.OnboardingPageState
 import org.mozilla.fenix.onboarding.view.OnboardingPageUiData
@@ -63,7 +60,7 @@ class ContinuousOnboardingFeature(
     private val activity: Activity,
     private val launcher: ActivityResultLauncher<Intent>,
     private val settings: Settings,
-    private val telemetryRecorder: OnboardingTelemetryRecorder,
+
     private val navigateToSyncSignIn: () -> Unit,
     private val ipProtectionOnboardingConfig: IPProtectionOnboardingConfig,
     private val stageProvider: ContinuousOnboardingStageProvider = ContinuousOnboardingStageProviderDefault(settings),
@@ -90,19 +87,10 @@ class ContinuousOnboardingFeature(
             },
             onIneligible = {
                 logger.info("User is not eligible for IP Protection.")
-                telemetryRecorder.onOnboardingComplete(
-                    sequenceId = IP_PROTECTION_SEQUENCE_ID,
-                    sequencePosition = "0",
-                    dismissedMethod = DismissedMethod.SKIPPED,
-                )
                 completeDaySeven()
             },
             onAlreadySatisfied = {
                 logger.info("IP Protection onboarding prompt is no longer allowed to be shown.")
-                telemetryRecorder.onOnboardingComplete(
-                    sequenceId = IP_PROTECTION_SEQUENCE_ID,
-                    sequencePosition = "0",
-                )
                 completeDaySeven()
             },
         )
@@ -139,10 +127,6 @@ class ContinuousOnboardingFeature(
                 if (!settings.signedInFxaAccount) {
                     showSyncCardDialog()
                 } else {
-                    telemetryRecorder.onOnboardingComplete(
-                        sequenceId = OnboardingPageUiData.Type.SYNC_SIGN_IN.telemetryId,
-                        sequencePosition = "0",
-                    )
                     markStageCompleted(stage)
                 }
 
@@ -215,16 +199,6 @@ class ContinuousOnboardingFeature(
             logger.info("Closed the sync card dialog.")
             markStageCompleted(stage)
 
-            telemetryRecorder.onSkipSignInClick(
-                sequenceId = OnboardingPageUiData.Type.SYNC_SIGN_IN.telemetryId,
-                sequencePosition = "0",
-                elementType = ET_CARD_CLOSE_BUTTON,
-            )
-            telemetryRecorder.onOnboardingComplete(
-                sequenceId = OnboardingPageUiData.Type.SYNC_SIGN_IN.telemetryId,
-                sequencePosition = "0",
-                dismissedMethod = DismissedMethod.SKIPPED,
-            )
         }
 
         showDialog(
@@ -245,15 +219,6 @@ class ContinuousOnboardingFeature(
                     onClick = {
                         logger.info("Sync card dialog primary button click.")
                         navigateToSyncSignIn()
-
-                        telemetryRecorder.onSyncSignInClick(
-                            sequenceId = OnboardingPageUiData.Type.SYNC_SIGN_IN.telemetryId,
-                            sequencePosition = "0",
-                        )
-                        telemetryRecorder.onOnboardingComplete(
-                            sequenceId = OnboardingPageUiData.Type.SYNC_SIGN_IN.telemetryId,
-                            sequencePosition = "0",
-                        )
                     },
                 ),
             secondaryButton =
@@ -262,24 +227,9 @@ class ContinuousOnboardingFeature(
                     onClick = {
                         logger.info("Sync card dialog secondary button click.")
                         markStageCompleted(stage)
-
-                        telemetryRecorder.onSkipSignInClick(
-                            sequenceId = OnboardingPageUiData.Type.SYNC_SIGN_IN.telemetryId,
-                            sequencePosition = "0",
-                        )
-                        telemetryRecorder.onOnboardingComplete(
-                            sequenceId = OnboardingPageUiData.Type.SYNC_SIGN_IN.telemetryId,
-                            sequencePosition = "0",
-                            dismissedMethod = DismissedMethod.SKIPPED,
-                        )
                     },
                 ),
             onRecordImpressionEvent = {
-                telemetryRecorder.onImpression(
-                    sequenceId = OnboardingPageUiData.Type.SYNC_SIGN_IN.telemetryId,
-                    pageType = OnboardingPageUiData.Type.SYNC_SIGN_IN,
-                    sequencePosition = "0",
-                )
             },
         )
 
@@ -293,10 +243,6 @@ class ContinuousOnboardingFeature(
      */
     fun onDefaultBrowserStepCompleted(resultCode: Int) {
         if (resultCode == Activity.RESULT_OK) {
-            telemetryRecorder.onSetToDefaultClick(
-                sequenceId = OnboardingPageUiData.Type.DEFAULT_BROWSER.telemetryId,
-                sequencePosition = "0",
-            )
         }
 
         maybeShowNotificationCardDialog(pendingStage)
@@ -315,12 +261,6 @@ class ContinuousOnboardingFeature(
             val onCloseButtonClicked = {
                 logger.info("Closed the notification-permission card dialog.")
                 markStageCompleted(stage)
-
-                telemetryRecorder.onSkipTurnOnNotificationsClick(
-                    sequenceId = NOTIFICATION_SEQUENCE_ID,
-                    sequencePosition = "0",
-                    elementType = ET_CARD_CLOSE_BUTTON,
-                )
             }
 
             showDialog(
@@ -347,11 +287,6 @@ class ContinuousOnboardingFeature(
                         logger.info("Notification card dialog primary button click.")
                         activity.components.notificationsDelegate.requestNotificationPermission()
                         markStageCompleted(stage)
-
-                        telemetryRecorder.onNotificationPermissionClick(
-                            sequenceId = NOTIFICATION_SEQUENCE_ID,
-                            sequencePosition = "0",
-                        )
                     },
                 ),
             secondaryButton =
@@ -360,18 +295,9 @@ class ContinuousOnboardingFeature(
                     onClick = {
                         logger.info("Notification card dialog secondary button click.")
                         markStageCompleted(stage)
-
-                        telemetryRecorder.onSkipTurnOnNotificationsClick(
-                            sequenceId = NOTIFICATION_SEQUENCE_ID,
-                            sequencePosition = "0",
-                        )
                     },
                 ),
             onRecordImpressionEvent = {
-                telemetryRecorder.onNotificationCardImpression(
-                    sequenceId = NOTIFICATION_SEQUENCE_ID,
-                    sequencePosition = "0",
-                )
             },
         )
 
@@ -440,7 +366,6 @@ class ContinuousOnboardingFeature(
          * @param fragment The [Fragment] to register with.
          * @param binding The [ViewBoundFeatureWrapper] to bind the feature to.
          * @param launcher The [ActivityResultLauncher] used to request system roles.
-         * @param telemetryRecorder Used to record onboarding telemetry.
          * @param navigateToSyncSignIn Invoked when the user chooses to sign in to Firefox Sync.
          * @param navigateToIpProtection Invoked when the IP Protection onboarding prompt should be shown.
          */
@@ -448,7 +373,6 @@ class ContinuousOnboardingFeature(
             fragment: Fragment,
             binding: ViewBoundFeatureWrapper<ContinuousOnboardingFeature>,
             launcher: ActivityResultLauncher<Intent>,
-            telemetryRecorder: OnboardingTelemetryRecorder,
             navigateToSyncSignIn: () -> Unit,
             navigateToIpProtection: () -> Unit,
         ) {
@@ -461,7 +385,6 @@ class ContinuousOnboardingFeature(
                         activity = fragment.requireActivity(),
                         launcher = launcher,
                         settings = settings,
-                        telemetryRecorder = telemetryRecorder,
                         navigateToSyncSignIn = navigateToSyncSignIn,
                         ipProtectionOnboardingConfig =
                             IPProtectionOnboardingConfig(

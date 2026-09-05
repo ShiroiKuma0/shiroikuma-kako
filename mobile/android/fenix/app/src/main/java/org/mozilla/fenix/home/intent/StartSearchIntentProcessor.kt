@@ -6,12 +6,10 @@ package org.mozilla.fenix.home.intent
 
 import android.content.Intent
 import androidx.navigation.NavController
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.SearchWidget
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
-import org.mozilla.fenix.components.metrics.MetricsUtils
+import org.mozilla.fenix.components.attribution.MetricsUtils
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.utils.Settings
@@ -48,7 +46,6 @@ class StartSearchIntentProcessor(
             val source =
                 when (event) {
                     SEARCH_WIDGET -> {
-                        SearchWidget.newTabButton.record(NoExtras())
                         MetricsUtils.Source.WIDGET
                     }
                     STATIC_SHORTCUT_NEW_TAB,

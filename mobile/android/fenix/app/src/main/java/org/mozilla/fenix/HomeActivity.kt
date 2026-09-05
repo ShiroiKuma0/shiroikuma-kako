@@ -92,14 +92,6 @@ import mozilla.components.support.utils.toSafeIntent
 import mozilla.components.support.webextensions.WebExtensionOptionsPageObserver
 import mozilla.components.support.webextensions.WebExtensionPopupObserver
 import mozilla.components.ui.icons.R as iconsR
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.AppIcon
-import org.mozilla.fenix.GleanMetrics.Events
-import org.mozilla.fenix.GleanMetrics.Metrics
-import org.mozilla.fenix.GleanMetrics.NativeShareSheet
-import org.mozilla.fenix.GleanMetrics.SplashScreen
-import org.mozilla.fenix.GleanMetrics.StartOnHome
-import org.mozilla.fenix.GleanMetrics.SyncAccount
 import org.mozilla.fenix.addons.ExtensionsProcessDisabledBackgroundController
 import org.mozilla.fenix.addons.ExtensionsProcessDisabledForegroundController
 import org.mozilla.fenix.automation.AutomatedLaunch
@@ -120,10 +112,8 @@ import org.mozilla.fenix.components.appstate.AppAction.ShareAction
 import org.mozilla.fenix.components.appstate.OrientationMode
 import org.mozilla.fenix.components.menu.MenuAccessPoint
 import org.mozilla.fenix.components.menu.share.QRCodeDialogFragment
-import org.mozilla.fenix.components.metrics.BreadcrumbsRecorder
-import org.mozilla.fenix.components.metrics.GrowthDataWorker
-import org.mozilla.fenix.components.metrics.InstallReferrerHandlingService
-import org.mozilla.fenix.components.metrics.fonts.FontEnumerationWorker
+import org.mozilla.fenix.components.attribution.BreadcrumbsRecorder
+import org.mozilla.fenix.components.attribution.InstallReferrerHandlingService
 import org.mozilla.fenix.components.share.QR_CODE_URI_KEY
 import org.mozilla.fenix.components.share.SEND_TO_DEVICES_ACTION
 import org.mozilla.fenix.components.share.SendToDevicesDialogFragment
@@ -133,7 +123,6 @@ import org.mozilla.fenix.crashes.UnsubmittedCrashDialog
 import org.mozilla.fenix.customtabs.ExternalAppBrowserActivity
 import org.mozilla.fenix.databinding.ActivityHomeBinding
 import org.mozilla.fenix.debugsettings.data.DefaultDebugSettingsRepository
-import org.mozilla.fenix.debugsettings.gleandebugtools.DefaultGleanDebugToolsStorage
 import org.mozilla.fenix.debugsettings.ui.FenixOverlay
 import org.mozilla.fenix.downloads.DownloadSnackbar
 import org.mozilla.fenix.e2e.EdgeToEdgeFragmentLifecycleCallbacks
@@ -184,7 +173,6 @@ import org.mozilla.fenix.perf.PerformanceInflater
 import org.mozilla.fenix.perf.ProfilerMarkers
 import org.mozilla.fenix.perf.StartupPathProvider
 import org.mozilla.fenix.perf.StartupTimeline
-import org.mozilla.fenix.perf.StartupTypeTelemetry
 import org.mozilla.fenix.privacyreport.PrivacyReportNotificationScheduler
 import org.mozilla.fenix.session.PrivateNotificationService
 import org.mozilla.fenix.settings.SupportUtils
@@ -421,7 +409,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
     private var actionMode: ActionMode? = null
 
     private val startupPathProvider: StartupPathProvider = DefaultStartupPathProvider()
-    private lateinit var startupTypeTelemetry: StartupTypeTelemetry
 
     private val onBackPressedCallback =
         object :
@@ -508,9 +495,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
 
         AutomatedLaunch.processIntentIfPerformanceTestOrAutomation(intent, this)
 
-        // Persist or clear a Glean debug view tag across restarts (Nightly/Debug only).
-        DefaultGleanDebugToolsStorage.persistDebugViewTagIfRequested(intent, components.settings)
-
         components.settings.seedOnboardingCompletedTimestampForDebugIfNeeded()
 
         val shouldShowOnboarding =
@@ -530,9 +514,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
                 showSplashScreen = { installSplashScreen().setKeepOnScreenCondition(it) },
                 onSplashScreenFinished = { result ->
                     if (result.sendTelemetry) {
-                        SplashScreen.firstLaunchExtended.record(
-                            SplashScreen.FirstLaunchExtendedExtra(dataFetched = result.wasDataFetched)
-                        )
                     }
 
                     if (savedInstanceState == null && shouldShowOnboarding) {
@@ -604,7 +585,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
                 }
                 maybeShowSetAsDefaultBrowserPrompt()
             } else {
-                StartOnHome.enterHomeScreen.record(NoExtras())
             }
         } else {
             processLaunchIntentAfterOnboarding()
@@ -623,10 +603,8 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
 
             val safeIntent = intent?.toSafeIntent()
             safeIntent?.let(::getIntentSource)?.also { source ->
-                Events.appOpened.record(Events.AppOpenedExtra(source = source))
 
                 if (safeIntent.action.equals(ACTION_OPEN_PRIVATE_TAB) && source == APP_ICON) {
-                    AppIcon.newPrivateTabTapped.record(NoExtras())
                 }
             }
         }
@@ -668,19 +646,9 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             moveTaskToBack(true)
         }
 
-        captureSnapshotTelemetryMetrics()
 
-        startupTelemetryOnCreateCalled(intent.toSafeIntent())
         startupPathProvider.attachOnActivityOnCreate(lifecycle, intent)
-        startupTypeTelemetry =
-            StartupTypeTelemetry(
-                    components.startupStateProvider,
-                    startupPathProvider,
-                    components.applicationScope,
-                )
-                .apply {
-                    attachOnHomeActivityOnCreate(lifecycle)
-                }
+
 
         components.core.requestInterceptor.setNavigationController(navHost.navController)
 
@@ -780,7 +748,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             components.strictMode.allowViolation(StrictMode::allowThreadDiskReads) {
                 components.appStore.dispatch(AppAction.UpdateWasNativeDefaultBrowserPromptShown(true))
                 showSetDefaultBrowserPrompt()
-                Metrics.setAsDefaultBrowserNativePromptShown.record()
                 components.settings.setAsDefaultPromptCalled()
             }
         }
@@ -797,17 +764,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             moveTaskToBack(false)
             startActivity(Intent(this, this::class.java).setFlags(FLAG_ACTIVITY_REORDER_TO_FRONT))
         }
-    }
-
-    private fun startupTelemetryOnCreateCalled(safeIntent: SafeIntent) {
-        // We intentionally only record this in HomeActivity and not ExternalBrowserActivity (e.g.
-        // PWAs) so we don't include more unpredictable code paths in the results.
-        components.performance.coldStartupDurationTelemetry.onHomeActivityOnCreate(
-            components.performance.visualCompletenessQueue,
-            components.startupStateProvider,
-            safeIntent,
-            binding.rootContainer,
-        )
     }
 
     override fun onRequestPermissionsResult(
@@ -845,15 +801,11 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         lifecycleScope.launch(IO) {
             if (components.settings.checkIfFenixIsDefaultBrowserOnAppResume()) {
                 if (components.appStore.state.wasNativeDefaultBrowserPromptShown) {
-                    Metrics.defaultBrowserChangedViaNativeSystemPrompt.record(NoExtras())
                 }
 
                 components.appStore.dispatch(AppAction.UpdateDefaultBrowserStatus(true))
-                Events.defaultBrowserChanged.record(NoExtras())
             }
 
-            GrowthDataWorker.sendActivatedSignalIfNeeded(applicationContext)
-            FontEnumerationWorker.sendActivatedSignalIfNeeded(applicationContext)
 
             if (components.core.sentFromFirefoxManager.shouldShowSnackbar) {
                 components.appStore.dispatch(ShareAction.ShareToWhatsApp)
@@ -1056,9 +1008,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
             return
         }
 
-        // Warm-launch path for the Glean debug intent; onCreate handles cold start (Nightly/Debug only).
-        DefaultGleanDebugToolsStorage.persistDebugViewTagIfRequested(intent, components.settings)
-
         if (intent.action == SEND_TO_DEVICES_ACTION) {
             handleSendToDevicesActionIntent(intent)
             return
@@ -1068,7 +1017,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
         if (qrCodeUri != null) {
             if (supportFragmentManager.findFragmentByTag(QRCodeDialogFragment.TAG) == null) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                    NativeShareSheet.qrCodeTapped.record(NoExtras())
                 }
 
                 QRCodeDialogFragment.newInstance(qrCodeUri)
@@ -1131,7 +1079,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
 
     @VisibleForTesting
     internal fun navigateToSignInForSendTab() {
-        SyncAccount.signInToSendTab.record(NoExtras())
         beginAwaitingSignInForSendTab()
         navHost.navController.navigate(
             NavGraphDirections.actionGlobalTurnOnSync(entrypoint = FenixFxAEntryPoint.DeepLink)
@@ -1731,26 +1678,6 @@ open class HomeActivity : LocaleAwareAppCompatActivity(), NavHostActivity, Crash
     /** The root container is null at this point, so let the HomeActivity know that we are visually complete. */
     fun setVisualCompletenessQueueReady() {
         isVisuallyComplete = true
-    }
-
-    private fun captureSnapshotTelemetryMetrics() {
-        lifecycleScope.launch {
-            val recentlyUsedPwaCount =
-                components.core.webAppShortcutManager.recentlyUsedWebAppsCount(
-                    activeThresholdMs = PWA_RECENTLY_USED_THRESHOLD
-                )
-
-            if (recentlyUsedPwaCount == 0) {
-                Metrics.hasRecentPwas.set(false)
-            } else {
-                Metrics.hasRecentPwas.set(true)
-                // This metric's lifecycle is set to 'application', meaning that it gets reset upon
-                // application restart. Combined with the behaviour of the metric type itself (a growing counter),
-                // it's important that this metric is only set once per application's lifetime.
-                // Otherwise, we're going to over-count.
-                Metrics.recentlyUsedPwaCount.add(recentlyUsedPwaCount)
-            }
-        }
     }
 
     @VisibleForTesting

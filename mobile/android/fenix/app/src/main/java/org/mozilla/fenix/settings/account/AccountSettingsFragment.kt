@@ -44,8 +44,6 @@ import mozilla.components.service.fxa.sync.getLastSynced
 import mozilla.components.service.fxa.sync.setLastSynced
 import mozilla.components.support.utils.ext.pixelSizeFor
 import mozilla.components.ui.widgets.withCenterAlignedButtons
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.SyncAccount
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.compose.snackbar.Snackbar
@@ -129,7 +127,6 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         SyncTelemetry.processOpenSyncSettingsMenuTelemetry()
-        SyncAccount.opened.record(NoExtras())
 
         accountManager = requireComponents.backgroundServices.accountManager
         accountManager.register(accountStateObserver, this, true)
@@ -460,7 +457,6 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
     /** Manual sync triggered by the user. This also checks account authentication and refreshes the device list. */
     private fun syncNow() {
         viewLifecycleOwner.lifecycleScope.launch {
-            SyncAccount.syncNow.record(NoExtras())
             // Trigger a sync.
             requireComponents.backgroundServices.accountManager.syncNow(SyncReason.User)
             // Poll for device events & update devices.
@@ -502,7 +498,6 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
                     }
                 }
             }
-            SyncAccount.manageAccount.record(NoExtras())
             true
         }
     }

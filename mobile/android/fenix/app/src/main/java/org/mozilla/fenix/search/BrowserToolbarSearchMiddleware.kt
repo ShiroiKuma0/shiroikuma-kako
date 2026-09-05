@@ -78,7 +78,6 @@ import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.base.utils.NamedThreadFactory
 import mozilla.components.support.ktx.kotlin.isUrl
 import mozilla.components.ui.icons.R as iconsR
-import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.BrowserFragmentDirections
@@ -94,7 +93,7 @@ import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchStarte
 import org.mozilla.fenix.components.appstate.VoiceSearchAction.VoiceInputRequestCleared
 import org.mozilla.fenix.components.appstate.VoiceSearchAction.VoiceInputRequested
 import org.mozilla.fenix.components.lens.CameraMode
-import org.mozilla.fenix.components.metrics.MetricsUtils
+import org.mozilla.fenix.components.attribution.MetricsUtils
 import org.mozilla.fenix.components.search.BOOKMARKS_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.search.HISTORY_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.search.TABS_SEARCH_ENGINE_ID
@@ -232,10 +231,6 @@ class BrowserToolbarSearchMiddleware(
                 browserStore.dispatch(EngagementFinished(abandoned = false))
             }
 
-            "about:glean" -> {
-                navController.navigate(NavGraphDirections.actionGlobalGleanDebugToolsFragment())
-            }
-
             "moz://a" ->
                 openSearchOrUrl(
                     SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.MANIFESTO),
@@ -351,7 +346,6 @@ class BrowserToolbarSearchMiddleware(
         )
 
         if (text.isUrl() || searchEngine == null) {
-            Events.enteredUrl.record(Events.EnteredUrlExtra(autocomplete = false))
         } else {
             val searchAccessPoint =
                 when (appStore.state.searchState.searchAccessPoint) {

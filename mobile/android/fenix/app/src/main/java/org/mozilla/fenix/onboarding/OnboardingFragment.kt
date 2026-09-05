@@ -28,16 +28,13 @@ import mozilla.components.service.nimbus.messaging.use
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.Browsers
-import org.mozilla.fenix.GleanMetrics.Pings
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.SupportedMenuNotifications
-import org.mozilla.fenix.components.initializeGlean
-import org.mozilla.fenix.components.metrics.InstallReferrerHandlingService
-import org.mozilla.fenix.components.metrics.RtamoAttributionHandler
-import org.mozilla.fenix.components.metrics.installSourcePackage
-import org.mozilla.fenix.components.startMetricsIfEnabled
+import org.mozilla.fenix.components.attribution.InstallReferrerHandlingService
+import org.mozilla.fenix.components.attribution.RtamoAttributionHandler
+import org.mozilla.fenix.components.attribution.installSourcePackage
 import org.mozilla.fenix.ext.application
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.hideToolbar
@@ -73,7 +70,6 @@ class OnboardingFragment : Fragment() {
 
     private val termsOfServiceEventHandler by lazy {
         DefaultOnboardingTermsOfServiceEventHandler(
-            telemetryRecorder = telemetryRecorder,
             openLink = this::launchSandboxCustomTab,
             showManagePrivacyPreferencesDialog = this::showPrivacyPreferencesDialog,
             settings = requireComponents.settings,
@@ -120,21 +116,7 @@ class OnboardingFragment : Fragment() {
 
     private fun displayDefaultBrowserPage(context: Context): Boolean = isNotDefaultBrowser(context)
 
-    private val telemetryRecorder by lazy {
-        OnboardingTelemetryRecorder(
-            onboardingReason =
-                if (requireComponents.settings.enablePersistentOnboarding) {
-                    OnboardingReason.EXISTING_USER
-                } else {
-                    OnboardingReason.NEW_USER
-                },
-            installSource =
-                installSourcePackage(
-                    packageManager = requireContext().application.packageManager,
-                    packageName = requireContext().application.packageName,
-                ),
-        )
-    }
+
 
     private val defaultBrowserPromptStorage by lazy { DefaultDefaultBrowserPromptStorage(requireContext()) }
     private val defaultBrowserPromptManager by lazy {
@@ -166,7 +148,6 @@ class OnboardingFragment : Fragment() {
             defaultBrowserPromptStorage.promptToSetAsDefaultBrowserDisplayedInOnboarding = false
         }
 
-        telemetryRecorder.onOnboardingStarted()
     }
 
     override fun onCreateView(
@@ -239,10 +220,6 @@ class OnboardingFragment : Fragment() {
                 promptToSetAsDefaultBrowser()
             },
             onSkipDefaultClick = {
-                telemetryRecorder.onSkipSetToDefaultClick(
-                    pagesToDisplay.telemetrySequenceId(),
-                    pagesToDisplay.sequencePosition(OnboardingPageUiData.Type.DEFAULT_BROWSER),
-                )
             },
             onSignInButtonClick = {
                 findNavController()
@@ -253,32 +230,18 @@ class OnboardingFragment : Fragment() {
                                 entrypoint = FenixFxAEntryPoint.NewUserOnboarding
                             ),
                     )
-                telemetryRecorder.onSyncSignInClick(
-                    sequenceId = pagesToDisplay.telemetrySequenceId(),
-                    sequencePosition = pagesToDisplay.sequencePosition(OnboardingPageUiData.Type.SYNC_SIGN_IN),
-                )
             },
             onSkipSignInClick = {
-                telemetryRecorder.onSkipSignInClick(
-                    pagesToDisplay.telemetrySequenceId(),
-                    pagesToDisplay.sequencePosition(OnboardingPageUiData.Type.SYNC_SIGN_IN),
-                )
             },
             onFinish = {
                 onFinish(it)
             },
             onImpression = {
-                telemetryRecorder.onImpression(
-                    sequenceId = pagesToDisplay.telemetrySequenceId(),
-                    pageType = it.type,
-                    sequencePosition = pagesToDisplay.sequencePosition(it.type),
-                )
 
                 defaultBrowserPromptManager.maybePromptToSetAsDefaultBrowser(it)
             },
             termsOfServiceEventHandler = termsOfServiceEventHandler,
             onMarketingDataLearnMoreClick = {
-                telemetryRecorder.onMarketingDataLearnMoreClick()
 
                 val url =
                     SupportUtils.getSumoURLForTopic(
@@ -288,53 +251,29 @@ class OnboardingFragment : Fragment() {
                 launchSandboxCustomTab(url)
             },
             onMarketingOptInToggle = { optIn ->
-                telemetryRecorder.onMarketingDataOptInToggled(optIn)
             },
             onMarketingDataContinueClick = { allowMarketingDataCollection ->
                 with(requireComponents.settings) {
                     isMarketingTelemetryEnabled = allowMarketingDataCollection
                     hasMadeMarketingTelemetrySelection = true
                 }
-                telemetryRecorder.onMarketingDataContinueClicked(allowMarketingDataCollection)
             },
             onMarketingDataSkipClick = {
-                telemetryRecorder.onMarketingDataSkipClicked()
             },
             currentIndex = { index ->
                 requireComponents.settings.onboardingCurrentPageIndex = index
             },
             onNavigateToNextPage = {
-                telemetryRecorder.onNavigatedToNextPage()
             },
         )
     }
 
     private fun startGlean() {
         val settings = requireComponents.settings
-        viewLifecycleOwner.lifecycleScope.launch {
-            initializeGlean(
-                requireContext().applicationContext,
-                logger,
-                settings.isTelemetryEnabled,
-                requireComponents.core.client,
-            )
-        }
-
-        if (!settings.isTelemetryEnabled) {
-            Pings.onboardingOptOut.setEnabled(true)
-            Pings.onboardingOptOut.submit()
-        }
 
         rtamoAttributionHandler.handleReferrer(InstallReferrerHandlingService.response)
 
         // The marketing telemetry may be enabled after finishing onboarding.
-        startMetricsIfEnabled(
-            logger = logger,
-            analytics = requireComponents.analytics,
-            isTelemetryEnabled = settings.isTelemetryEnabled,
-            isMarketingTelemetryEnabled = false,
-            isDailyUsagePingEnabled = settings.isDailyUsagePingEnabled,
-        )
     }
 
     private fun onFinish(onboardingPageUiData: OnboardingPageUiData?) {
@@ -343,22 +282,11 @@ class OnboardingFragment : Fragment() {
             val sequenceId = pagesToDisplay.telemetrySequenceId()
             val sequencePosition = pagesToDisplay.sequencePosition(onboardingPageUiData.type)
 
-            telemetryRecorder.onOnboardingComplete(
-                sequenceId = sequenceId,
-                sequencePosition = sequencePosition,
-            )
         }
 
         val settings = requireComponents.settings
 
         // Telemetry and daily usage ping get enabled after ToU acceptance.
-        startMetricsIfEnabled(
-            logger = logger,
-            analytics = requireComponents.analytics,
-            isTelemetryEnabled = false,
-            isMarketingTelemetryEnabled = settings.isMarketingTelemetryEnabled,
-            isDailyUsagePingEnabled = false,
-        )
 
         findNavController()
             .nav(
@@ -413,10 +341,6 @@ class OnboardingFragment : Fragment() {
         activity?.openSetDefaultBrowserOption(useCustomTab = true)
         requireComponents.settings.coldStartsBetweenSetAsDefaultPrompts = 0
         requireComponents.settings.recordSetAsDefaultPromptShownTime()
-        telemetryRecorder.onSetToDefaultClick(
-            sequenceId = pagesToDisplay.telemetrySequenceId(),
-            sequencePosition = pagesToDisplay.sequencePosition(OnboardingPageUiData.Type.DEFAULT_BROWSER),
-        )
     }
 
     private fun launchSandboxCustomTab(url: String) = SupportUtils.launchSandboxCustomTab(requireContext(), url)

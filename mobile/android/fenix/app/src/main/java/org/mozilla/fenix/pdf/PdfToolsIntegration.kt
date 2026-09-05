@@ -33,8 +33,6 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.theme.layout.AcornWindowSize
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.ktx.android.view.ImeInsetsSynchronizer
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.PdfViewer
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.share.tryDispatchPdfShareAction
 import org.mozilla.fenix.pdf.ui.PdfTools
@@ -209,31 +207,17 @@ class PdfToolsIntegration(
     /** Opens the dialog for adding a signature to the PDF. */
     internal fun handleSignClick() {
         isSigning = true
-        PdfViewer.signTapped.record(NoExtras())
     }
 
     /** Erases the signature that was typed. */
     internal fun handleSignClearClick() {
         signature.clearText()
-        PdfViewer.signDialogClearTapped.record(
-            PdfViewer.SignDialogClearTappedExtra(signatureType = SignatureType.Typed.telemetryName)
-        )
     }
 
     /** Adds the typed signature to the PDF and closes the dialog. */
     internal fun handleSignAddClick() {
-        PdfViewer.signDialogAddTapped.record(
-            PdfViewer.SignDialogAddTappedExtra(signatureType = SignatureType.Typed.telemetryName)
-        )
-
         val engineSession = browserStore.state.selectedTab?.engineState?.engineSession
         if (engineSession == null) {
-            PdfViewer.signDialogAddFailure.record(
-                PdfViewer.SignDialogAddFailureExtra(
-                    reason = SignatureFailure.NoEngineSession.telemetryName,
-                    signatureType = SignatureType.Typed.telemetryName,
-                )
-            )
             dismissSignatureDialog()
             return
         }
@@ -241,18 +225,9 @@ class PdfToolsIntegration(
         engineSession.addSignatureToPdf(
             text = signature.text.toString(),
             onResult = {
-                PdfViewer.signDialogAddCompleted.record(
-                    PdfViewer.SignDialogAddCompletedExtra(signatureType = SignatureType.Typed.telemetryName)
-                )
                 dismissSignatureDialog()
             },
             onException = {
-                PdfViewer.signDialogAddFailure.record(
-                    PdfViewer.SignDialogAddFailureExtra(
-                        reason = SignatureFailure.EngineError.telemetryName,
-                        signatureType = SignatureType.Typed.telemetryName,
-                    )
-                )
                 dismissSignatureDialog()
             },
         )
@@ -261,9 +236,6 @@ class PdfToolsIntegration(
     /** Closes the dialog and discards the signature. */
     internal fun handleSignCloseClick() {
         dismissSignatureDialog()
-        PdfViewer.signDialogCloseTapped.record(
-            PdfViewer.SignDialogCloseTappedExtra(signatureType = SignatureType.Typed.telemetryName)
-        )
     }
 
     /** Clears out the state if the user navigates away. */
@@ -281,7 +253,6 @@ class PdfToolsIntegration(
 
     /** Saves the PDF the selected tab is displaying to the device. */
     internal fun handleDownloadClick() {
-        PdfViewer.downloadTapped.record(NoExtras())
         browserStore.state.selectedTabId?.let {
             browserStore.dispatch(EngineAction.SaveToPdfAction(it))
         }
@@ -289,7 +260,6 @@ class PdfToolsIntegration(
 
     /** Prints the PDF the selected tab is displaying. */
     internal fun handlePrintClick() {
-        PdfViewer.printTapped.record(NoExtras())
         browserStore.state.selectedTabId?.let {
             browserStore.dispatch(EngineAction.PrintContentAction(it))
         }
@@ -297,7 +267,6 @@ class PdfToolsIntegration(
 
     /** Shares the PDF the selected tab is displaying. */
     internal fun handleShareClick() {
-        PdfViewer.shareTapped.record(NoExtras())
         val tab = browserStore.state.selectedTab ?: return
         browserStore.tryDispatchPdfShareAction(tabId = tab.id, url = tab.content.url)
     }

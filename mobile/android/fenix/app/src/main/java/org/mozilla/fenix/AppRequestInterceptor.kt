@@ -20,7 +20,6 @@ import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import mozilla.components.feature.search.ext.buildSearchUrl
 import mozilla.components.support.ktx.kotlin.isContentUrl
 import org.mozilla.fenix.AppRequestInterceptor.Companion.ERROR_PAGE_ACTION_SCHEME
-import org.mozilla.fenix.GleanMetrics.ErrorPage
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.isOnline
 
@@ -85,13 +84,11 @@ class AppRequestInterceptor(
         val improvedErrorType = improveErrorType(errorType)
         val riskLevel = getRiskLevel(improvedErrorType)
 
-        ErrorPage.visitedError.record(ErrorPage.VisitedErrorExtra(improvedErrorType.name))
 
         val archiveActionEnabled = context.components.settings.isWaybackMachineEnabled
 
         // Record additional telemetry for content URI not found
         if (uri?.isContentUrl() == true && improvedErrorType == ErrorType.ERROR_FILE_NOT_FOUND) {
-            ErrorPage.visitedError.record(ErrorPage.VisitedErrorExtra(errorType = "ERROR_CONTENT_URI_NOT_FOUND"))
         }
 
         val isPrivate = isPrivateForSession(session)
@@ -123,7 +120,6 @@ class AppRequestInterceptor(
         val parsed = uri.toUri()
         return when (parsed.host) {
             ERROR_PAGE_ACTION_ATTEMPT -> {
-                ErrorPage.archiveButtonClicked.record()
                 RequestInterceptor.InterceptionResponse.Deny
             }
 
@@ -133,7 +129,6 @@ class AppRequestInterceptor(
                 if (query.isEmpty() || searchEngine == null) {
                     RequestInterceptor.InterceptionResponse.Deny
                 } else {
-                    ErrorPage.archiveSearchWebSelected.record()
                     RequestInterceptor.InterceptionResponse.Url(searchEngine.buildSearchUrl(query))
                 }
             }
@@ -143,7 +138,6 @@ class AppRequestInterceptor(
                 if (archiveUrl.isEmpty()) {
                     RequestInterceptor.InterceptionResponse.Deny
                 } else {
-                    ErrorPage.archivedVersionOpened.record()
                     RequestInterceptor.InterceptionResponse.Url(archiveUrl)
                 }
             }

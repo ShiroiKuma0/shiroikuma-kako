@@ -2,18 +2,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-package org.mozilla.fenix.components.metrics
+package org.mozilla.fenix.components.attribution
 
 import kotlin.test.assertNotNull
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.mozilla.fenix.components.metrics.fake.FakeGleanProfileId
-import org.mozilla.fenix.components.metrics.fake.FakeGleanProfileIdStore
-import org.mozilla.fenix.components.metrics.fake.FakeGleanUsageReporting
-import org.mozilla.fenix.components.metrics.fake.FakeLifecycleEventObserver
-import org.mozilla.fenix.components.metrics.fake.FakeLifecycleOwner
+import org.mozilla.fenix.components.attribution.fake.FakeGleanProfileId
+import org.mozilla.fenix.components.attribution.fake.FakeGleanProfileIdStore
+import org.mozilla.fenix.components.attribution.fake.FakeGleanUsageReporting
+import org.mozilla.fenix.components.attribution.fake.FakeLifecycleEventObserver
+import org.mozilla.fenix.components.attribution.fake.FakeLifecycleOwner
 
 internal class GleanUsageReportingMetricsServiceTest {
 

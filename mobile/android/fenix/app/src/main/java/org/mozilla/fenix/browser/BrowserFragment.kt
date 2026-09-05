@@ -47,7 +47,7 @@ import mozilla.components.lib.shake.detectShakes
 import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.ktx.kotlin.isContentUrl
-import org.mozilla.fenix.GleanMetrics.Translations
+
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.readermode.PowerSavingModeReaderViewBinding
 import org.mozilla.fenix.browser.store.BrowserScreenAction.ReaderModeStatusUpdated
@@ -59,7 +59,7 @@ import org.mozilla.fenix.components.VoiceSearchFeature
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppAction.SnackbarAction
-import org.mozilla.fenix.components.metrics.installSourcePackage
+import org.mozilla.fenix.components.attribution.installSourcePackage
 import org.mozilla.fenix.components.share.isSystemShareSheetSupported
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.components.toolbar.gestures.ToolbarHorizontalGesturesHandler
@@ -82,7 +82,6 @@ import org.mozilla.fenix.listentopage.ListenSheetIntegration
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.onboarding.OnboardingFragmentDirections
 import org.mozilla.fenix.onboarding.OnboardingReason
-import org.mozilla.fenix.onboarding.OnboardingTelemetryRecorder
 import org.mozilla.fenix.onboarding.continuous.ContinuousOnboardingFeature
 import org.mozilla.fenix.pdf.PdfToolsIntegration
 import org.mozilla.fenix.settings.downloads.DownloadLocationManager
@@ -143,19 +142,7 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
     }
 
     private val telemetryRecorder by lazy {
-        OnboardingTelemetryRecorder(
-            onboardingReason =
-                if (requireComponents.settings.enablePersistentOnboarding) {
-                    OnboardingReason.EXISTING_USER
-                } else {
-                    OnboardingReason.NEW_USER
-                },
-            installSource =
-                installSourcePackage(
-                    packageManager = requireContext().application.packageManager,
-                    packageName = requireContext().application.packageName,
-                ),
-        )
+
     }
 
     override fun initializeUI(view: View, tab: SessionState) {
@@ -403,7 +390,6 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
             fragment = this,
             binding = continuousOnboardingFeature,
             launcher = continuousOnboardingDefaultBrowserLauncher,
-            telemetryRecorder = telemetryRecorder,
             navigateToSyncSignIn = {
                 findNavController()
                     .nav(
@@ -421,7 +407,6 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler, SystemIns
     }
 
     private fun openTranslationsDialogFromToolbar() {
-        Translations.action.record(Translations.ActionExtra("main_flow_toolbar"))
         requireComponents.appStore.dispatch(SnackbarAction.SnackbarDismissed)
         findNavController()
             .navigateSafe(
