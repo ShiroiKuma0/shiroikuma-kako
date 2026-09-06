@@ -5,6 +5,90 @@ Everything built on top of stock Firefox (release channel) — the Android brows
 `<upstream-base>+<build>`; the fork commits live on `custom`, rebased onto each
 adopted `FIREFOX_*_RELEASE` tag, and one tag covers both products.
 
+## 155.0.1+017 — 2026-09-06
+
+The base stays at Firefox **155.0.1** (`FIREFOX_155_0_1_RELEASE`). This release is
+about one thing: **the APK now contains no trackers at all.**
+
+A scan of 155.0.1+001 named three — **Adjust** (install-attribution analytics),
+**Sentry** (crash reporting) and **Mozilla Telemetry** (Glean). 155.0.1+017 is clean
+against all **588 signatures** in the Exodus Privacy database, the list the tracker
+scanners use. They are removed at source rather than disabled, and the last of them
+cost the fork its prebuilt engine.
+
+### Adjust and Sentry — deleted
+
+**Adjust** is gone entirely: the `libs.adjust` dependency, both `ADJUST_TOKEN` build
+fields, the `com.adjust.preinstall.READ_PERMISSION` permission and the
+`AdjustPreinstallReferrerReceiver` from the manifest, and the three sources behind
+them — `AdjustMetricsService`, its SDK seam and the third-party-sharing controller
+that named Google, Meta, TikTok, Reddit, X and Moloco as sharing partners.
+
+**Sentry** likewise: `libs.sentry`, the `lib-crash-sentry` component, both
+`SENTRY_TOKEN` fields and the `SentryService` branch of the crash reporter. Crash
+reporting still works through Socorro, which is opt-in and asks first.
+
+### Glean — removed, not silenced
+
+Disabling collection leaves the classes in the APK, so the code came out:
+
+- **34 telemetry-only files deleted** — every `*TelemetryMiddleware`, the onboarding
+  telemetry recorder, startup-type and cold-startup telemetry, `GleanHelper`,
+  `GleanMetricsService`, `GleanUsageReporting`, `ActivationPing`, `StorageStatsMetrics`,
+  `GleanCrashReporterService`, and the `about:glean` debug tools with their
+  debug-drawer route.
+- **Call sites cleared from 111 more**, including the whole telemetry core in
+  `components/metrics` — `MetricController`, `MetricsService`, `Event`,
+  `MetricsMiddleware`, `MetricsStorage`, the growth-data worker and the
+  font-enumeration worker — and the five startup-reporting functions in
+  `FenixApplication`.
+- **The metrics generator is gone** from Fenix, the longfox module and the four
+  android-components modules that ran it, so its 120 generated files and roughly a
+  megabyte of Kotlin are never produced.
+- **The Glean SDK is not in the APK.**
+
+What survived `components/metrics` was never metrics — install-referrer and RTAMO
+attribution, product detection, the crash breadcrumb recorder — and moved to
+`components/attribution`.
+
+### The Data Choices screen
+
+Three switches there fed the machinery that is now gone, so they are gone too:
+*Send technical and interaction data*, the *daily usage ping* and *marketing data*.
+**Studies** and **crash reports** remain, because they still do something. Settings
+search no longer offers the removed sections.
+
+### Android builds from source now
+
+Mozilla's published application-services binaries carry Glean, and nothing on the app
+side can reach inside them: R8 pins ~6100 Glean classes through the JNA keep rules, so
+cutting every call site changed the count by zero, and excluding the artifact killed
+the app with `NoClassDefFoundError` from the prebuilt storage code. So Android compiles
+Gecko and application-services from source — about sixteen minutes — with Glean stripped
+from the vendored app-services too.
+
+One trap is worth recording: Gecko links its own allocator into every shared library it
+builds, so the in-tree `libmegazord.so` depends on `libmozglue.so`. But app-services is
+driven from Kotlin over JNA, where memory comes from bionic, and freeing it through
+mozjemalloc segfaults in `arena_dalloc` the moment `places.sqlite` is opened. The build
+now stages Mozilla's self-contained megazord for the native half, and refuses any
+megazord that links mozglue.
+
+### Also in this release
+
+- Three paths from android-components into Glean removed: the ads-client telemetry sink,
+  the remote-settings telemetry sink, and `RustComponentsInitializer.init()`, whose first
+  act was `Glean.registerPings()`.
+- Nimbus keeps configuring features; only its reporting is gone.
+- JNA's desktop jar is excluded from packaging — without Glean pulling the JNA AAR,
+  Gradle resolves the plain jar, whose AIX and Solaris native archives AGP cannot merge.
+
+### Desktop
+
+The GNU/Linux build is rebuilt on the same commit and carries the same version. **Its
+telemetry is untouched** — on desktop that is Gecko's FOG, compiled into `libxul` as C++
+and Rust, which is a different mechanism from the Android Glean SDK and out of scope here.
+
 ## 155.0.1+001 — 2026-09-05
 
 The base moves to Firefox **155.0.1** (`FIREFOX_155_0_1_RELEASE`), the first point
