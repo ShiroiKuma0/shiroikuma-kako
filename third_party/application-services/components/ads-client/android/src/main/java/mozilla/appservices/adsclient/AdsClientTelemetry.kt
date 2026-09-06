@@ -5,7 +5,6 @@
 package mozilla.appservices.adsclient
 
 import mozilla.appservices.adsclient.MozAdsTelemetry
-import org.mozilla.appservices.adsclient.GleanMetrics.AdsClient
 
 /**
  * AdsClientTelemetry is a thin wrapper used to expose
@@ -13,22 +12,17 @@ import org.mozilla.appservices.adsclient.GleanMetrics.AdsClient
  */
 class AdsClientTelemetry : MozAdsTelemetry {
     override fun recordBuildCacheError(label: String, value: String) {
-        AdsClient.buildCacheError[label].set(value)
     }
 
     override fun recordClientError(label: String, value: String) {
-        AdsClient.clientError[label].set(value)
     }
 
     override fun recordClientOperationTotal(label: String) {
-        AdsClient.clientOperationTotal[label].add()
     }
 
     override fun recordDeserializationError(label: String, value: String) {
-        AdsClient.deserializationError[label].set(value)
     }
 
     override fun recordHttpCacheOutcome(label: String, value: String) {
-        AdsClient.httpCacheOutcome[label].set(value)
     }
 }
