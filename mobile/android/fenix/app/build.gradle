@@ -250,6 +250,13 @@ android {
 
     // Exclude native libraries for unsupported architectures from third-party dependencies
     packaging {
+        resources {
+            // Without the Glean AAR on the classpath, app-services resolves JNA's plain
+            // desktop jar, which carries native archives for platforms Android never uses
+            // (aix-ppc, sunos, ...). AGP cannot merge those. Android only needs
+            // libjnidispatch.so, which comes from jniLibs, so drop the jar-side copies.
+            excludes += ["com/sun/jna/**"]
+        }
         jniLibs {
             excludes += ["**/armeabi/*.so", "**/mips/*.so", "**/mips64/*.so", "**/x86/*.so"]
             if (!isAppBundle) {

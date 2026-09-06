@@ -64,45 +64,62 @@ artifact — an engine (C++/Rust/Gecko) patch would force a full multi-hour
 compile, so avoid it; none planned. The desktop product has no such constraint:
 it is a full compile from source either way.
 
-**Application-services stays prebuilt. The in-tree build does not work (2026-09-06).**
-`--enable-appservices-in-tree` builds `third_party/application-services` from source,
-which would let its Glean be removed and take the APK to zero trackers. Gecko itself
-builds that way in ~16 minutes on this machine and is sound — `geckoview_example`
-from the same objdir runs correctly on device — but **Fenix built against in-tree
-app-services force-closes at startup** with a native crash just after `GeckoLibLoad`,
-and the device yields no backtrace (Huawei suppresses tombstones and the crash
-buffer; a release APK cannot use `run-as`).
+**Android builds from source, and application-services with it (2026-09-06).**
+`tools/kako/mozconfig-android-src` is the Android build: Gecko compiles from source
+(~16 min) so that `--enable-appservices-in-tree` works, which is what lets Glean be
+removed from application-services at source and takes the APK to **zero detected
+trackers**. `tools/kako/mozconfig` is the old artifact build — faster, but one
+tracker, because prebuilt app-services AARs carry Glean.
 
-That crash is **not** ours: 155.0.1+011, built with `third_party/application-services`
-checked out pristine and Glean fully present, crashes identically. The path is
-unfinished upstream — its `nimbus-fml` is a placeholder that panics with *"a
-place-holder for the app-services monorepo migration"*, and its `sync_manager` and
-`nimbus` build files ask the catalog for `libs.androidx.core.ktx`, which this tree
-does not have. `tools/kako/mozconfig-android-src` keeps the working configuration as
-a record; do not ship from it.
+**The megazord must be staged, or the app force-closes.** Between `./mach build` and
+`./mach gradle fenix:assembleRelease`, run `tools/kako/stage-megazord.sh`. Gecko
+links `libmegazord.so` against `libmozglue.so` — it links its allocator into every
+shared library it builds — but app-services is driven from Kotlin over JNA, where
+allocations come from bionic. Freeing those through mozjemalloc segfaults in
+`arena_dalloc` (`mozjemalloc.cpp`) the moment `places.sqlite` is opened. The script
+stages Mozilla's self-contained megazord, whose `NEEDED` is only libdl/libc/liblog/
+libm, and refuses to stage one that links mozglue. 155.0.1+008, +011 and +014 all
+force-closed for want of this step.
 
-**Verify by launching, never by scanning.** 155.0.1+006 scanned clean against all 588
-Exodus signatures and force-closed on launch; 155.0.1+008 did the same. A pid a few
-seconds after `monkey` is not proof either — check that no crash notification fired:
+**Verify by launching, never by scanning.** 155.0.1+006 and +008 scanned clean and
+force-closed. A pid seconds after `monkey` is not proof either — check that no crash
+notification fired, and load a page, which exercises the places storage that crashes:
 
 ```bash
 adb install -r ~/tmp/shiroikuma-kako_<ver>_arm64-v8a.apk
 adb shell am force-stop shiroikuma.kako && adb logcat -c
 adb shell am start -n shiroikuma.kako/org.mozilla.fenix.HomeActivity
-sleep 15
+sleep 18
 adb logcat -d | grep -c 'mozac.lib.crash.notification'   # must be 0
 adb shell pidof shiroikuma.kako                          # must print a pid
 ```
 
+Native crashes give nothing on this phone (Huawei suppresses tombstones and the
+crash buffer). To debug one, set `debuggable = true` on the release build type, then
+`adb shell "run-as shiroikuma.kako cat 'files/mozilla/<profile>/minidumps/<id>.dmp'"`
+and walk it with `~/.mozbuild/minidump-stackwalk`; resolve offsets against the
+unstripped libraries in `objdir-kako-src/dist/bin`. That is how the crash above was
+found. Remove the flag before shipping.
+
 ## No trackers, ever (hard rule)
 
-Adjust and Sentry are removed at source and must stay gone. Glean is stripped
-from everything the fork owns — Fenix, android-components, longfox — and is never
-initialised, so nothing is collected or uploaded. **One detection remains and is
-currently the floor: Mozilla Telemetry**, from Glean classes inside the prebuilt
-application-services and Nimbus AARs. Removing it needs app-services built from
-source, which does not work (above). Do not spend time on it again without first
-checking whether upstream has finished the monorepo migration.
+The APK contains **zero trackers**, verified on 155.0.1+017 against all 588
+signatures in Exodus's database. Adjust and Sentry are deleted at source; Glean is
+stripped from Fenix, android-components, the longfox module **and** the vendored
+application-services, and the Glean SDK is not in the APK at all.
+
+An upstream adoption will drag all of it back in. Strip it again, and check the dex
+rather than trusting the source:
+
+```bash
+unzip -p ~/tmp/shiroikuma-kako_<ver>_arm64-v8a.apk 'classes*.dex' \
+  | grep -c -a -o -F "mozilla/telemetry/glean"      # must be 0
+```
+
+The `metrics.yaml` files under `third_party/application-services` are **kept**: the
+Rust `build.rs` of each component runs `glean_parser` over them and the build fails
+without them. They no longer reach the dex, because the Glean Gradle plugin that
+turned them into Kotlin is gone from those modules.
 
 That means, in Fenix, android-components, the longfox module *and* the vendored
 application-services: no `libs.mozilla.glean`, no `glean-gradle-plugin`, no
