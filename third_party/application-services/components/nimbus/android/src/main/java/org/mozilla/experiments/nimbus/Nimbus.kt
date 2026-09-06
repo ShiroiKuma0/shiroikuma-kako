@@ -26,7 +26,11 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.appservices.remotesettings.RemoteSettingsService
+import mozilla.telemetry.glean.Glean
 import org.json.JSONObject
+import org.mozilla.experiments.nimbus.GleanMetrics.NimbusEvents
+import org.mozilla.experiments.nimbus.GleanMetrics.NimbusHealth
+import org.mozilla.experiments.nimbus.GleanMetrics.Pings
 import org.mozilla.experiments.nimbus.internal.AppContext
 import org.mozilla.experiments.nimbus.internal.AvailableExperiment
 import org.mozilla.experiments.nimbus.internal.DatabaseLoadExtraDef
@@ -91,25 +95,74 @@ open class Nimbus(
 
     private val metricsHandler = object : MetricsHandler {
         override fun recordDatabaseLoad(event: DatabaseLoadExtraDef) {
+            NimbusEvents.databaseLoad.record(
+                NimbusEvents.DatabaseLoadExtra(
+                    corrupt = event.corrupt,
+                    initialVersion = event.initialVersion?.toInt(),
+                    error = event.error,
+                    migratedVersion = event.migratedVersion?.toInt(),
+                    migrationError = event.migrationError,
+                ),
+            )
         }
         override fun recordDatabaseMigration(event: DatabaseMigrationExtraDef) {
+            NimbusEvents.databaseMigration.record(
+                NimbusEvents.DatabaseMigrationExtra(
+                    reason = event.reason,
+                    fromVersion = event.fromVersion.toInt(),
+                    toVersion = event.toVersion.toInt(),
+                    error = event.error,
+                ),
+            )
         }
         override fun recordEnrollmentStatuses(enrollmentStatusExtras: List<EnrollmentStatusExtraDef>) {
             for (extra in enrollmentStatusExtras) {
+                NimbusEvents.enrollmentStatus.record(
+                    NimbusEvents.EnrollmentStatusExtra(
+                        branch = extra.branch,
+                        slug = extra.slug,
+                        status = extra.status,
+                        reason = extra.reason,
+                        errorString = extra.errorString,
+                        conflictSlug = extra.conflictSlug,
+                    ),
+                )
             }
         }
 
         override fun recordFeatureActivation(event: FeatureExposureExtraDef) {
+            NimbusEvents.activation.record(
+                NimbusEvents.ActivationExtra(
+                    experiment = event.slug,
+                    branch = event.branch,
+                    featureId = event.featureId,
+                ),
+            )
         }
 
         override fun recordFeatureExposure(event: FeatureExposureExtraDef) {
+            NimbusEvents.exposure.record(
+                NimbusEvents.ExposureExtra(
+                    experiment = event.slug,
+                    branch = event.branch,
+                    featureId = event.featureId,
+                ),
+            )
         }
 
         override fun recordMalformedFeatureConfig(event: MalformedFeatureConfigExtraDef) {
+            NimbusEvents.malformedFeature.record(
+                NimbusEvents.MalformedFeatureExtra(
+                    experiment = event.slug,
+                    branch = event.branch,
+                    featureId = event.featureId,
+                    partId = event.part,
+                ),
+            )
         }
 
         override fun submitTargetingContext() {
-            // 白い熊 火狐 ships without Glean: there is no ping to submit.
+            org.mozilla.experiments.nimbus.GleanMetrics.Pings.nimbusTargetingContext.submit()
         }
     }
 
@@ -178,6 +231,11 @@ open class Nimbus(
         try {
             nimbusClient.getFeatureConfigVariables(featureId)?.let { JSONObject(it) }
         } catch (e: NimbusException.DatabaseNotReady) {
+            NimbusHealth.cacheNotReadyForFeature.record(
+                NimbusHealth.CacheNotReadyForFeatureExtra(
+                    featureId = featureId,
+                ),
+            )
             null
         } catch (e: Throwable) {
             reportError("getFeatureConfigVariablesJson", e)
@@ -253,7 +311,9 @@ open class Nimbus(
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun fetchExperimentsOnThisThread() = withCatchAll("fetchExperiments") {
         try {
-            nimbusClient.fetchExperiments()
+            NimbusHealth.fetchExperimentsTime.measure {
+                nimbusClient.fetchExperiments()
+            }
             updateObserver {
                 it.onExperimentsFetched()
             }
@@ -289,6 +349,7 @@ open class Nimbus(
                 val time = measureTimeMillis {
                     enrollmentChangeEvents = nimbusClient.applyPendingExperiments()
                 }
+                NimbusHealth.applyPendingExperimentsTime.accumulateSingleSample(time)
 
                 // SAFETY: events is only null at declaration time and is
                 // immediately assigned a non-null value inside the
@@ -350,6 +411,7 @@ open class Nimbus(
             // During initialization we need to report the experiment status of
             // all pre-existing experiments.
             for (experiment in experiments) {
+                Glean.setExperimentActive(experiment.slug, experiment.branchSlug)
             }
         }
 
@@ -560,6 +622,10 @@ open class Nimbus(
         experiments.forEach { experiment ->
             // For now, we will just record the experiment id and the branch id. Once we can call
             // Glean from Rust, this will move to the nimbus-sdk Rust core.
+            Glean.setExperimentActive(
+                experiment.slug,
+                experiment.branchSlug,
+            )
         }
     }
 
@@ -568,21 +634,63 @@ open class Nimbus(
         enrollmentChangeEvents.forEach { event ->
             when (event.change) {
                 EnrollmentChangeEventType.ENROLLMENT -> {
+                    NimbusEvents.enrollment.record(
+                        NimbusEvents.EnrollmentExtra(
+                            experiment = event.experimentSlug,
+                            branch = event.branchSlug,
+                        ),
+                    )
 
+                    Glean.setExperimentActive(
+                        event.experimentSlug,
+                        event.branchSlug,
+                    )
                 }
 
                 EnrollmentChangeEventType.DISQUALIFICATION -> {
+                    NimbusEvents.disqualification.record(
+                        NimbusEvents.DisqualificationExtra(
+                            experiment = event.experimentSlug,
+                            branch = event.branchSlug,
+                        ),
+                    )
 
+                    Glean.setExperimentInactive(
+                        event.experimentSlug,
+                    )
                 }
 
                 EnrollmentChangeEventType.UNENROLLMENT -> {
+                    NimbusEvents.unenrollment.record(
+                        NimbusEvents.UnenrollmentExtra(
+                            experiment = event.experimentSlug,
+                            branch = event.branchSlug,
+                            reason = event.reason,
+                        ),
+                    )
 
+                    Glean.setExperimentInactive(
+                        event.experimentSlug,
+                    )
                 }
 
                 EnrollmentChangeEventType.ENROLL_FAILED -> {
+                    NimbusEvents.enrollFailed.record(
+                        NimbusEvents.EnrollFailedExtra(
+                            experiment = event.experimentSlug,
+                            branch = event.branchSlug,
+                            reason = event.reason,
+                        ),
+                    )
                 }
 
                 EnrollmentChangeEventType.UNENROLL_FAILED -> {
+                    NimbusEvents.unenrollFailed.record(
+                        NimbusEvents.UnenrollFailedExtra(
+                            experiment = event.experimentSlug,
+                            reason = event.reason,
+                        ),
+                    )
                 }
             }
         }
@@ -694,4 +802,10 @@ open class Nimbus(
         )
     }
 
+    /**
+    * Glean pings exposed for use in Fenix tests outside this package.
+    */
+    public object Pings {
+        public val nimbusTargetingContext = org.mozilla.experiments.nimbus.GleanMetrics.Pings.nimbusTargetingContext
+    }
 }
