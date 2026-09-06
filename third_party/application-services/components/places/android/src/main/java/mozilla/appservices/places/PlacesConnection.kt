@@ -30,6 +30,8 @@ import mozilla.appservices.places.uniffi.VisitObservation
 import mozilla.appservices.places.uniffi.VisitType
 import mozilla.appservices.places.uniffi.placesApiNew
 import mozilla.appservices.sync15.SyncTelemetryPing
+import mozilla.telemetry.glean.private.CounterMetricType
+import mozilla.telemetry.glean.private.LabeledMetricType
 import java.lang.ref.WeakReference
 import mozilla.appservices.places.uniffi.PlacesApi as UniffiPlacesApi
 import mozilla.appservices.places.uniffi.PlacesConnection as UniffiPlacesConnection
@@ -778,3 +780,50 @@ data class HistoryMetadataKey(
     val searchTerm: String?,
     val referrerUrl: String?,
 )
+
+/**
+ * A helper class for gathering basic count metrics on different kinds of PlacesManager operations.
+ *
+ * For each type of operation, we want to measure:
+ *    - total count of operations performed
+ *    - count of operations that produced an error, labeled by type
+ *
+ * This is a convenience wrapper to measure the two in one shot.
+ */
+class PlacesManagerCounterMetrics(
+    val count: CounterMetricType,
+    val errCount: LabeledMetricType<CounterMetricType>,
+) {
+    @Suppress("ComplexMethod", "TooGenericExceptionCaught")
+    inline fun <U> measure(callback: () -> U): U {
+        count.add()
+        try {
+            return callback()
+        } catch (e: Exception) {
+            when (e) {
+                is PlacesApiException.UrlParseFailed -> {
+                    errCount["url_parse_failed"].add()
+                }
+                is PlacesApiException.OperationInterrupted -> {
+                    errCount["operation_interrupted"].add()
+                }
+                is PlacesApiException.UnknownBookmarkItem -> {
+                    errCount["unknown_bookmark_item"].add()
+                }
+                is PlacesApiException.InvalidBookmarkOperation -> {
+                    errCount["invalid_bookmark_operation"].add()
+                }
+                is PlacesApiException.PlacesConnectionBusy -> {
+                    errCount["places_connection_busy"].add()
+                }
+                is PlacesApiException.UnexpectedPlacesException -> {
+                    errCount["unexpected_places_exception"].add()
+                }
+                else -> {
+                    errCount["__other__"].add()
+                }
+            }
+            throw e
+        }
+    }
+}
