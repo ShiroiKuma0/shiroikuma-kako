@@ -14,7 +14,6 @@ import kotlinx.coroutines.withContext
 import mozilla.appservices.fxaclient.CloseTabsResult as RustCloseTabsResult
 import mozilla.appservices.fxaclient.FxaClient
 import mozilla.appservices.fxaclient.FxaException
-import mozilla.appservices.syncmanager.SyncTelemetry
 import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.concept.sync.AccountEvent
 import mozilla.components.concept.sync.AccountEventsObserver
@@ -189,10 +188,6 @@ class FxaDeviceConstellation(
                                 }
                             }
                         }
-                    val errors: List<Throwable> = SyncTelemetry.processFxaTelemetry(account.gatherTelemetry())
-                    for (error in errors) {
-                        crashReporter?.submitCaughtException(error)
-                    }
                     result
                 }
             result
@@ -225,10 +220,6 @@ class FxaDeviceConstellation(
                 false
             } else {
                 processEvents(events)
-                val errors: List<Throwable> = SyncTelemetry.processFxaTelemetry(account.gatherTelemetry())
-                for (error in errors) {
-                    crashReporter?.submitCaughtException(error)
-                }
                 true
             }
         }

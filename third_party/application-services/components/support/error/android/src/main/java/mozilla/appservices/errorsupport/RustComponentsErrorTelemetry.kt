@@ -14,9 +14,6 @@ import mozilla.appservices.tracing.EventTarget
 import mozilla.appservices.tracing.TracingEvent
 import mozilla.appservices.tracing.TracingLevel
 import mozilla.appservices.tracing.registerEventSink
-import mozilla.telemetry.glean.Glean
-import org.mozilla.appservices.errorsupport.GleanMetrics.Pings
-import org.mozilla.appservices.errorsupport.GleanMetrics.RustComponentErrors
 
 /**
  * RustErrorTelemetry forwarder
@@ -29,7 +26,6 @@ public object RustComponentsErrorTelemetry {
      * Register the RustComponentsErrorTelemetry and start forwarding telemetry to glean
      */
     fun register() {
-        Glean.registerPings(Pings)
         val spec = EventSinkSpecification(
             targets = listOf(EventTarget("app-services-error-reporter", TracingLevel.DEBUG)),
         )
@@ -43,10 +39,7 @@ public object RustComponentsErrorTelemetry {
      * For example, `UniffiInternalError` which happens in the generated bindings.
      */
     fun submitErrorPing(typeName: String, message: String) {
-        RustComponentErrors.errorType.set(typeName)
-        RustComponentErrors.details.set(message)
         // Unfortunately, there's no easy way to support breadcrumbs in this case.
-        Pings.rustComponentErrors.submit()
     }
 }
 
@@ -63,10 +56,6 @@ private class ErrorEventSink : EventSink {
     override fun onEvent(event: TracingEvent) {
         if (event.target == "app-services-error-reporter::error") {
             val fields = json.decodeFromString<TracingErrorFields>(event.fields)
-            RustComponentErrors.errorType.set(fields.typeName)
-            RustComponentErrors.details.set(event.message)
-            RustComponentErrors.breadcrumbs.set(fields.breadcrumbs.split("\n"))
-            Pings.rustComponentErrors.submit()
         }
     }
 }
