@@ -12,7 +12,6 @@ import androidx.annotation.RawRes
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
-import org.mozilla.experiments.nimbus.GleanMetrics.NimbusEvents
 import org.mozilla.experiments.nimbus.internal.AvailableExperiment
 import org.mozilla.experiments.nimbus.internal.EnrolledExperiment
 import org.mozilla.experiments.nimbus.internal.EnrollmentChangeEvent
@@ -396,7 +395,6 @@ interface NimbusEventStore {
     fun recordIsReady(count: Int) {
         @Suppress("unused")
         for (i in 1..count) {
-            NimbusEvents.isReady.record()
         }
     }
 }

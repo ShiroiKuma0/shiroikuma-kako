@@ -1,20 +1,19 @@
-# 白い熊 火狐 — FULL SOURCE build of Firefox for Android. DOES NOT WORK: KEPT AS A RECORD.
+# 白い熊 火狐 — Android build. THIS IS THE ANDROID BUILD (2026-09-06).
 #
-# This was the attempt to reach a tracker-free APK by building application-services
-# from the in-tree copy (--enable-appservices-in-tree) so its Glean could be removed
-# at source. Gecko itself builds fine this way in ~16 minutes, and geckoview_example
-# built from it runs correctly on device -- but Fenix built against in-tree
-# app-services force-closes at startup with a native crash, right after GeckoLibLoad.
+# Gecko is compiled from source rather than fetched as an artifact, because that is
+# what allows --enable-appservices-in-tree: application-services then builds from
+# third_party/application-services, where its Glean telemetry is removed at source.
+# That is what takes the APK to zero detected trackers. A full build is ~16 minutes
+# on this machine.
 #
-# That crash is NOT caused by our telemetry removal: 155.0.1+011, built with
-# third_party/application-services checked out pristine (Glean fully present), crashes
-# identically. The in-tree app-services path is simply unfinished upstream -- its
-# nimbus-fml is a placeholder that panics with "a place-holder for the app-services
-# monorepo migration", and its sync_manager/nimbus build files ask the version catalog
-# for libs.androidx.core.ktx, which this tree does not have.
-#
-# Do not use this for releases. tools/kako/mozconfig is the working Android build.
-# See CLAUDE.md, "No trackers".
+# MANDATORY EXTRA STEP: run tools/kako/stage-megazord.sh between `./mach build` and
+# `./mach gradle fenix:assembleRelease`. Gecko links libmegazord.so against
+# libmozglue.so -- it links its allocator into every shared library it builds -- but
+# app-services is driven from Kotlin over JNA, where allocations come from bionic.
+# Freeing those through mozjemalloc segfaults in arena_dalloc the moment
+# places.sqlite is opened. The script stages Mozilla's self-contained megazord
+# instead, which uses the system allocator. Skip it and the app force-closes at
+# startup, as 155.0.1+008, +011 and +014 did.
 #
 ac_add_options --enable-project=mobile/android
 
