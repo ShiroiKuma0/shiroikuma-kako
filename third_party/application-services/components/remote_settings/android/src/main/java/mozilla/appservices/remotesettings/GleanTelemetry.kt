@@ -7,6 +7,7 @@ package mozilla.appservices.remotesettings
 import android.util.Log
 import mozilla.appservices.remotesettings.RemoteSettingsTelemetry
 import mozilla.appservices.remotesettings.UptakeEventExtras
+import org.mozilla.appservices.remotesettings.GleanMetrics.RemoteSettings as RSMetrics
 
 /**
  * GleanTelemetry is a thin wrapper used to expose
@@ -24,6 +25,17 @@ class GleanTelemetry : RemoteSettingsTelemetry {
                 "timestamp=${extras.timestamp}, " +
                 "duration=${extras.duration}, " +
                 "errorName=${extras.errorName}",
+        )
+        RSMetrics.uptakeRemotesettings.record(
+            RSMetrics.UptakeRemotesettingsExtra(
+                value = extras.value,
+                source = extras.source,
+                age = extras.age,
+                trigger = extras.trigger,
+                timestamp = extras.timestamp,
+                duration = extras.duration,
+                errorname = extras.errorName,
+            ),
         )
     }
 }

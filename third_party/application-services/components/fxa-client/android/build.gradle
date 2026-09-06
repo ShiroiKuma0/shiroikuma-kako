@@ -13,6 +13,7 @@ buildscript {
         }
 
         dependencies {
+            classpath libs.mozilla.glean.gradle.plugin
         }
     }
 }
@@ -24,6 +25,13 @@ plugins {
 apply from: "$appServicesRootDir/build-scripts/component-common.gradle"
 apply from: "$publishDir/publish.gradle"
 
+ext {
+    gleanNamespace = "mozilla.telemetry.glean"
+    if (gradle.hasProperty("mozconfig")) {
+        gleanPythonEnvDir = gradle.mozconfig.substs.GRADLE_GLEAN_PARSER_VENV
+    }
+}
+apply plugin: "org.mozilla.telemetry.glean-gradle-plugin"
 
 android {
     namespace 'org.mozilla.appservices.fxaclient'
@@ -32,7 +40,9 @@ android {
 dependencies {
     api project(':sync15')
 
+    implementation libs.mozilla.glean
 
+    testImplementation libs.mozilla.glean.forUnitTests
 }
 
 ext.configureUniFFIBindgen("fxa_client")
