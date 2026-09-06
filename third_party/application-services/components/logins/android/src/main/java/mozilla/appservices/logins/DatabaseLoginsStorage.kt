@@ -13,6 +13,9 @@ package mozilla.appservices.logins
  * on version updates.
  */
 
+import mozilla.telemetry.glean.private.CounterMetricType
+import mozilla.telemetry.glean.private.LabeledMetricType
+import org.mozilla.appservices.logins.GleanMetrics.LoginsStore as LoginsStoreMetrics
 
 /**
  * An artifact of the uniffi conversion - a thin-ish wrapper around a
@@ -133,8 +136,10 @@ class DatabaseLoginsStorage(dbPath: String, keyManager: KeyManager) : AutoClosea
     fun deleteUndecryptableLoginsAndRecordMetrics() {
         val result = store.deleteUndecryptableRecordsForRemoteReplacement()
         if (result.localDeleted > 0u) {
+            LoginsStoreMetrics.localUndecryptableDeleted.add(result.localDeleted.toInt())
         }
         if (result.mirrorDeleted > 0u) {
+            LoginsStoreMetrics.mirrorUndecryptableDeleted.add(result.mirrorDeleted.toInt())
         }
     }
 }
@@ -147,8 +152,59 @@ fun recordKeyRegenerationEvent(reason: KeyRegenerationEventReason) {
     // Avoid the deprecation warning when calling  `record()` without the optional EventExtras param
     @Suppress("DEPRECATION")
     when (reason) {
-        KeyRegenerationEventReason.Lost -> Unit
-        KeyRegenerationEventReason.Corrupt -> Unit
-        KeyRegenerationEventReason.Other -> Unit
+        KeyRegenerationEventReason.Lost -> LoginsStoreMetrics.keyRegeneratedLost.record()
+        KeyRegenerationEventReason.Corrupt -> LoginsStoreMetrics.keyRegeneratedCorrupt.record()
+        KeyRegenerationEventReason.Other -> LoginsStoreMetrics.keyRegeneratedOther.record()
+    }
+}
+
+/**
+ * A helper class for gathering basic count metrics on different kinds of LoginsStore operation.
+ *
+ * For each type of operation, we want to measure:
+ *    - total count of operations performed
+ *    - count of operations that produced an error, labeled by type
+ *
+ * This is a convenience wrapper to measure the two in one shot.
+ */
+class LoginsStoreCounterMetrics(
+    val count: CounterMetricType,
+    val errCount: LabeledMetricType<CounterMetricType>,
+) {
+    inline fun <U> measure(callback: () -> U): U {
+        return measureIgnoring({ false }, callback)
+    }
+
+    @Suppress("ComplexMethod", "TooGenericExceptionCaught")
+    inline fun <U> measureIgnoring(
+        shouldIgnore: (Exception) -> Boolean,
+        callback: () -> U,
+    ): U {
+        count.add()
+        try {
+            return callback()
+        } catch (e: Exception) {
+            if (shouldIgnore(e)) {
+                throw e
+            }
+            when (e) {
+                is LoginsApiException.NoSuchRecord -> {
+                    errCount["no_such_record"].add()
+                }
+                is LoginsApiException.Interrupted -> {
+                    errCount["interrupted"].add()
+                }
+                is LoginsApiException.InvalidRecord -> {
+                    errCount["invalid_record"].add()
+                }
+                is LoginsApiException -> {
+                    errCount["storage_error"].add()
+                }
+                else -> {
+                    errCount["__other__"].add()
+                }
+            }
+            throw e
+        }
     }
 }
