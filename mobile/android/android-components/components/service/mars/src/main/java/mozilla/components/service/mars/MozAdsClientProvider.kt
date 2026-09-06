@@ -6,7 +6,6 @@ package mozilla.components.service.mars
 
 import android.content.Context
 import androidx.annotation.VisibleForTesting
-import mozilla.appservices.adsclient.AdsClientTelemetry
 import mozilla.appservices.adsclient.MozAdsCacheConfig
 import mozilla.appservices.adsclient.MozAdsClient
 import mozilla.appservices.adsclient.MozAdsClientBuilder
@@ -39,7 +38,6 @@ object MozAdsClientProvider {
                         maxSizeMib = null,
                     )
                 )
-                .telemetry(AdsClientTelemetry())
                 .build()
     }
 
