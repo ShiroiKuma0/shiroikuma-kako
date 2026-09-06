@@ -69,13 +69,14 @@ versionCode, which is upstream-derived, so resetting the counter is safe.)
 
 ## No trackers (hard rule, 白い熊 2026-09-06)
 
-The APK ships **zero** trackers. Adjust, Sentry and Glean are removed at source
-across Fenix, android-components, the longfox module and the vendored
-`third_party/application-services`. The mozconfig therefore carries
-`--enable-appservices-in-tree` — without it, Mozilla's prebuilt app-services
-AARs put Glean straight back in. Never drop that flag to speed a build up.
+Adjust and Sentry are gone from the APK and must stay gone; Glean is stripped
+from Fenix, android-components and longfox. One detection remains — Mozilla
+Telemetry, from the prebuilt app-services/Nimbus AARs — and removing it needs
+`--enable-appservices-in-tree`, which currently breaks the app (no
+`libmegazord.so` in an artifact build; see CLAUDE.md).
 
-Verify every build before delivering; the dex is the authority, not the source:
+**Install and launch every build before delivering it** — 155.0.1+006 scanned
+clean and force-closed on startup. Then check the dex:
 
 ```bash
 unzip -p ~/tmp/shiroikuma-kako_<ver>_arm64-v8a.apk 'classes*.dex' \

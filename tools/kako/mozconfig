@@ -4,7 +4,9 @@
 ac_add_options --enable-project=mobile/android
 ac_add_options --enable-artifact-builds
 ac_add_options --target=aarch64
-# Build application-services from the in-tree copy so its Glean telemetry can be
-# removed at source. Costs a cargo build of the megazord on top of the artifact build.
-ac_add_options --enable-appservices-in-tree
+# NOTE (2026-09-06): --enable-appservices-in-tree is OFF. It builds the app-services
+# Kotlin from the vendored source, but libmegazord.so is produced by the Gecko native
+# build (megazords/full -> fenix-dylib), which an artifact build never runs -- the app
+# then dies on launch with UnsatisfiedLinkError: library "libmegazord.so" not found.
+# Re-enabling it needs the megazord built too; see CLAUDE.md.
 mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/objdir-kako
