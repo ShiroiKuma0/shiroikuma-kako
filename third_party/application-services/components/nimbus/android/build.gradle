@@ -13,7 +13,6 @@ buildscript {
         }
 
         dependencies {
-            classpath libs.mozilla.glean.gradle.plugin
         }
     }
 }
@@ -25,14 +24,6 @@ plugins {
 apply from: "$appServicesRootDir/build-scripts/component-common.gradle"
 apply from: "$publishDir/publish.gradle"
 
-ext {
-    gleanNamespace = "mozilla.telemetry.glean"
-    gleanYamlFiles = ["${project.projectDir}/../metrics.yaml", "${project.projectDir}/../pings.yaml"]
-    if (gradle.hasProperty("mozconfig")) {
-        gleanPythonEnvDir = gradle.mozconfig.substs.GRADLE_GLEAN_PARSER_VENV
-    }
-}
-apply plugin: "org.mozilla.telemetry.glean-gradle-plugin"
 
 android {
     namespace 'org.mozilla.experiments.nimbus'
@@ -42,14 +33,12 @@ dependencies {
     api project(":remotesettings")
 
     implementation libs.androidx.annotation
-    implementation libs.androidx.core.ktx
+    implementation libs.androidx.core
     implementation libs.kotlinx.coroutines
-    implementation libs.mozilla.glean
 
     testImplementation libs.androidx.test.core
     testImplementation libs.androidx.test.junit
     testImplementation libs.androidx.work.testing
-    testImplementation libs.mozilla.glean.forUnitTests
 }
 
 ext.configureUniFFIBindgen("nimbus")

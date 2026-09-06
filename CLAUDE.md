@@ -59,10 +59,60 @@ Extensions from a collection are AMO-signed, so the signing enforcement baked
 into the prebuilt release GeckoView never bites — which is what lets us use
 fast **artifact builds** (prebuilt engine; only Kotlin/Java compiles locally).
 
-**Artifact-build constraint (Android only):** Fenix/Android-Components-side
-(Kotlin/Java/resources) changes only. An engine (C++/Rust/Gecko) patch would
-force a full multi-hour compile — avoid; none planned. The desktop product has
-no such constraint: it is a full compile from source either way.
+**Artifact-build constraint (Android only):** Gecko itself is still a prebuilt
+artifact — an engine (C++/Rust/Gecko) patch would force a full multi-hour
+compile, so avoid it; none planned. The desktop product has no such constraint:
+it is a full compile from source either way.
+
+**Application-services builds from source (白い熊, 2026-09-06).** The mozconfig
+carries `--enable-appservices-in-tree`, so `third_party/application-services`
+(places, logins, syncmanager, remotesettings, errorsupport, ads-client, fxaclient
+and Nimbus) compiles here rather than resolving Mozilla's prebuilt Maven AARs,
+and cargo builds the Rust megazord for aarch64. This is what makes the
+no-trackers rule below achievable: those AARs ship Glean welded in, and nothing
+short of building them ourselves can take it out. The cost is that an Android
+build is no longer Kotlin-only. Do not remove the flag to make builds faster —
+it would put every Glean class straight back into the APK.
+
+## No trackers, ever (hard rule)
+
+The APK must contain **zero** trackers: Adjust, Sentry and Mozilla Telemetry
+(Glean) are removed at source, not disabled. Verified on 155.0.1+006 against all
+588 signatures in Exodus's database — zero detections.
+
+That means, in Fenix, android-components, the longfox module *and* the vendored
+application-services: no `libs.mozilla.glean`, no `glean-gradle-plugin`, no
+`metrics.yaml`/`pings.yaml`, and no `GleanMetrics` call sites. An upstream
+adoption will drag all of it back in; strip it again before shipping, and check
+the dex rather than trusting the source:
+
+```bash
+unzip -p ~/tmp/shiroikuma-kako_<ver>_arm64-v8a.apk 'classes*.dex' \
+  | grep -c -a -o -F "mozilla/telemetry/glean"      # must be 0
+```
+
+**When stripping telemetry, real code hides inside it.** Deleting statements by
+their receiver silently removed `PlacesConnection.runMaintenance`'s vacuum,
+optimize and checkpoint calls, Nimbus's `fetchExperiments()`, and — worst — the
+whole `TabsTray(...)` composable, because `TabsTray` is both a Glean metrics
+category and the tab manager's Compose function. Audit every removal: anything
+inside a `measure {}` wrapper, and any name used in call form (`Name(`) rather
+than as `Name.metric.record(...)`.
+
+**`nimbus-fml` in `~/.mozbuild` is a stub** that panics with "a place-holder for
+the app-services monorepo migration"; builds only passed while Gradle had
+`nimbusValidate` cached. Build the real one from the vendored source and install
+it over the stub:
+
+```bash
+cargo build --release --manifest-path \
+  third_party/application-services/components/support/nimbus-fml/Cargo.toml
+cp target/release/nimbus-fml ~/.mozbuild/nimbus-fml/nimbus-fml
+```
+
+The monorepo also forces `allWarningsAsErrors` on every Kotlin task, which the
+UniFFI-generated bindings trip; `ProjectPlugin.kt` exempts the vendored
+application-services and uniffi-bindgen trees.
 
 ## Target device & environment
 
