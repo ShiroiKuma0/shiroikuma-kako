@@ -67,7 +67,29 @@ embeds both. The counter **resets on each upstream adoption**: when
 the new version's first build is `<newbase>+1`. (Android upgrade ordering uses
 versionCode, which is upstream-derived, so resetting the counter is safe.)
 
-## Build pipeline (artifact mode — Kotlin/Java only compiles locally)
+## No trackers (hard rule, 白い熊 2026-09-06)
+
+The APK ships **zero** trackers. Adjust, Sentry and Glean are removed at source
+across Fenix, android-components, the longfox module and the vendored
+`third_party/application-services`. The mozconfig therefore carries
+`--enable-appservices-in-tree` — without it, Mozilla's prebuilt app-services
+AARs put Glean straight back in. Never drop that flag to speed a build up.
+
+Verify every build before delivering; the dex is the authority, not the source:
+
+```bash
+unzip -p ~/tmp/shiroikuma-kako_<ver>_arm64-v8a.apk 'classes*.dex' \
+  | grep -c -a -o -F "mozilla/telemetry/glean"   # must be 0
+```
+
+Two traps, both hit on 2026-09-06: `~/.mozbuild/nimbus-fml/nimbus-fml` is a stub
+that panics (rebuild it from
+`third_party/application-services/components/support/nimbus-fml`), and deleting
+telemetry statements by receiver silently eats real code — a `measure {}` block's
+contents, or a name like `TabsTray` that is both a metrics category and a
+composable. Audit removals against the original.
+
+## Build pipeline (Gecko is prebuilt; app-services and Kotlin compile locally)
 
 > Verified on the first build (151.0.4+1, 2026-06-10). Timings from that run:
 > `./mach build` ≈ 5 min, `fenix:assembleRelease` ≈ 13 min.

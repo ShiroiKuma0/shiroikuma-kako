@@ -4,4 +4,7 @@
 ac_add_options --enable-project=mobile/android
 ac_add_options --enable-artifact-builds
 ac_add_options --target=aarch64
+# Build application-services from the in-tree copy so its Glean telemetry can be
+# removed at source. Costs a cargo build of the megazord on top of the artifact build.
+ac_add_options --enable-appservices-in-tree
 mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/objdir-kako
