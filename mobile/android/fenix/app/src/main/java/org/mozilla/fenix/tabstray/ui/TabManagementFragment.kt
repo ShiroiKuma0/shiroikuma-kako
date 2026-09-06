@@ -351,6 +351,114 @@ class TabManagementFragment : Fragment() {
                         entryProvider = entryProvider {
                             entry<TabManagerNavDestination.Root> {
                                 val tabGroupDotColors = tabGroupDotColors()
+                                TabsTray(
+                                    state = state,
+                                    snackbarHostState = snackbarHostState,
+                                    onAction = tabsTrayStore::dispatch,
+                                    onTabPageClick = { page ->
+                                        onTabPageClick(
+                                            tabsTrayInteractor = tabManagerInteractor,
+                                            page = page,
+                                        )
+                                    },
+                                    onTabClose = { tab ->
+                                        tabManagerInteractor.onTabClosed(tab, TAB_MANAGER_FEATURE_NAME)
+                                    },
+                                    onItemClick = {
+                                        // Either start the transition animation and delay the click handling
+                                        // until it is complete, or directly proceed.
+                                        when (it) {
+                                            is TabsTrayItem.Tab -> handleTabClick(it)
+
+                                            is TabsTrayItem.TabGroup -> {
+                                                tabsTrayStore.dispatch(TabGroupAction.TabGroupClicked(group = it))
+                                            }
+                                        }
+                                    },
+                                    onItemLongClick = { item ->
+                                        tabsTrayStore.dispatch(
+                                            TabsTrayAction.TabItemLongClicked(
+                                                item,
+                                            ),
+                                        )
+                                    },
+                                    onInactiveTabsHeaderClick =
+                                        tabManagerInteractor::onInactiveTabsHeaderClicked,
+                                    onDeleteAllInactiveTabsClick =
+                                        tabManagerInteractor::onDeleteAllInactiveTabsClicked,
+                                    onInactiveTabsAutoCloseDialogShown = {
+                                        tabsTrayStore.dispatch(TabsTrayAction.TabAutoCloseDialogShown)
+                                    },
+                                    onInactiveTabAutoCloseDialogCloseButtonClick =
+                                        tabManagerInteractor::onAutoCloseDialogCloseButtonClicked,
+                                    onEnableInactiveTabAutoCloseClick = {
+                                        tabManagerInteractor.onEnableAutoCloseClicked()
+                                        showInactiveTabsAutoCloseConfirmationSnackbar()
+                                    },
+                                    onInactiveTabClick = tabManagerInteractor::onInactiveTabClicked,
+                                    onInactiveTabClose = tabManagerInteractor::onInactiveTabClosed,
+                                    onSyncedTabClick = tabManagerInteractor::onSyncedTabClicked,
+                                    onSyncedTabClose = tabManagerInteractor::onSyncedTabClosed,
+                                    onSignInClick = tabManagerInteractor::onSignInClicked,
+                                    onSaveToCollectionClick =
+                                        tabManagerInteractor::onAddSelectedTabsToCollectionClicked,
+                                    onShareSelectedTabsClick = tabManagerInteractor::onShareSelectedTabs,
+                                    onTabSettingsClick = tabManagerController::onTabSettingsClicked,
+                                    onRecentlyClosedClick = tabManagerController::onOpenRecentlyClosedClicked,
+                                    onAccountSettingsClick = tabManagerController::onAccountSettingsClicked,
+                                    onDeleteAllTabsClick = {
+                                        if (tabsTrayStore.state.selectedPage == Page.NormalTabs) {
+                                            tabsTrayStore.dispatch(TabsTrayAction.CloseAllNormalTabs)
+                                        } else if (tabsTrayStore.state.selectedPage == Page.PrivateTabs) {
+                                            tabsTrayStore.dispatch(TabsTrayAction.CloseAllPrivateTabs)
+                                        }
+
+                                        tabManagerController.onCloseAllTabsClicked(
+                                            private = tabsTrayStore.state.selectedPage == Page.PrivateTabs,
+                                        )
+                                    },
+                                    onDeleteSelectedTabsClick =
+                                        tabManagerInteractor::onDeleteSelectedTabsClicked,
+                                    onBookmarkSelectedTabsClick =
+                                        tabManagerInteractor::onBookmarkSelectedTabsClicked,
+                                    onForceSelectedTabsAsInactiveClick =
+                                        tabManagerInteractor::onForceSelectedTabsAsInactiveClicked,
+                                    onTabsTrayPbmLockedClick = ::onTabsTrayPbmLockedClick,
+                                    onTabsTrayPbmLockedDismiss = {
+                                        requireComponents.settings.shouldShowLockPbmBanner = false
+                                    },
+                                    onTabAutoCloseBannerViewOptionsClick = {
+                                        tabManagerCfrController.onTabAutoCloseBannerDismiss()
+                                        tabManagerController.onTabSettingsClicked()
+                                    },
+                                    onTabAutoCloseBannerDismiss = tabManagerCfrController::onTabAutoCloseBannerDismiss,
+                                    onTabAutoCloseBannerShown = {},
+                                    tabInteractionHandler = tabInteractionHandler,
+                                    onInactiveTabsCFRShown = {
+                                    },
+                                    onInactiveTabsCFRClick = {
+                                        tabManagerCfrController.onInactiveTabsCfrClick()
+                                        tabManagerController.onTabSettingsClicked()
+                                    },
+                                    onInactiveTabsCFRDismiss = tabManagerCfrController::onInactiveTabsCfrDismiss,
+                                    onTabGroupOnboardingDismiss = {
+                                        tabsTrayStore.dispatch(TabGroupAction.OnboardingDismissed)
+                                    },
+                                    onTabGroupOnboardingShown = {
+                                        tabsTrayStore.dispatch(TabGroupAction.OnboardingShown)
+                                    },
+                                    onOpenNewNormalTabClicked = tabManagerInteractor::onNormalTabsFabClicked,
+                                    onOpenNewPrivateTabClicked = tabManagerInteractor::onPrivateTabsFabClicked,
+                                    onSyncedTabsFabClicked = tabManagerInteractor::onSyncedTabsFabClicked,
+                                    onUnlockPbmClick = {
+                                        verifyUser(fallbackVerification = verificationResultLauncher)
+                                    },
+                                    onShareTabGroupClick = { group ->
+                                        shareTabGroup(group, tabGroupDotColors.getValue(group.theme))
+                                    },
+                                    trackersBlockedCount = trackersBlockedCount,
+                                    onPrivacyReportTapped = tabManagerController::onPrivacyReportTapped,
+                                )
                             }
 
                             entry<TabManagerNavDestination.TabSearch> {

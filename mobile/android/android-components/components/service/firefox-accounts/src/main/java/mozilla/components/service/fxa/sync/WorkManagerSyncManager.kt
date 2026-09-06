@@ -30,7 +30,6 @@ import mozilla.appservices.syncmanager.ServiceStatus
 import mozilla.appservices.syncmanager.SyncAuthInfo
 import mozilla.appservices.syncmanager.SyncEngineSelection
 import mozilla.appservices.syncmanager.SyncParams
-import mozilla.appservices.syncmanager.SyncTelemetry
 import mozilla.components.concept.storage.KeyProvider
 import mozilla.components.concept.sync.SyncConfig
 import mozilla.components.concept.sync.SyncEngine
@@ -483,7 +482,6 @@ internal class WorkManagerSyncWorker(
         }
 
         // Process telemetry.
-        syncResult.telemetryJson?.let { SyncTelemetry.processSyncTelemetry(SyncTelemetryPing.fromJSONString(it)) }
 
         // Finally, declare success, failure or request a retry based on 'sync status'.
         return when (syncResult.status) {

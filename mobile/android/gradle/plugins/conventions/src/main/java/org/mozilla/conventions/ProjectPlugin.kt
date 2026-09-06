@@ -235,6 +235,17 @@ class ProjectPlugin : Plugin<Project> {
     }
 
     private fun configureKotlinWarningsAsErrors(project: Project) {
+        // Vendored application-services and the UniFFI-generated bindings are not written to the
+        // monorepo's warning policy: the generated code references objects purely to force their
+        // initialization, which Kotlin reports as an unused expression. 白い熊 火狐 builds those
+        // projects from source (--enable-appservices-in-tree) so telemetry can be removed at
+        // source, so exempt them rather than editing generated files on every regeneration.
+        val path = project.projectDir.invariantSeparatorsPath
+        if ("/third_party/application-services/" in path ||
+            "/toolkit/components/uniffi-bindgen-gecko-js/" in path
+        ) {
+            return
+        }
         project.tasks.configureEach {
             if (!this::class.java.name.startsWith("org.jetbrains.kotlin.gradle.tasks.KotlinCompile")) {
                 return@configureEach
