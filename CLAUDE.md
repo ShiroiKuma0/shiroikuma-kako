@@ -64,21 +64,45 @@ artifact — an engine (C++/Rust/Gecko) patch would force a full multi-hour
 compile, so avoid it; none planned. The desktop product has no such constraint:
 it is a full compile from source either way.
 
-**Application-services builds from source (白い熊, 2026-09-06).** The mozconfig
-carries `--enable-appservices-in-tree`, so `third_party/application-services`
-(places, logins, syncmanager, remotesettings, errorsupport, ads-client, fxaclient
-and Nimbus) compiles here rather than resolving Mozilla's prebuilt Maven AARs,
-and cargo builds the Rust megazord for aarch64. This is what makes the
-no-trackers rule below achievable: those AARs ship Glean welded in, and nothing
-short of building them ourselves can take it out. The cost is that an Android
-build is no longer Kotlin-only. Do not remove the flag to make builds faster —
-it would put every Glean class straight back into the APK.
+**Application-services stays prebuilt — for now (2026-09-06).** The mozconfig once
+carried `--enable-appservices-in-tree`, which builds
+`third_party/application-services` from source so its Glean can be removed. The
+Kotlin side works, but **the app then dies on launch**:
+
+```
+java.lang.UnsatisfiedLinkError: Unable to load library 'megazord':
+dlopen failed: library "libmegazord.so" not found
+```
+
+In the monorepo that library comes from the **Gecko native build** —
+`megazords/full` compiles a staticlib and a `fenix-dylib` crate turns it into the
+cdylib — and the cargo path in `megazords/full/android/build.gradle` is disabled
+whenever a mozconfig is present. An artifact build never runs that compile, no
+NDK is installed, and the `fenix-dylib` crate is not in the vendored tree. So the
+flag is **incompatible with `--enable-artifact-builds`** as things stand. Turning
+it on again means either dropping artifact builds for Android entirely, or
+producing `libmegazord.so` some other way and staging it into
+`objdir-kako/dist/geckoview/appservices/lib/arm64-v8a/`.
+
+**A build that passes the dex scan is not verified.** 155.0.1+006 scanned clean
+against all 588 Exodus signatures and force-closed on launch. Install and open
+every build before delivering it:
+
+```bash
+adb install -r ~/tmp/shiroikuma-kako_<ver>_arm64-v8a.apk
+adb logcat -c && adb shell monkey -p shiroikuma.kako -c android.intent.category.LAUNCHER 1
+sleep 8 && adb logcat -d | grep -E "FATAL|UnsatisfiedLink"   # must be empty
+adb shell pidof shiroikuma.kako                              # must print a pid
+```
 
 ## No trackers, ever (hard rule)
 
-The APK must contain **zero** trackers: Adjust, Sentry and Mozilla Telemetry
-(Glean) are removed at source, not disabled. Verified on 155.0.1+006 against all
-588 signatures in Exodus's database — zero detections.
+Adjust and Sentry are removed at source and must stay gone. Glean is stripped
+from everything the fork owns — Fenix, android-components, longfox — but one
+detection remains, **Mozilla Telemetry**, from the prebuilt application-services
+and Nimbus AARs. Nothing is collected or uploaded: Glean is never initialised.
+Zero detections is reachable only by also building app-services from source,
+which needs the megazord problem above solved first.
 
 That means, in Fenix, android-components, the longfox module *and* the vendored
 application-services: no `libs.mozilla.glean`, no `glean-gradle-plugin`, no
