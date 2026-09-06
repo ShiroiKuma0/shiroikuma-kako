@@ -6,13 +6,35 @@
 
 **Firefox in pure black & yellow — on the phone and on the desktop — with extension freedom on the release channel.**
 
-A fork of [Mozilla Firefox](https://github.com/mozilla-firefox/firefox) (release channel) with **major additions**: custom AMO extension collections unlocked on release, add-ons installable straight from a file, a fully settable black/yellow UI with external fonts, pinned extension buttons that carry the extension's own options on a two-row toolbar, one-tap sync from that toolbar, whole-profile export & import — scriptable from outside the app, and handed to a companion app through a verified data door — about:config, a line-traced fox, and a **GNU/Linux desktop build** in the same palette.
+A fork of [Mozilla Firefox](https://github.com/mozilla-firefox/firefox) (release channel) with **major additions**: custom AMO extension collections unlocked on release, add-ons installable straight from a file, a fully settable black/yellow UI with external fonts, pinned extension buttons that carry the extension's own options on a two-row toolbar, one-tap sync from that toolbar, whole-profile export & import — scriptable from outside the app, and handed to a companion app through a verified data door — about:config, a line-traced fox, **not one tracker in the APK**, and a **GNU/Linux desktop build** in the same palette.
 
 Installs **side-by-side** with stock Firefox/Beta/Nightly: app id `shiroikuma.kako` on Android, package `shiroikuma-kako` with its own `~/.mozilla/kako` profile on the desktop.
 
-**📥 Latest release: [`155.0.1+001`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
+**📥 Latest release: [`155.0.1+017`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
 
 </div>
+
+---
+
+## 🕵 Zero trackers
+
+Stock Firefox for Android ships three, and a scan of the APK names them: **Adjust**
+(install-attribution analytics), **Sentry** (crash reporting) and **Mozilla Telemetry**
+(Glean). This build contains **none** — verified against all 588 signatures in the Exodus
+Privacy database, the same list the tracker scanners use.
+
+They are removed at source, not switched off. Adjust and Sentry are deleted outright —
+dependencies, tokens, the manifest receiver, the services behind them. Glean goes further
+than the app: 34 telemetry-only files deleted, the call sites cleared out of another 111,
+the metrics generator removed so its 120 generated files and megabyte of Kotlin are never
+produced, and the SDK itself absent from the APK. The Data Choices screen loses the three
+switches that fed it, since they would now control nothing; Studies and crash reporting,
+which still do something, stay.
+
+Getting Glean out completely meant giving up the prebuilt engine: Mozilla's published
+application-services binaries carry it, and nothing on the app side can reach inside them.
+So Android now builds Gecko and application-services from source, and this is the only
+part of the fork that costs real build time — about sixteen minutes.
 
 ---
 
