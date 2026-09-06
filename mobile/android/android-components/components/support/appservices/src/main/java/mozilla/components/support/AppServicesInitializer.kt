@@ -4,7 +4,7 @@
 
 package mozilla.components.support
 
-import mozilla.appservices.RustComponentsInitializer
+import mozilla.appservices.init_rust_components.initialize
 import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.support.base.log.Log
 import mozilla.components.support.rustlog.RustLog
@@ -24,7 +24,12 @@ object AppServicesInitializer {
      */
     fun init(config: Config) {
         // Rust components must be initialized at the very beginning, before any other Rust call, ...
-        RustComponentsInitializer.init()
+        //
+        // 白い熊 火狐 inlines what RustComponentsInitializer.init() does instead of calling it:
+        // that helper also runs RustComponentsErrorTelemetry.register(), whose first act is
+        // Glean.registerPings(). Going through it is what drags the Glean SDK into the APK.
+        initialize()
+        System.setProperty("mozilla.appservices.megazord.library", "megazord")
 
         // ... but RustHttpConfig.setClient() and RustLog.enable() can be called later.
         RustLog.apply {
