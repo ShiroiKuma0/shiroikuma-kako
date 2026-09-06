@@ -1,0 +1,59 @@
+# 白い熊 火狐 — FULL SOURCE build of Firefox for Android. DOES NOT WORK: KEPT AS A RECORD.
+#
+# This was the attempt to reach a tracker-free APK by building application-services
+# from the in-tree copy (--enable-appservices-in-tree) so its Glean could be removed
+# at source. Gecko itself builds fine this way in ~16 minutes, and geckoview_example
+# built from it runs correctly on device -- but Fenix built against in-tree
+# app-services force-closes at startup with a native crash, right after GeckoLibLoad.
+#
+# That crash is NOT caused by our telemetry removal: 155.0.1+011, built with
+# third_party/application-services checked out pristine (Glean fully present), crashes
+# identically. The in-tree app-services path is simply unfinished upstream -- its
+# nimbus-fml is a placeholder that panics with "a place-holder for the app-services
+# monorepo migration", and its sync_manager/nimbus build files ask the version catalog
+# for libs.androidx.core.ktx, which this tree does not have.
+#
+# Do not use this for releases. tools/kako/mozconfig is the working Android build.
+# See CLAUDE.md, "No trackers".
+#
+ac_add_options --enable-project=mobile/android
+
+# Same toolchain story as mozconfig-desktop: taskcluster toolchain artifacts do
+# not resolve from a release-tag checkout carrying our own commits, so bootstrap
+# is off and we build against the distro toolchain. Gecko drives the NDK sysroot
+# with the host clang (it appends --target=aarch64-linux-android26), and Tuxedo's
+# default clang 18 is below the required 19.
+ac_add_options --disable-bootstrap
+
+# Gecko is built with the distro clang-20, NOT the NDK's own clang. Building it
+# with the NDK compiler (Android clang 21) links and packages fine but produces a
+# Gecko that crashes natively at startup right after GeckoLibLoad -- Mozilla does
+# not build Gecko with the Android toolchain. The only reason to reach for it was
+# a link failure, "unable to find library -lgcc": NDK r23+ dropped libgcc, so the
+# runtime has to be named explicitly instead.
+# Target compiler is the NDK's own clang. The distro clang-20 cannot be used:
+# it has no Android runtime libraries (it looks for libclang_rt.builtins.a under
+# /usr/lib/llvm-20 and fails), and without --rtlib it asks for -lgcc, which NDK
+# r23+ dropped. The NDK clang is proven good here -- geckoview_example built with
+# it runs correctly on device.
+NDK_BIN=/home/shiroikuma/.mozbuild/android-sdk-linux/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin
+export CC="$NDK_BIN/clang"
+export CXX="$NDK_BIN/clang++"
+export HOST_CC=clang-20
+export HOST_CXX=clang++-20
+
+# The RLBox wasm sandbox is compiled with the distro clang too: it inherits CC
+# otherwise, and the NDK clang does not know the distro's wasm32-wasi libraries.
+# Setting these keeps the sandbox rather than disabling it.
+export WASM_CC=clang-20
+export WASM_CXX=clang++-20
+ac_add_options --target=aarch64
+ac_add_options --enable-appservices-in-tree
+
+# Same as mozconfig-desktop: keep RLBox sandboxing, and point at the distro
+# wasi-libc, whose layout (/usr/include/wasm32-wasi, /usr/lib/wasm32-wasi) is
+# exactly sysroot=/usr for the wasm32-wasi target.
+ac_add_options --with-wasi-sysroot=/usr
+ac_add_options --with-android-sdk=/home/shiroikuma/.mozbuild/android-sdk-linux
+ac_add_options --with-android-ndk=/home/shiroikuma/.mozbuild/android-sdk-linux/ndk/29.0.14206865
+mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/objdir-kako-src
