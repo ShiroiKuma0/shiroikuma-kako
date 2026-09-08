@@ -24,6 +24,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import org.mozilla.fenix.R
 import org.mozilla.fenix.utils.Settings
 import java.io.File
@@ -134,7 +135,13 @@ class KakoAutomationDataService : Service() {
             try {
                 fd.use { open ->
                     if (importing) {
-                        runImport(jobId, open, ::reply)
+                        runImport(
+                            jobId = jobId,
+                            fd = open,
+                            progressAction = progressAction,
+                            replyPackage = replyPackage,
+                            reply = ::reply,
+                        )
                     } else {
                         runExport(
                             jobId = jobId,
@@ -221,8 +228,28 @@ class KakoAutomationDataService : Service() {
      * [KakoExim.import] wants the bytes, and that is the right shape here for a reason beyond
      * convenience: a partial read that failed halfway would otherwise import half an archive, and
      * a half-restored app is worse than one that refused.
+     *
+     * ## Why this reports progress, and why it has a deadline
+     *
+     * Both because an import can legitimately take minutes and the caller cannot see inside it.
+     * Restoring extensions fetches each one from AMO; on a slow network that is a quarter of an
+     * hour, and until 2026-09-08 this method said **nothing at all** until it was finished — no
+     * progress, one reply at the very end. 応用管理 abandons an app that has been silent for ten
+     * minutes, so a slow restore and a dead one looked identical from outside, and a working
+     * import was reported as a failure (応用管理, 2026-09-08).
+     *
+     * The deadline is the belt to that braces: [KakoAddons] bounds its own steps, but a step that
+     * wedges the main thread would take its own timeout with it. This one runs on IO and is the
+     * only thing that cannot be taken down with the work it is timing.
      */
-    private suspend fun runImport(jobId: String, fd: ParcelFileDescriptor, reply: (String) -> Unit) {
+    @Suppress("LongParameterList")
+    private suspend fun runImport(
+        jobId: String,
+        fd: ParcelFileDescriptor,
+        progressAction: String?,
+        replyPackage: String?,
+        reply: (String) -> Unit,
+    ) {
         // Spooled to disk rather than read straight off the descriptor into a ByteArray.
         // [KakoExim.import] wants the whole archive as bytes, but growing an array from a stream
         // of unknown length reallocates as it goes and peaks at several times the final size —
@@ -263,8 +290,42 @@ class KakoAutomationDataService : Service() {
             reply("ERROR:archive carries no categories")
             return
         }
-        val summary = KakoExim.import(this, bytes, present)
+        // Enum order, exactly as KakoExim.import walks it — so the position it reports can be
+        // turned back into the category id §3 wants in `item`.
+        val ordered = KakoExim.Cat.entries.filter { it in present }
+        var lastProgressAt = 0L
+        val summary = withTimeoutOrNull(IMPORT_TIMEOUT_MS) {
+            KakoExim.import(
+                context = this@KakoAutomationDataService,
+                zip = bytes,
+                cats = present,
+                onProgress = { done, total, label ->
+                    val now = SystemClock.elapsedRealtime()
+                    // At most one every 500 ms — but the closing one always goes out.
+                    if (done >= total || now - lastProgressAt >= PROGRESS_MIN_INTERVAL_MS) {
+                        lastProgressAt = now
+                        sendProgress(
+                            progressAction = progressAction,
+                            replyPackage = replyPackage,
+                            jobId = jobId,
+                            item = ordered.getOrNull(done - 1)?.id.orEmpty(),
+                            done = done,
+                            total = total,
+                            label = label,
+                            bytes = bytes.size.toLong(),
+                        )
+                    }
+                },
+            )
+        }
+        // Before the verdict, and on both paths: whatever categories did land must reach disk
+        // ahead of the caller's force-stop. A partial import silently undone by SIGKILL is
+        // worse than a partial import the caller was told about.
         flushImportedPrefs()
+        if (summary == null) {
+            reply("ERROR:import timed out after ${IMPORT_TIMEOUT_MS / MS_PER_SECOND}s")
+            return
+        }
         // The caller force-stops us straight after this. That is deliberate and belongs on its
         // side: a running process writes its cached SharedPreferences back out at orderly shutdown
         // and silently undoes the import that just happened (応用管理 paid for this one already).
@@ -388,6 +449,19 @@ class KakoAutomationDataService : Service() {
 
         private const val PROGRESS_UNIT = "区分"
         private const val PROGRESS_MIN_INTERVAL_MS = 500L
+        private const val MS_PER_SECOND = 1000L
+
+        /**
+         * The whole import, start to finish — the one deadline that cannot be defeated by the
+         * work it is timing, because it runs on IO while the step most likely to wedge
+         * ([KakoAddons.install]) runs on Main.
+         *
+         * Six minutes: comfortably longer than the extension restore's own four-minute budget,
+         * so that budget is what normally bites and this stays a backstop, and comfortably
+         * shorter than 応用管理's ten-minute silence watchdog, so the caller hears a verdict
+         * from us rather than inventing one.
+         */
+        private const val IMPORT_TIMEOUT_MS = 360_000L
 
         /** A ceiling on an incoming archive, so a hostile or corrupt descriptor cannot OOM us. */
         private const val MAX_IMPORT_BYTES = 512L shl 20

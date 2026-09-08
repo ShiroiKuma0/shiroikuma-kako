@@ -11,14 +11,21 @@ import androidx.annotation.StringRes
 import androidx.core.content.edit
 import androidx.documentfile.provider.DocumentFile
 import mozilla.appservices.places.BookmarkRoot
+import mozilla.components.browser.state.state.recover.RecoverableTab
+import mozilla.components.browser.state.state.recover.TabState
 import mozilla.components.concept.storage.BookmarkNode
 import mozilla.components.concept.storage.BookmarkNodeType
 import mozilla.components.concept.storage.CreditCardNumber
 import mozilla.components.concept.storage.LoginEntry
 import mozilla.components.concept.storage.NewCreditCardFields
+import mozilla.components.concept.storage.PageObservation
+import mozilla.components.concept.storage.PageVisit
 import mozilla.components.concept.storage.UpdatableAddressFields
+import mozilla.components.concept.storage.VisitType
 import mozilla.components.concept.storage.bookmarks.InsertableBookmarkTreeNode
 import mozilla.components.concept.storage.bookmarks.InsertableBookmarkTreeRoot
+import mozilla.components.service.fxa.FXA_STATE_KEY
+import mozilla.components.service.fxa.FXA_STATE_PREFS_KEY
 import org.json.JSONArray
 import org.json.JSONObject
 import org.mozilla.fenix.R
@@ -29,6 +36,7 @@ import java.io.OutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
@@ -44,7 +52,29 @@ import java.util.zip.ZipOutputStream
 object KakoExim {
 
     const val FORMAT = "kako-export"
-    const val VERSION = 1
+
+    /**
+     * 2 since 2026-09-09, when open tabs, history, the search choice and the account joined
+     * the archive. A v1 archive still imports — it simply carries none of those four — so
+     * `MIN_FORMAT_READABLE` on the automation provider stays at 1.
+     */
+    const val VERSION = 2
+
+    /**
+     * Newest visits kept by the history category.
+     *
+     * History is the largest thing in a Fenix profile by a wide margin, and this is the only
+     * category whose size is unbounded by anything the user chose. Restoring it is also the
+     * slowest part of an import — one `recordVisit` per row — so the cap is what keeps a
+     * restore inside the caller's ten-minute patience as much as it keeps the ZIP small.
+     */
+    private const val HISTORY_MAX_VISITS = 5_000L
+
+    /**
+     * android-components' own search-metadata preferences file, which is where the selected
+     * search engine is persisted. `private const` in `SearchMetadataStorage`, hence repeated.
+     */
+    private const val SEARCH_METADATA_PREFS = "mozac_feature_search_metadata"
 
     /**
      * The family file-name convention (白い熊, 2026-07-25): every backup any sister app
@@ -95,6 +125,16 @@ object KakoExim {
         LOGINS("logins", R.string.kako_eim_cat_logins, sensitive = true),
         CARDS("credit_cards", R.string.kako_eim_cat_cards, sensitive = true),
         ADDRESSES("addresses", R.string.kako_eim_cat_addresses, sensitive = true),
+
+        // Added 2026-09-09. Everything above this line lives in one of two SharedPreferences
+        // files or in places/autofill storage; these four do not, which is exactly why they
+        // used to go missing from a restore while the archive still carried the *flags* that
+        // describe them — `pref_key_open_tabs_count` said 6 and `pref_key_fxa_signed_in` said
+        // true over a profile that had neither (白い熊, 2026-09-09).
+        TABS("tabs", R.string.kako_eim_cat_tabs),
+        HISTORY("history", R.string.kako_eim_cat_history, sensitive = true),
+        SEARCH("search", R.string.kako_eim_cat_search),
+        ACCOUNT("account", R.string.kako_eim_cat_account, sensitive = true),
         ;
 
         /** This category's JSON entry inside the ZIP. */
@@ -245,6 +285,10 @@ object KakoExim {
                     Cat.LOGINS -> put(cat.fileName, exportLogins(context))
                     Cat.CARDS -> put(cat.fileName, exportCards(context))
                     Cat.ADDRESSES -> put(cat.fileName, exportAddresses(context))
+                    Cat.TABS -> put(cat.fileName, exportTabs(context))
+                    Cat.HISTORY -> put(cat.fileName, exportHistory(context))
+                    Cat.SEARCH -> put(cat.fileName, exportPrefs(searchPrefs(context)) { true })
+                    Cat.ACCOUNT -> put(cat.fileName, exportAccount(context))
                 }
                 onProgress(index + 1, ordered.size, context.getString(cat.labelRes))
             }
@@ -264,14 +308,28 @@ object KakoExim {
      * Restores the selected categories from [zip]; returns a per-category summary
      * ("Label: N" lines). A category missing from the file is skipped silently; a
      * failing category is skipped without aborting the rest.
+     *
+     * [onProgress] (done, total, category label) fires after each category, exactly as
+     * [export]'s does — and for the same reason. A caller on the other side of an IPC
+     * boundary cannot tell a slow import from a dead one, and 応用管理 gives up on an app
+     * that has said nothing for ten minutes (応用管理, 2026-09-08). The import used to say
+     * nothing at all, which made a slow restore indistinguishable from a hung one.
      */
-    suspend fun import(context: Context, zip: ByteArray, cats: Set<Cat>): String {
+    suspend fun import(
+        context: Context,
+        zip: ByteArray,
+        cats: Set<Cat>,
+        onProgress: (done: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
+    ): String {
         val entries = readZip(zip)
         val lines = mutableListOf<String>()
+        // Enum order, exactly as [export] walks it, so the position handed to [onProgress]
+        // can be turned back into the category id the contract wants in `item`.
+        val ordered = Cat.entries.filter { it in cats }
 
-        cats.forEach { cat ->
-            val bytes = entries[cat.fileName] ?: return@forEach
-            val applied = runCatching {
+        ordered.forEachIndexed { index, cat ->
+            val bytes = entries[cat.fileName]
+            val applied = if (bytes == null) -1 else runCatching {
                 when (cat) {
                     Cat.KAKO_UI -> importPrefs(KakoTheme.prefs(context), bytes) { key ->
                         key !in FONT_KEYS && key !in KAKO_UI_EXCLUDE
@@ -301,9 +359,17 @@ object KakoExim {
                     Cat.LOGINS -> importLogins(context, bytes)
                     Cat.CARDS -> importCards(context, bytes)
                     Cat.ADDRESSES -> importAddresses(context, bytes)
+                    Cat.TABS -> importTabs(context, bytes)
+                    Cat.HISTORY -> importHistory(context, bytes)
+                    Cat.SEARCH -> importPrefs(searchPrefs(context), bytes) { true }
+                    Cat.ACCOUNT -> importAccount(context, bytes)
                 }
             }.getOrDefault(-1)
             if (applied >= 0) lines.add("${context.getString(cat.labelRes)}: $applied")
+            // Fires for a category the archive lacks as well: a caller watching these to
+            // decide whether we are still alive must see the count reach the total, and a
+            // category it never hears about is one it would wait for forever.
+            onProgress(index + 1, ordered.size, context.getString(cat.labelRes))
         }
 
         // Caches backing the fork prefs/fonts were swapped underneath; refresh so
@@ -453,6 +519,173 @@ object KakoExim {
         }
         return applied
     }
+
+    // Open tabs, history, the search choice and the account. None of these are a preference
+    // in one of the two files the categories above share, which is why they were absent from
+    // every archive this fork wrote before 2026-09-09.
+
+    /**
+     * The open tabs, in order, as the browser store holds them.
+     *
+     * URL, title and the selection — not the engine session. A [RecoverableTab]'s
+     * `engineSessionState` is Gecko's own opaque per-tab blob (scroll offsets, form state,
+     * session history); it does not serialise to JSON, it is meaningless in another profile,
+     * and it is the bulk of the size. Restored tabs therefore come back unloaded and at the
+     * top of their page, which is what a restore onto a clean phone can honestly offer.
+     */
+    private fun exportTabs(context: Context): ByteArray {
+        val state = context.components.core.store.state
+        val array = JSONArray()
+        state.tabs.forEach { tab ->
+            array.put(
+                JSONObject().apply {
+                    put("url", tab.content.url)
+                    put("title", tab.content.title)
+                    put("private", tab.content.private)
+                    put("selected", tab.id == state.selectedTabId)
+                },
+            )
+        }
+        return JSONObject().put("tabs", array).toString(2).toByteArray()
+    }
+
+    private fun importTabs(context: Context, bytes: ByteArray): Int {
+        val array = JSONObject(String(bytes)).optJSONArray("tabs") ?: return 0
+        val recovered = mutableListOf<RecoverableTab>()
+        var selectId: String? = null
+        for (index in 0 until array.length()) {
+            val obj = array.optJSONObject(index) ?: continue
+            val url = obj.optStringOrNull("url") ?: continue
+            // Our own id: the exporting profile's ids mean nothing here, and reusing one
+            // would collide with a tab this profile already has.
+            val id = UUID.randomUUID().toString()
+            if (obj.optBoolean("selected", false)) selectId = id
+            recovered.add(
+                RecoverableTab(
+                    engineSessionState = null,
+                    state = TabState(
+                        id = id,
+                        url = url,
+                        title = obj.optString("title"),
+                        private = obj.optBoolean("private", false),
+                        index = index,
+                    ),
+                ),
+            )
+        }
+        if (recovered.isEmpty()) return 0
+        // Additive, deliberately: restoring is not a reason to close whatever is already open.
+        context.components.useCases.tabsUseCases.restore(recovered, selectId)
+        return recovered.size
+    }
+
+    /**
+     * Browsing history, newest first, capped at [HISTORY_MAX_VISITS].
+     *
+     * Uncapped this is by far the largest thing in a Fenix profile and it would dominate both
+     * the archive and the import's running time — the one category that could push a restore
+     * past the caller's patience.
+     */
+    private suspend fun exportHistory(context: Context): ByteArray {
+        val visits = context.components.core.historyStorage
+            .getVisitsPaginated(offset = 0, count = HISTORY_MAX_VISITS)
+        val array = JSONArray()
+        visits.forEach { visit ->
+            array.put(
+                JSONObject().apply {
+                    put("url", visit.url)
+                    put("title", visit.title ?: JSONObject.NULL)
+                    put("visitTime", visit.visitTime)
+                    put("visitType", visit.visitType.name)
+                },
+            )
+        }
+        return JSONObject().put("visits", array).toString(2).toByteArray()
+    }
+
+    /**
+     * **Visit times do not survive.** [HistoryStorage] has no timestamped write — `recordVisit`
+     * stamps now, and places offers nothing else through the public API — so a restored history
+     * comes back with every visit dated to the restore. The URLs, titles and the fact of the
+     * visit are what travel; frecency rebuilds itself from there. Exported times are kept in
+     * the archive anyway, against a future API that can use them.
+     */
+    private suspend fun importHistory(context: Context, bytes: ByteArray): Int {
+        val array = JSONObject(String(bytes)).optJSONArray("visits") ?: return 0
+        val storage = context.components.core.historyStorage
+        var applied = 0
+        // Oldest first, so that what little ordering survives is the original one.
+        for (index in array.length() - 1 downTo 0) {
+            val obj = array.optJSONObject(index) ?: continue
+            val url = obj.optStringOrNull("url") ?: continue
+            val type = runCatching { VisitType.valueOf(obj.optString("visitType")) }
+                .getOrDefault(VisitType.LINK)
+            runCatching {
+                storage.recordVisit(url, PageVisit(visitType = type))
+                obj.optStringOrNull("title")?.let {
+                    storage.recordObservation(url, PageObservation(title = it))
+                }
+                applied++
+            }
+        }
+        return applied
+    }
+
+    /**
+     * The Firefox Account session, verbatim.
+     *
+     * 白い熊 asked for the sign-in to travel with the backup (2026-09-09) after being told what
+     * that means, and this is what it means: the string below is the account state
+     * [mozilla.components.service.fxa.SharedPrefAccountStorage] persists — refresh token
+     * included — and the archive it lands in is a plain ZIP on shared storage unless 応用管理's
+     * own encryption is turned on. Anything that can read the backup can sign in as him.
+     *
+     * Reading the preference directly rather than going through `AccountStorage` because that
+     * interface is `internal` to the component; [FXA_STATE_PREFS_KEY] and [FXA_STATE_KEY] are
+     * its public constants and name the same file and key. This is the plaintext storage, which
+     * is what the release channel selects (`secureStateAtRest = Config.channel.isNightlyOrDebug`
+     * in BackgroundServices) — on a build where that flips, the state lives in the Keystore-backed
+     * store instead and this category will simply find nothing.
+     */
+    private fun exportAccount(context: Context): ByteArray {
+        val state = context
+            .getSharedPreferences(FXA_STATE_PREFS_KEY, Context.MODE_PRIVATE)
+            .getString(FXA_STATE_KEY, null)
+        return JSONObject().apply {
+            put("fxaState", state ?: JSONObject.NULL)
+        }.toString(2).toByteArray()
+    }
+
+    /**
+     * Writes the account state back, synchronously.
+     *
+     * `commit()` rather than `apply()` for the reason the whole import flushes at the end: the
+     * caller force-stops this app the moment it answers, and a queued write does not survive
+     * SIGKILL. The account manager reads this file when the app next starts.
+     */
+    private fun importAccount(context: Context, bytes: ByteArray): Int {
+        val state = JSONObject(String(bytes)).optStringOrNull("fxaState") ?: return 0
+        val committed = context
+            .getSharedPreferences(FXA_STATE_PREFS_KEY, Context.MODE_PRIVATE)
+            .edit()
+            .putString(FXA_STATE_KEY, state)
+            .commit()
+        return if (committed) 1 else 0
+    }
+
+    /**
+     * Where the selected search engine actually lives — `mozac_feature_search_metadata`, a
+     * SharedPreferences file of android-components' own, not Fenix's.
+     *
+     * This is the whole reason the search engine reverted to Google on every restore: the
+     * exporter only ever read [KakoTheme.prefs] and Fenix's own preferences, and the choice is
+     * in neither. Fenix's `pref_key_search_engine` looks like it should hold it and does not.
+     *
+     * The file name is `private const` in `SearchMetadataStorage`, so it is repeated here; it
+     * is part of that component's on-disk layout and changing it upstream would be a migration.
+     */
+    private fun searchPrefs(context: Context): SharedPreferences =
+        context.getSharedPreferences(SEARCH_METADATA_PREFS, Context.MODE_PRIVATE)
 
     /** Each Places root is exported as its own subtree so a restore lands back in place. */
     private suspend fun exportBookmarks(context: Context): ByteArray {

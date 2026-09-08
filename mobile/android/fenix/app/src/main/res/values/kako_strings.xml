@@ -110,6 +110,10 @@
     <string name="kako_eim_cat_logins" translatable="false">Saved passwords</string>
     <string name="kako_eim_cat_cards" translatable="false">Credit cards</string>
     <string name="kako_eim_cat_addresses" translatable="false">Addresses</string>
+    <string name="kako_eim_cat_tabs" translatable="false">Open tabs</string>
+    <string name="kako_eim_cat_history" translatable="false">Browsing history</string>
+    <string name="kako_eim_cat_search" translatable="false">Search engine choice</string>
+    <string name="kako_eim_cat_account" translatable="false">Firefox Account sign-in</string>
     <string name="kako_eim_plaintext_warning" translatable="false">Leaves the encrypted store — written as plaintext in the ZIP.</string>
     <string name="kako_eim_export" translatable="false">Export</string>
     <string name="kako_eim_import" translatable="false">Import</string>
