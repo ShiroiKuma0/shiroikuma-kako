@@ -4,15 +4,12 @@
 
 package mozilla.components.lib.crash
 
-import android.app.ForegroundServiceStartNotAllowedException
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.BadParcelableException
 import android.os.Build
 import androidx.annotation.StyleRes
 import androidx.annotation.VisibleForTesting
-import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,7 +20,6 @@ import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.lib.crash.CrashReporter.Companion.requireInstance
 import mozilla.components.lib.crash.db.CrashDatabase
-import mozilla.components.lib.crash.db.forceSerializable
 import mozilla.components.lib.crash.db.insertCrashSafely
 import mozilla.components.lib.crash.db.insertReportSafely
 import mozilla.components.lib.crash.db.toCrash
@@ -34,8 +30,6 @@ import mozilla.components.lib.crash.notification.CrashNotification
 import mozilla.components.lib.crash.prompt.CrashPrompt
 import mozilla.components.lib.crash.service.CrashReporterService
 import mozilla.components.lib.crash.service.CrashTelemetryService
-import mozilla.components.lib.crash.service.SendCrashReportService
-import mozilla.components.lib.crash.service.SendCrashTelemetryService
 import mozilla.components.support.base.log.logger.Logger
 
 /**
@@ -322,10 +316,6 @@ class CrashReporter internal constructor(
 
         database.crashDao().insertCrashSafely(crashWithTags.toEntity())
 
-        if (telemetryServices.isNotEmpty()) {
-            sendCrashTelemetry(context, crashWithTags)
-        }
-
         // If crash is native code and non fatal then the view will handle the user prompt
         if (shouldSendIntent(crashWithTags)) {
             // App has registered a pending intent
@@ -339,12 +329,22 @@ class CrashReporter internal constructor(
             return
         }
 
-        if (services.isNotEmpty()) {
-            if (CrashPrompt.shouldPromptForCrash(shouldPrompt, crashWithTags)) {
-                showPromptOrNotification(context, crashWithTags)
-            } else {
-                sendCrashReport(context, crashWithTags)
-            }
+        // 白い熊 火狐: telling the user is all that happens here now. Upstream had two more
+        // branches — start SendCrashTelemetryService when telemetry services were registered,
+        // and, when the prompt was suppressed, upload silently through SendCrashReportService.
+        // Both services are deleted in this fork (see the module manifest), so nothing is
+        // uploaded without the user asking for it; the prompt's own Report button is the only
+        // remaining route to Mozilla, and it goes through [submitReport].
+        //
+        // The `if (services.isNotEmpty())` gate upstream wrapped this in went with them, on
+        // purpose. It meant "only tell the user when there is somewhere to send it", which is
+        // upstream's logic, not ours: strip the upload path far enough and that gate silently
+        // takes the crash notification with it — and that notification is exactly what every
+        // build of this fork is verified against (`adb logcat | grep
+        // mozac.lib.crash.notification`, CLAUDE.md). A crash the user is never told about is
+        // not a privacy win, it is a blind spot.
+        if (CrashPrompt.shouldPromptForCrash(shouldPrompt, crashWithTags)) {
+            showPromptOrNotification(context, crashWithTags)
         }
     }
 
@@ -394,54 +394,6 @@ class CrashReporter internal constructor(
     internal fun showNotification(context: Context, crash: Crash) {
         val notification = CrashNotification(context, crash, promptConfiguration)
         notification.show()
-    }
-
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal fun sendCrashReport(context: Context, crash: Crash) = try {
-        ContextCompat.startForegroundService(context, SendCrashReportService.createReportIntent(context, crash))
-    } catch (e: BadParcelableException) {
-        (crash as? Crash.UncaughtExceptionCrash)?.let {
-            // We may end up with a throwable that isn't completely serializable, which will cause
-            // a crash when the service tries to unbundle it.
-            val updatedCrash = it.copy(throwable = it.throwable.forceSerializable())
-            ContextCompat.startForegroundService(
-                context,
-                SendCrashReportService.createReportIntent(context, updatedCrash),
-            )
-            logger.warn("replaced throwable for crash that could not be serialized")
-        }
-    } catch (e: IllegalStateException) {
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S &&
-            e is ForegroundServiceStartNotAllowedException
-        ) {
-            logger.warn("ignored failed service start while backgrounded")
-        } else {
-            throw e
-        }
-    }
-
-    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal fun sendCrashTelemetry(context: Context, crash: Crash) = try {
-        ContextCompat.startForegroundService(context, SendCrashTelemetryService.createReportIntent(context, crash))
-    } catch (e: BadParcelableException) {
-        (crash as? Crash.UncaughtExceptionCrash)?.let {
-            // We may end up with a throwable that isn't completely serializable, which will cause
-            // a crash when the service tries to unbundle it.
-            val updatedCrash = it.copy(throwable = it.throwable.forceSerializable())
-            ContextCompat.startForegroundService(
-                context,
-                SendCrashTelemetryService.createReportIntent(context, updatedCrash),
-            )
-            logger.warn("replaced throwable for crash that could not be serialized")
-        }
-    } catch (e: IllegalStateException) {
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S &&
-            e is ForegroundServiceStartNotAllowedException
-        ) {
-            logger.warn("ignored failed service start while backgrounded")
-        } else {
-            throw e
-        }
     }
 
     @VisibleForTesting
