@@ -10,7 +10,7 @@ A fork of [Mozilla Firefox](https://github.com/mozilla-firefox/firefox) (release
 
 Installs **side-by-side** with stock Firefox/Beta/Nightly: app id `shiroikuma.kako` on Android, package `shiroikuma-kako` with its own `~/.mozilla/kako` profile on the desktop.
 
-**📥 Latest release: [`155.0.1+017`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
+**📥 Latest release: [`155.0.1+020`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
 
 </div>
 
@@ -20,16 +20,23 @@ Installs **side-by-side** with stock Firefox/Beta/Nightly: app id `shiroikuma.ka
 
 Stock Firefox for Android ships three, and a scan of the APK names them: **Adjust**
 (install-attribution analytics), **Sentry** (crash reporting) and **Mozilla Telemetry**
-(Glean). This build contains **none** — verified against all 588 signatures in the Exodus
-Privacy database, the same list the tracker scanners use.
+(Glean). This build contains **none**.
 
 They are removed at source, not switched off. Adjust and Sentry are deleted outright —
 dependencies, tokens, the manifest receiver, the services behind them. Glean goes further
 than the app: 34 telemetry-only files deleted, the call sites cleared out of another 111,
 the metrics generator removed so its 120 generated files and megabyte of Kotlin are never
 produced, and the SDK itself absent from the APK. The Data Choices screen loses the three
-switches that fed it, since they would now control nothing; Studies and crash reporting,
-which still do something, stay.
+switches that fed it, since they would now control nothing.
+
+**Since `155.0.1+019`, nothing reports a crash either.** Earlier builds claimed a clean
+scan on the strength of a dex grep for Glean — which answers one of those 588 signatures,
+not all of them — and a tracker scanner had been reading two more all along, both of them
+android-components' crash uploaders: `SendCrashReportService` and
+`SendCrashTelemetryService`. Both are gone, with the code paths that started them, so the
+browser no longer sends anything to Mozilla on its own. Crash *handling* stays exactly
+where it was: crashes are still caught, still recorded locally, and still announced, and
+the prompt's Report button still works if you deliberately tap it.
 
 Getting Glean out completely meant giving up the prebuilt engine: Mozilla's published
 application-services binaries carry it, and nothing on the app side can reach inside them.
@@ -62,7 +69,11 @@ A dedicated settings page (pinned at the top of Settings, or long-press the menu
 ---
 
 ## 💾 Export & import the whole profile
-Pick a backup directory once; the page then shows the newest export in it every time you open it. One panel exports — or restores — the browser by category: the 白い熊 UI theme, imported fonts, **every installed extension** (re-installed from AMO on restore, with its enabled and private-browsing state, the pinned toolbar order, and your custom collection), Firefox's own settings, bookmarks, saved passwords, credit cards and addresses. The archive is a plain ZIP of readable JSON — no databases, no opaque blobs — so it stays inspectable and portable. Credentials necessarily travel as plaintext inside it, which the panel says out loud; treat the file like the passwords it holds.
+Pick a backup directory once; the page then shows the newest export in it every time you open it. One panel exports — or restores — the browser by category: the 白い熊 UI theme, imported fonts, **every installed extension** (re-installed from AMO on restore, with its enabled and private-browsing state, the pinned toolbar order, and your custom collection), Firefox's own settings, bookmarks, saved passwords, credit cards and addresses — and, since `155.0.1+020`, **your open tabs, your browsing history, the search engine you chose and your Firefox Account sign-in**. The archive is a plain ZIP of readable JSON — no databases, no opaque blobs — so it stays inspectable and portable.
+
+Those last four were the difference between a backup and a real one. Each of them lives outside the two preference files the earlier categories share — tabs in the browser-state snapshot, the search choice in an android-components preference file of its own, the account in `fxaAppState` — so none of them was ever captured, while the settings category cheerfully carried `pref_key_open_tabs_count` and `pref_key_fxa_signed_in`: a restore put back the labels describing state the archive did not hold. Two limits are honest and inherent: **visit times do not survive** a round trip, because the history store offers no timestamped write, so a restored history is dated to the restore; and **per-tab engine state** — scroll offsets, form contents — is the engine's opaque blob, so tabs come back unloaded at the top of the page.
+
+Credentials necessarily travel as plaintext inside the archive, which the panel says out loud — and that now includes the account's refresh token, so anything that can read a backup can sign in as you. Treat the file like the passwords it holds, and encrypt it wherever it is stored.
 
 ---
 
@@ -73,6 +84,8 @@ The same export answers a broadcast, so an automation app can back the browser u
 
 ## 🚪 A data door for a clean phone
 Beyond writing a ZIP to a directory, the browser will hand its whole backup **straight to a companion app through a file descriptor** — and take one back the same way, which is what makes restoring onto a wiped phone possible at all. A descriptor rather than a path is the point: a backup being assembled is renamed on commit, and it is encrypted and checksummed per file its owner knows about, so a file dropped into that directory by someone else would be moved out from under them, unencrypted and unverified. Because the caller chooses where the data lands, it is identified before a byte moves — an exact package name, the uid the kernel reports, and a pinned signing certificate, all three. Restoring is reachable **only** through that identified door, never through the open broadcast surface. The work runs in a foreground service with real progress and a working cancel, an incoming archive is spooled under a size cap rather than held in memory, and every restored preference is written to disk before success is reported.
+
+A restore now also **says so while it runs**. Until `155.0.1+020` the import side sent no progress at all and answered only when it was finished, which made a slow restore indistinguishable from a dead one — and one step of it was genuinely slow, because it decided which extensions to reinstall from a browser-store list the engine had not filled in yet and so refetched every one of them from AMO over the copy already on disk. It waits for that list now, every network step is bounded, and the whole import carries a deadline that answers even when the work behind it will not.
 
 ---
 
@@ -129,16 +142,21 @@ tools/kako/deb/build-deb.sh          # → ~/tmp/shiroikuma-kako_<version>_amd64
 
 ### Android (arm64-v8a → `.apk`)
 
-Artifact build (prebuilt GeckoView engine; only Kotlin/Java compiles locally):
+A full build, like the desktop one. It has to be: getting Glean out of the APK completely means building application-services in-tree, and that needs Gecko from source rather than the prebuilt engine. About sixteen minutes.
 
 ```bash
 git clone --branch custom git@github.com:ShiroiKuma0/shiroikuma-kako.git
 cd shiroikuma-kako
-./mach bootstrap          # choose "GeckoView/Firefox for Android Artifact Mode"
+./mach bootstrap          # for the SDK and NDK
 
-export MOZCONFIG=$PWD/tools/kako/mozconfig
+export MOZCONFIG=$PWD/tools/kako/mozconfig-android-src
 ./mach build
+tools/kako/stage-megazord.sh          # MANDATORY — see below
 ./mach gradle fenix:assembleRelease
-# APK: objdir-kako/gradle/build/mobile/android/fenix/app/outputs/apk/release/fenix-arm64-v8a-release.apk
+# APK: objdir-kako-src/gradle/build/mobile/android/fenix/app/outputs/apk/release/fenix-arm64-v8a-release.apk
 # then zipalign + apksigner with your own keystore
 ```
+
+`stage-megazord.sh` is not optional and the app force-closes without it. Gecko links its own allocator into every shared library it builds, `libmegazord.so` included — but application-services is driven from Kotlin over JNA, where allocations come from bionic, and freeing those through mozjemalloc segfaults the moment `places.sqlite` is opened. The script stages Mozilla's self-contained megazord instead, and refuses to stage one that links mozglue.
+
+`tools/kako/mozconfig` still builds the old artifact configuration — faster, but the prebuilt application-services binaries carry Glean, so that APK is not tracker-free.
