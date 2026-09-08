@@ -937,7 +937,9 @@
              app cannot be asked anything. An app without these is simply not offered for data
              backup or restore. -->
         <meta-data android:name="shiroikuma.automation.contract" android:value="2" />
-        <meta-data android:name="shiroikuma.automation.format" android:value="1" />
+        <!-- 2 since 2026-09-09: the archive gained open tabs, history, the search choice
+             and the account. min_format stays 1 — a v1 archive still imports. -->
+        <meta-data android:name="shiroikuma.automation.format" android:value="2" />
         <meta-data android:name="shiroikuma.automation.min_format" android:value="1" />
 
         <receiver
