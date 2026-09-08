@@ -5,6 +5,107 @@ Everything built on top of stock Firefox (release channel) — the Android brows
 `<upstream-base>+<build>`; the fork commits live on `custom`, rebased onto each
 adopted `FIREFOX_*_RELEASE` tag, and one tag covers both products.
 
+## 155.0.1+020 — 2026-09-09
+
+The base stays at Firefox **155.0.1** (`FIREFOX_155_0_1_RELEASE`). Two things, both
+found by actually restoring a backup and watching what came back: **the app-data
+backup now covers what it always claimed to**, and **the last two trackers are gone**.
+
+### The backup covers your session at last
+
+`KakoExim` read exactly two preference files — the fork's own and Fenix's — and four
+of the things you would most expect a browser backup to hold are in neither of them:
+
+| What | Where it actually lives |
+| --- | --- |
+| Open tabs | the browser-state snapshot in the app's `files/` directory |
+| Browsing history | places storage |
+| The search engine you chose | `mozac_feature_search_metadata`, an android-components preference file of its own |
+| Firefox Account sign-in | `fxaAppState` |
+
+So none of them was ever exported — while `app_settings.json` carried
+`pref_key_open_tabs_count = 6` and `pref_key_fxa_signed_in = true`. A restore put the
+*labels* back over state the archive did not contain, which is exactly why a restore
+looked like it had run and done nothing: same theme, same bookmarks, no tabs, signed
+out, and the search engine back to Google when the choice had been DuckDuckGo all
+along, sitting in a file nothing read.
+
+Four categories are added and the archive format goes to **2**. A v1 archive still
+imports — it simply carries none of the four — so `min_format_readable` stays 1.
+Verified against a live export: five tabs with the selected one marked, 5,000 visits,
+`ddg`/DuckDuckGo, and the account state.
+
+Two limits are inherent rather than oversights, and both are documented at the call
+sites:
+
+- **Visit timestamps do not survive.** The history store has no timestamped write —
+  `recordVisit` stamps now — so a restored history is dated to the restore. The URLs,
+  titles and the fact of each visit travel, and frecency rebuilds from there.
+- **Per-tab engine state does not travel.** Scroll offsets, form contents and per-tab
+  session history are the engine's own opaque blob; it does not serialise to JSON and
+  means nothing in another profile. Restored tabs come back unloaded.
+
+The account category carries the **refresh token**. In an unencrypted backup that is a
+plain ZIP anything can read and sign in with — a deliberate choice, made knowing that,
+so encrypt where these are stored.
+
+### A restore that goes quiet now says why
+
+The same investigation started from a companion app reporting `App-supplied data
+restore failed: silent 10m · heard 0 progress, 0 replies`. The job was accepted and
+the import genuinely ran; it was simply mute and, sometimes, very slow.
+
+`KakoAddons.restore` decided which extensions were missing by reading the browser
+store's extension map — which a headless import reaches *before* the engine has
+published anything into it. Measured on the phone: the engine published the installed
+set 280–760 ms after the service started, and the import had already decided. So it
+treated all seven installed extensions as absent and re-fetched every one of them from
+AMO, over the copy already on disk, on **every** import. Seven lookups at a 20-second
+read timeout plus seven installs capped at two minutes each is up to sixteen minutes of
+work, and the import broadcast no progress at all and replied only at the very end. On
+a fast network it cost two seconds and nobody noticed.
+
+- The extension list is now **waited for** rather than sampled, so installed add-ons
+  are recognised instead of reinstalled over themselves.
+- Every AMO step is bounded, and the extension restore carries a four-minute budget.
+- The import **reports progress per category**, the way the export always did.
+- The whole import carries a six-minute deadline that runs on the I/O dispatcher — the
+  one timeout that cannot be taken down by the work it is timing — so a terminal answer
+  goes out even when the step behind it never returns.
+
+### The last two trackers — gone (`155.0.1+019`)
+
+`155.0.1+017` was published as tracker-free. It was not. A scanner had been reading two
+components all along, both android-components crash uploaders:
+`mozilla.components.lib.crash.service.SendCrashReportService` and
+`SendCrashTelemetryService`. The claim survived because the only check ever run was a
+dex grep for Glean — one Exodus signature out of 588, not a tracker check.
+
+Both services are deleted, together with `CrashReporter.sendCrashReport`,
+`sendCrashTelemetry`, their call sites and their manifest entries. Nothing reports to
+Mozilla on its own any more; the crash prompt's Report button is the one remaining
+route and takes a deliberate tap.
+
+**Crash handling is deliberately untouched.** Crashes are still caught, still recorded
+locally, and the crash notification still fires. Upstream showed that notification only
+`if (services.isNotEmpty())` — "tell the user only when there is somewhere to upload
+to" — and that gate went with the upload path rather than taking the notification with
+it, because every build of this fork is verified by grepping the log for exactly that
+notification. Removing it would have turned the check into one that always passes.
+
+The verification recipe in `CLAUDE.md` is corrected to match: it now checks Glean,
+Adjust, Sentry and both crash services, and says to confirm against the scanner rather
+than trusting a grep.
+
+### Also in this release
+
+- `155.0.1+018` carried the import fix on its own; `155.0.1+019` added the crash-service
+  removal. `155.0.1+020` is the first to carry all of it, and is the build published here.
+- The Android build instructions in `README.md` described the old artifact configuration.
+  They now describe the source build the tracker-free APK actually requires, including the
+  mandatory `tools/kako/stage-megazord.sh` step between `./mach build` and the Gradle
+  assemble — skip it and the app force-closes the moment `places.sqlite` is opened.
+
 ## 155.0.1+017 — 2026-09-06
 
 The base stays at Firefox **155.0.1** (`FIREFOX_155_0_1_RELEASE`). This release is
