@@ -103,18 +103,39 @@ found. Remove the flag before shipping.
 
 ## No trackers, ever (hard rule)
 
-The APK contains **zero trackers**, verified on 155.0.1+017 against all 588
-signatures in Exodus's database. Adjust and Sentry are deleted at source; Glean is
-stripped from Fenix, android-components, the longfox module **and** the vendored
-application-services, and the Glean SDK is not in the APK at all.
+The APK contains **zero trackers** as of 155.0.1+019. Adjust and Sentry are deleted
+at source; Glean is stripped from Fenix, android-components, the longfox module
+**and** the vendored application-services, and the Glean SDK is not in the APK at
+all. `lib-crash`'s two crash-upload services are deleted as well — see below.
+
+**155.0.1+017 was NOT tracker-free, whatever the line here used to claim.**
+応用管理 showed it as "2 trackers" all along, both from `lib-crash`:
+`mozilla.components.lib.crash.service.SendCrashReportService` and
+`SendCrashTelemetryService`. The claim survived because the only check ever run was
+the Glean grep below, and a Glean grep is not a tracker check — it answers one
+signature out of Exodus's 588. Deleted in +019 together with `CrashReporter`'s
+`sendCrashReport`/`sendCrashTelemetry` and their manifest entries; crash *handling*,
+the local crash database and `CrashNotification` all stay, and `MozillaSocorroService`
+stays registered because `CrashReporter`'s `init` requires a non-empty service list —
+so the crash prompt's own Report button is the one remaining route to Mozilla, and it
+takes an explicit tap (白い熊, 2026-09-09).
 
 An upstream adoption will drag all of it back in. Strip it again, and check the dex
-rather than trusting the source:
+and the manifest rather than trusting the source — **every name below, not just
+Glean**:
 
 ```bash
-unzip -p ~/tmp/shiroikuma-kako_<ver>_arm64-v8a.apk 'classes*.dex' \
-  | grep -c -a -o -F "mozilla/telemetry/glean"      # must be 0
+APK=~/tmp/shiroikuma-kako_<ver>_arm64-v8a.apk
+for c in mozilla/telemetry/glean com/adjust/sdk io/sentry \
+         mozilla/components/lib/crash/service/SendCrashReportService \
+         mozilla/components/lib/crash/service/SendCrashTelemetryService; do
+  printf '%-58s %s\n' "$c" "$(unzip -p "$APK" 'classes*.dex' | grep -c -a -o -F "$c")"
+done                                                  # every count must be 0
 ```
+
+And confirm against the tool that actually judges it: 応用管理 → the app's page →
+the trackers pill. A dex grep only finds what it was told to look for; that pill is
+the number 白い熊 sees.
 
 The `metrics.yaml` files under `third_party/application-services` are **kept**: the
 Rust `build.rs` of each component runs `glean_parser` over them and the build fails
@@ -180,6 +201,36 @@ The 白い熊 火狐 UI (KakoTheme slots + `kako_theme.xml` overlay) seeds and r
 `#000000` + **pure yellow `#FFFF00`** (`KAKO_PALETTE_BLACK` / `KAKO_PALETTE_YELLOW` in
 `fenix/kako/KakoTheme.kt`; the alpha-variant resources in `kako_theme.xml` share the same base).
 Never use material yellow `#FFEB3B` for fork UI defaults.
+
+## What the app-data backup covers (and the trap in it)
+
+`KakoExim.Cat` is the whole contract — twelve categories since 2026-09-09, archive
+format **2**. Until then it was eight, and it read exactly two SharedPreferences
+files: `KakoTheme.prefs` and `Settings.FENIX_PREFERENCES`.
+
+**That is why restores looked like they had done nothing.** Open tabs, browsing
+history, the selected search engine and the Firefox Account are in *neither* of
+those files — tabs live in the browser-state snapshot, the search choice in
+android-components' own `mozac_feature_search_metadata`, the account in
+`fxaAppState` — so none of them was ever exported. Worse, `app_settings.json` did
+carry `pref_key_open_tabs_count = 6` and `pref_key_fxa_signed_in = true`: the
+archive restored the *flags* describing state it did not contain.
+
+The lesson generalises: **a Fenix preference key that names something is not where
+that something is stored.** `pref_key_search_engine` exists and is always empty.
+Before trusting a category, export one and read the JSON.
+
+Two things do not survive a round trip, by design or by API:
+
+- **Visit timestamps.** `HistoryStorage` has no timestamped write, so restored
+  history is dated to the restore. URLs and titles travel; frecency rebuilds.
+- **Per-tab engine state.** Scroll position, form contents and per-tab session
+  history are Gecko's opaque blob; restored tabs come back unloaded.
+
+**The archive contains the Firefox Account session** (白い熊's explicit decision,
+2026-09-09, after being told what it means): the refresh token is in
+`account.json`, in a plain ZIP unless 応用管理's encryption is on. Anything that can
+read a backup can sign in as him. Never write one to shared storage as scratch.
 
 ## Build & deploy pipeline (summary — see `kako-build` skill)
 
