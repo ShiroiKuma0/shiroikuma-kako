@@ -25,25 +25,16 @@
                 android:value="This foreground service allows users to report crashes" />
         </service>
 
-        <!-- Separate process to avoid starting the application when starting this service -->
-        <service android:name=".service.SendCrashReportService"
-            android:process=":crashReportingProcess"
-            android:exported="false"
-            android:foregroundServiceType="specialUse">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="This foreground service allows users to report crashes" />
-        </service>
+        <!-- 白い熊 火狐: SendCrashReportService and SendCrashTelemetryService are gone, and
+             with them the whole crash-upload path. They were the two components Exodus and
+             応用管理 detect as trackers in this app, and they were still here on 155.0.1+017
+             even though CLAUDE.md called that build tracker-free — the check behind that
+             claim only ever grepped the dex for Glean (白い熊, 2026-09-09).
 
-        <!-- Separate process to avoid starting the application when starting this service -->
-        <service android:name=".service.SendCrashTelemetryService"
-            android:process=":crashReportingProcess"
-            android:exported="false"
-            android:foregroundServiceType="specialUse">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="This foreground service allows users to report crashes" />
-        </service>
+             Crash HANDLING stays: CrashHandlerService above still catches crashes, they are
+             still written to the local database, and CrashNotification still fires — which
+             is what the build-verification step greps logcat for. Only the reporting to
+             Mozilla is removed. -->
     </application>
 
 </manifest>
