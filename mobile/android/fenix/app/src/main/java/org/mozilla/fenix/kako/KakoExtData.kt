@@ -92,6 +92,30 @@ internal object KakoExtData {
     /** Where an import unpacks to, and [applyPending] moves from. Private storage, ours alone. */
     private const val PENDING_DIR = "kako_pending_extdata"
 
+    /**
+     * Where an import unpacks the add-ons' own XPI files.
+     *
+     * A separate directory because these are **not** moved into the profile: an XPI dropped into
+     * `<profile>/extensions/` is invisible to Gecko, which knows only what its own extension
+     * database says. They are installed properly, by [KakoAddons], and deleted afterwards.
+     */
+    private const val PENDING_ADDONS_DIR = "kako_pending_addons"
+
+    /**
+     * The add-ons' XPI files, under the [KakoExim.Cat.EXTENSIONS] id like every other bulk entry.
+     *
+     * Carrying them is what makes an extension restore self-contained. The archive used to record
+     * only *which* add-ons were installed, and the restore re-downloaded each one from AMO — so it
+     * needed the network, needed AMO to answer, needed every add-on to still be listed, and could
+     * only ever return whatever version AMO offers today. When any of that failed the add-ons
+     * simply did not come back (白い熊, 2026-09-09: "Plugins not restored"). With the XPI in hand
+     * the restore installs the exact build that was backed up, offline.
+     */
+    val ADDONS_PREFIX = KakoExim.Cat.EXTENSIONS.id + "/"
+
+    /** Gecko keeps installed add-ons here, one XPI per add-on. */
+    private const val PROFILE_EXTENSIONS_DIR = "extensions"
+
     private const val STORAGE_PERMANENT = "storage/permanent"
     private const val STORAGE_DEFAULT = "storage/default"
     private const val LEGACY_LOCAL_STORAGE = "browser-extension-data"
@@ -205,11 +229,26 @@ internal object KakoExtData {
      * `<id>/` cannot be confused with the `<id>.json` side-car: the separator differs.
      */
     fun categoryOf(name: String): KakoExim.Cat? = when {
+        name.startsWith(ADDONS_PREFIX) -> KakoExim.Cat.EXTENSIONS
         name.startsWith(SETTINGS_PREFIX) || name.startsWith(LEGACY_SETTINGS_PREFIX) ->
             KakoExim.Cat.EXT_SETTINGS
         name.startsWith(DATABASES_PREFIX) || name.startsWith(LEGACY_DATABASES_PREFIX) ->
             KakoExim.Cat.EXT_DATABASES
         else -> null
+    }
+
+    /** The add-on XPIs an import unpacked, for [KakoAddons] to install from. */
+    fun stagedAddonsDir(context: Context): File = File(context.filesDir, PENDING_ADDONS_DIR)
+
+    /** Dropped once the add-ons are installed — they are megabytes, and single-use. */
+    fun clearStagedAddons(context: Context) {
+        runCatching { stagedAddonsDir(context).deleteRecursively() }
+    }
+
+    /** The installed add-ons as Gecko stores them, one XPI apiece. */
+    fun addonFiles(context: Context): List<Entry> {
+        val profile = KakoGeckoPrefs.profileDir(context) ?: return emptyList()
+        return filesUnder(profile, File(profile, PROFILE_EXTENSIONS_DIR), ADDONS_PREFIX)
     }
 
     /**
@@ -219,10 +258,16 @@ internal object KakoExtData {
      * an archive is an input: `..` in an entry name would otherwise write anywhere this app can.
      */
     fun stageFile(context: Context, zipName: String, input: InputStream): Long {
+        val addon = zipName.startsWith(ADDONS_PREFIX)
         val relative = zipName
+            .removePrefix(ADDONS_PREFIX)
             .removePrefix(SETTINGS_PREFIX).removePrefix(DATABASES_PREFIX)
             .removePrefix(LEGACY_SETTINGS_PREFIX).removePrefix(LEGACY_DATABASES_PREFIX)
-        val root = pendingDir(context)
+        val root = if (addon) {
+            stagedAddonsDir(context).also { if (!it.exists()) it.mkdirs() }
+        } else {
+            pendingDir(context)
+        }
         val target = File(root, relative)
         if (!target.canonicalPath.startsWith(root.canonicalPath + File.separator)) return 0L
         target.parentFile?.mkdirs()
@@ -255,17 +300,27 @@ internal object KakoExtData {
         if (!root.isDirectory) return
         val profile = KakoGeckoPrefs.profileDir(context) ?: return
         val base = root.path + File.separator
+        var failed = 0
         root.walkTopDown().filter { it.isFile }.forEach { staged ->
             val relative = staged.path.removePrefix(base)
             val target = File(profile, relative)
-            runCatching {
+            val moved = runCatching {
                 target.parentFile?.mkdirs()
                 target.delete()
                 // A rename inside filesDir: same filesystem, so no second copy of the gigabytes.
-                if (!staged.renameTo(target)) staged.copyTo(target, overwrite = true)
-            }
+                staged.renameTo(target) || run {
+                    staged.copyTo(target, overwrite = true)
+                    staged.delete()
+                }
+            }.getOrDefault(false)
+            if (!moved) failed++
         }
-        runCatching { root.deleteRecursively() }
+        // **Only when every file moved.** The first cut deleted the staging tree unconditionally,
+        // with each move wrapped in its own `runCatching` — so a destination that could not be
+        // written, for any reason, threw away 2.7 GB that had just been unpacked and reported
+        // nothing. A staging tree left standing costs disk and is retried on the next start;
+        // a staging tree deleted after a failed move is gone for good.
+        if (failed == 0) runCatching { root.deleteRecursively() }
     }
 
     private fun pendingDir(context: Context): File =

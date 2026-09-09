@@ -414,15 +414,21 @@ object KakoExim {
                             put("fonts/${font.name}", font.readBytes())
                         }
                     }
-                    Cat.EXTENSIONS -> put(
-                        cat.fileName,
-                        JSONObject().apply {
-                            // The pinned set/order and the custom AMO collection…
-                            put("prefs", prefsJson(fenixPrefs(context)) { it in extensionKeys(context) })
-                            // …plus every installed add-on, not only the pinned ones.
-                            put("installed", KakoAddons.installedJson(context))
-                        }.toString(2).toByteArray(),
-                    )
+                    Cat.EXTENSIONS -> {
+                        put(
+                            cat.fileName,
+                            JSONObject().apply {
+                                // The pinned set/order and the custom AMO collection…
+                                put("prefs", prefsJson(fenixPrefs(context)) { it in extensionKeys(context) })
+                                // …plus every installed add-on, not only the pinned ones.
+                                put("installed", KakoAddons.installedJson(context))
+                            }.toString(2).toByteArray(),
+                        )
+                        // …and the add-ons themselves, so a restore needs neither AMO nor a network.
+                        writeExtData(KakoExtData.addonFiles(context), ::putFile, isCancelled) {
+                            onProgress(index + 1, ordered.size, context.getString(cat.labelRes))
+                        }
+                    }
                     Cat.APP_SETTINGS -> put(cat.fileName, exportAppSettings(context))
                     Cat.BOOKMARKS -> put(cat.fileName, exportBookmarks(context))
                     Cat.LOGINS -> put(cat.fileName, exportLogins(context))
@@ -562,14 +568,17 @@ object KakoExim {
                         stagedFiles[extCat] = (stagedFiles[extCat] ?: 0) + 1
                         if (sinceReport >= EXT_DATA_PROGRESS_BYTES) {
                             sinceReport = 0
-                            val position = orderedForProgress.indexOf(extCat) + 1
-                            if (position > 0) {
-                                onProgress(
-                                    position,
-                                    orderedForProgress.size,
-                                    context.getString(extCat.labelRes),
-                                )
-                            }
+                            // Position 1, always. This pass is UNPACKING, not applying: it walks
+                            // the archive in write order, so reporting the position of whatever
+                            // entry is going past announced "19 of 19" nine seconds in and then
+                            // started again at 3, and 応用管理 said so in its log — "the app started
+                            // its count again — pass 1 over the same data" (2026-09-09). The label
+                            // carries the truth; the number stays where the work has not started.
+                            onProgress(
+                                1,
+                                orderedForProgress.size,
+                                context.getString(R.string.kako_eim_unpacking),
+                            )
                         }
                     }
                 }
