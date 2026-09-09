@@ -119,6 +119,8 @@
     <string name="kako_eim_cat_site_permissions" translatable="false">Site permissions (camera \u00b7 microphone \u00b7 location \u00b7 autoplay)</string>
     <string name="kako_eim_cat_login_exceptions" translatable="false">Never-save-a-password sites</string>
     <string name="kako_eim_cat_collections" translatable="false">Tab collections</string>
+    <string name="kako_eim_cat_ext_settings" translatable="false">Extension settings (each add-on\'s own options)</string>
+    <string name="kako_eim_cat_ext_databases" translatable="false">Extension databases (yomitan dictionaries — gigabytes, slow)</string>
     <string name="kako_eim_plaintext_warning" translatable="false">Leaves the encrypted store — written as plaintext in the ZIP.</string>
     <string name="kako_eim_export" translatable="false">Export</string>
     <string name="kako_eim_import" translatable="false">Import</string>
