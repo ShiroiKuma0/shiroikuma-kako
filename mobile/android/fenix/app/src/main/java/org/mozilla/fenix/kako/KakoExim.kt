@@ -32,6 +32,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.utils.Settings
 import java.io.File
+import java.io.InputStream
 import java.io.OutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -75,6 +76,15 @@ object KakoExim {
      * restore inside the caller's ten-minute patience as much as it keeps the ZIP small.
      */
     private const val HISTORY_MAX_VISITS = 5_000L
+
+    /**
+     * How much extension data to move between liveness reports, in either direction.
+     *
+     * 32 MB is about a second of I/O on this phone, so a 2.7 GB category reports roughly ninety
+     * times over several minutes — often enough that nobody watching can mistake it for dead,
+     * rarely enough that the broadcasts are not themselves the load.
+     */
+    private const val EXT_DATA_PROGRESS_BYTES = 32L shl 20
 
     /**
      * android-components' own search-metadata preferences file, which is where the selected
@@ -162,6 +172,12 @@ object KakoExim {
         SITE_PERMISSIONS("site_permissions", R.string.kako_eim_cat_site_permissions),
         LOGIN_EXCEPTIONS("login_exceptions", R.string.kako_eim_cat_login_exceptions),
         COLLECTIONS("collections", R.string.kako_eim_cat_collections),
+
+        // What the extensions themselves have stored — see [KakoExtData]. Last, and in this
+        // order, because they are the bulk of the archive by a factor of ten thousand: everything
+        // above is written and safe before the gigabytes start.
+        EXT_SETTINGS("extension_settings", R.string.kako_eim_cat_ext_settings),
+        EXT_DATABASES("extension_databases", R.string.kako_eim_cat_ext_databases),
         ;
 
         /** This category's JSON entry inside the ZIP. */
@@ -347,6 +363,30 @@ object KakoExim {
                 zip.closeEntry()
             }
 
+            /**
+             * Streams one file straight through. Never read whole: these are SQLite databases of
+             * a gigabyte and more.
+             *
+             * **Never call `setLevel` here.** The first cut of this stored the bulk entries
+             * uncompressed, on the theory that IndexedDB compresses its own records — and both
+             * halves of that were wrong. The data deflates six to one (1.94 GiB of yomitan
+             * dictionaries became a 337 MB archive), and switching the level between entries
+             * corrupts the stream: `ZipOutputStream` shares one `Deflater` across the whole
+             * archive, and changing its level mid-flight makes `deflateParams` flush into the
+             * bitstream. `ZipFile` never noticed — it only reads the central directory, whose
+             * sizes were right — but `ZipInputStream` inflates, and answered
+             * `ZipException: invalid block type`. That is [import]'s own reader, so the archive
+             * this wrote could not have been restored (2026-09-09, found by the 辞書 chat's
+             * insistence on running both readers).
+             */
+            fun putFile(name: String, file: File) {
+                runCatching {
+                    zip.putNextEntry(ZipEntry(name))
+                    file.inputStream().use { it.copyTo(zip, DEFAULT_BUFFER_SIZE) }
+                    zip.closeEntry()
+                }
+            }
+
             val manifest = JSONObject().apply {
                 put("format", FORMAT)
                 put("version", VERSION)
@@ -403,6 +443,28 @@ object KakoExim {
                     Cat.SITE_PERMISSIONS -> put(cat.fileName, KakoEximStores.exportSitePermissions(context))
                     Cat.LOGIN_EXCEPTIONS -> put(cat.fileName, KakoEximStores.exportLoginExceptions(context))
                     Cat.COLLECTIONS -> put(cat.fileName, KakoEximStores.exportCollections(context))
+                    Cat.EXT_SETTINGS -> {
+                        // The UUID map first: without it the directories that follow name nobody.
+                        put(cat.fileName, KakoExtData.exportSettingsJson(context))
+                        writeExtData(
+                            KakoExtData.settingsFiles(context),
+                            ::putFile,
+                            isCancelled,
+                        ) { onProgress(index + 1, ordered.size, context.getString(cat.labelRes)) }
+                    }
+                    Cat.EXT_DATABASES -> {
+                        val files = KakoExtData.databaseFiles(context)
+                        put(
+                            cat.fileName,
+                            JSONObject()
+                                .put("files", files.size)
+                                .put("bytes", files.sumOf { it.file.length() })
+                                .toString(2).toByteArray(),
+                        )
+                        writeExtData(files, ::putFile, isCancelled) {
+                            onProgress(index + 1, ordered.size, context.getString(cat.labelRes))
+                        }
+                    }
                 }
                 onProgress(index + 1, ordered.size, context.getString(cat.labelRes))
             }
@@ -410,11 +472,50 @@ object KakoExim {
         return "${cats.size} categories"
     }
 
+    /**
+     * Writes one category's bulk files, reporting liveness as it goes.
+     *
+     * A category that takes minutes and says nothing is indistinguishable from a hung one, and
+     * 応用管理 abandons an app that has been silent for ten minutes. The per-category progress the
+     * rest of the export leans on cannot help here — this *is* one category — so [alive] fires
+     * every [EXT_DATA_PROGRESS_BYTES] and repeats the current position rather than advancing it.
+     */
+    private inline fun writeExtData(
+        files: List<KakoExtData.Entry>,
+        putFile: (String, File) -> Unit,
+        isCancelled: () -> Boolean,
+        alive: () -> Unit,
+    ) {
+        var sinceReport = 0L
+        files.forEach { entry ->
+            if (isCancelled()) throw ExportCancelled()
+            val length = entry.file.length()
+            putFile(entry.zipName, entry.file)
+            sinceReport += length
+            if (sinceReport >= EXT_DATA_PROGRESS_BYTES) {
+                sinceReport = 0
+                alive()
+            }
+        }
+    }
+
     // Import
 
-    /** The categories present in [zip] — used to reject files that are not our exports. */
-    fun categoriesIn(zip: ByteArray): Set<Cat> {
-        val names = readZip(zip).keys
+    /**
+     * The categories present in [archive] — used to reject files that are not our exports.
+     *
+     * Reads names only, never content: the file may be gigabytes, and this runs before the caller
+     * has decided to import anything at all.
+     */
+    fun categoriesIn(archive: InputStream): Set<Cat> {
+        val names = mutableSetOf<String>()
+        ZipInputStream(archive).use { stream ->
+            var entry = stream.nextEntry
+            while (entry != null) {
+                names.add(entry.name)
+                entry = stream.nextEntry
+            }
+        }
         return Cat.entries.filter { it.fileName in names }.toSet()
     }
 
@@ -431,11 +532,51 @@ object KakoExim {
      */
     suspend fun import(
         context: Context,
-        zip: ByteArray,
+        archive: InputStream,
         cats: Set<Cat>,
         onProgress: (done: Int, total: Int, label: String) -> Unit = { _, _, _ -> },
     ): String {
-        val entries = readZip(zip)
+        // ONE pass over the stream, and the archive is never held whole.
+        //
+        // It used to arrive as a `ByteArray` and be exploded into a map of every entry's bytes,
+        // which was fine while the largest thing in it was a bookmark tree. The extension
+        // databases are 2.7 GB on 白い熊's phone; that map is now an instant OOM, and the caller
+        // cannot rewind a pipe to have a second go. So the small entries — every category's JSON,
+        // the fonts, the search engines — are collected as before, and the bulk entries are
+        // streamed straight to [KakoExtData]'s staging as they go past.
+        val entries = mutableMapOf<String, ByteArray>()
+        val stagedFiles = mutableMapOf<Cat, Int>()
+        var sinceReport = 0L
+        val orderedForProgress = Cat.entries.filter { it in cats }
+        ZipInputStream(archive).use { stream ->
+            var entry = stream.nextEntry
+            while (entry != null) {
+                val name = entry.name
+                if (!entry.isDirectory) {
+                    val extCat = KakoExtData.categoryOf(name)
+                    if (extCat == null) {
+                        entries[name] = stream.readBytes()
+                    } else if (extCat in cats) {
+                        // Unticked, and it is simply not read: `nextEntry` skips the rest.
+                        sinceReport += KakoExtData.stageFile(context, name, stream)
+                        stagedFiles[extCat] = (stagedFiles[extCat] ?: 0) + 1
+                        if (sinceReport >= EXT_DATA_PROGRESS_BYTES) {
+                            sinceReport = 0
+                            val position = orderedForProgress.indexOf(extCat) + 1
+                            if (position > 0) {
+                                onProgress(
+                                    position,
+                                    orderedForProgress.size,
+                                    context.getString(extCat.labelRes),
+                                )
+                            }
+                        }
+                    }
+                }
+                entry = stream.nextEntry
+            }
+        }
+
         val lines = mutableListOf<String>()
         // Enum order, exactly as [export] walks it, so the position handed to [onProgress]
         // can be turned back into the category id the contract wants in `item`.
@@ -490,6 +631,12 @@ object KakoExim {
                     Cat.SITE_PERMISSIONS -> KakoEximStores.importSitePermissions(context, bytes)
                     Cat.LOGIN_EXCEPTIONS -> KakoEximStores.importLoginExceptions(context, bytes)
                     Cat.COLLECTIONS -> KakoEximStores.importCollections(context, bytes)
+                    // The files themselves were staged during the pass above; what is left is the
+                    // UUID map, without which they name nobody.
+                    Cat.EXT_SETTINGS ->
+                        KakoExtData.importSettingsJson(context, bytes) +
+                            (stagedFiles[Cat.EXT_SETTINGS] ?: 0)
+                    Cat.EXT_DATABASES -> stagedFiles[Cat.EXT_DATABASES] ?: 0
                 }
             }.getOrDefault(-1)
             if (applied >= 0) lines.add("${context.getString(cat.labelRes)}: $applied")
@@ -1097,15 +1244,4 @@ object KakoExim {
         context.getString(R.string.pref_key_override_amo_collection),
     )
 
-    private fun readZip(zip: ByteArray): Map<String, ByteArray> {
-        val entries = mutableMapOf<String, ByteArray>()
-        ZipInputStream(zip.inputStream()).use { stream ->
-            var entry = stream.nextEntry
-            while (entry != null) {
-                if (!entry.isDirectory) entries[entry.name] = stream.readBytes()
-                entry = stream.nextEntry
-            }
-        }
-        return entries
-    }
 }
