@@ -204,28 +204,84 @@ Never use material yellow `#FFEB3B` for fork UI defaults.
 
 ## What the app-data backup covers (and the trap in it)
 
-`KakoExim.Cat` is the whole contract — twelve categories since 2026-09-09, archive
-format **2**. Until then it was eight, and it read exactly two SharedPreferences
-files: `KakoTheme.prefs` and `Settings.FENIX_PREFERENCES`.
+`KakoExim.Cat` is the whole contract — **seventeen** categories, archive format
+**3** (155.0.1+021, 2026-09-09). It was eight and format 1 that morning, twelve
+and format 2 by the afternoon, and a restore onto a fresh phone still came up
+with default settings, the wrong search engine and no extensions.
 
-**That is why restores looked like they had done nothing.** Open tabs, browsing
-history, the selected search engine and the Firefox Account are in *neither* of
-those files — tabs live in the browser-state snapshot, the search choice in
-android-components' own `mozac_feature_search_metadata`, the account in
-`fxaAppState` — so none of them was ever exported. Worse, `app_settings.json` did
-carry `pref_key_open_tabs_count = 6` and `pref_key_fxa_signed_in = true`: the
-archive restored the *flags* describing state it did not contain.
+**Every one of those failures was a store nobody had looked in.** The rule that
+keeps coming back: *a Fenix preference key that names something is not where that
+something is stored* (`pref_key_search_engine` exists and is always empty;
+`app_settings.json` used to carry `pref_key_open_tabs_count = 6` over a profile
+with no tabs in it). Before trusting a category, export one and read the JSON.
 
-The lesson generalises: **a Fenix preference key that names something is not where
-that something is stored.** `pref_key_search_engine` exists and is always empty.
-Before trusting a category, export one and read the JSON.
+Where the settings actually live, all of it now exported:
 
-Two things do not survive a round trip, by design or by API:
+- **Fenix has TWO preferences files.** `Settings` reads `fenix_preferences`, but
+  only `AccessibilityFragment` points `preferenceManager` at it — every other
+  settings screen leaves the AndroidX default, so each switch also persists to
+  `<package>_preferences`, and a few settings (external download manager,
+  automatic download clean-up, what's-new) live *only* there. Measured on 白い熊's
+  phone 2026-09-09: `fenix_preferences` 82 keys, `shiroikuma.kako_preferences`
+  **112** — and only the first was ever backed up. `Cat.APP_SETTINGS` now sweeps
+  **every** file in `shared_prefs/` bar a deny-list, so a file upstream adds next
+  cycle travels without anyone noticing it exists.
+- **Three kinds of file must never be swept.** `*_kp_pre_m` / `*_kp_post_m` hold
+  the key to the logins and autofill databases (plaintext on release), and
+  `loginsCrypto` / `autofillCrypto` hold the `canaryPhrase` encrypted under it.
+  The entries themselves travel in `Cat.LOGINS`/`Cat.CARDS` and are re-encrypted
+  under the new phone's key; a restored canary then fails to decrypt and
+  application-services treats the whole store as unreadable. `kako_automation`
+  holds this app's automation token — restoring another phone's breaks the
+  pairing 応用管理 has, and exporting it puts the token in the archive. And any
+  migration stamp (`pref_search_migrated`, `logins_undecryptable_cleaned`) tells
+  the new phone that work it has never done is already done.
+- **A custom search engine is a file, not a preference** —
+  `filesDir/search-engines/<base64 id>.xml`. Restoring
+  `mozac_feature_search_metadata` alone writes the *id* of an engine the new
+  phone has never heard of, and the middleware silently falls back to Google.
+- **`about:config` is Gecko's, in `prefs.js` inside the salted profile
+  directory.** Export parses it; import cannot write it (Gecko owns the file, and
+  on a phone that has never been opened the profile does not exist yet), so it
+  stages the prefs and `FenixApplication` hands them to the engine on the next
+  start through `setBrowserPref`, which the dispatcher queues until Gecko is up.
+  `prefs.js` is mostly *not* settings: of 52 user-branch prefs on 白い熊's phone,
+  four were his (`intl.accept_languages`, `intl.locale.requested`,
+  `browser.translations.neverTranslateLanguages`, one ETP flag) and the rest were
+  GPU caches, blocklist stamps and per-extension migration flags. The deny-list in
+  `KakoGeckoPrefs` is what separates them, and it drops names that state a *time*
+  or a *schema* — never a fragment like "cache", which would take
+  `browser.cache.disk.enable` with it.
+- **Pinned shortcuts, site permissions, the never-save-a-password list and tab
+  collections are four Room databases.** Site permissions are read and written
+  through `OnDiskSitePermissionsStorage`, never `geckoSitePermissionsStorage` —
+  the latter's `all()` waits on the runtime, and a backup runs headlessly in a
+  service where Gecko may never start.
+
+**An import must flush every preferences file, not the ones it remembers.**
+`edit {}` is `apply()`; 応用管理 force-stops the app the instant the import replies
+OK, and `SIGKILL` drains no queued write. `KakoExim.flushPrefs` enumerates
+`shared_prefs/` and `commit()`s each. The search-engine choice was lost exactly
+this way on every restore before +021.
+
+**An export must wait for the engine before listing extensions.**
+`store.state.extensions` is filled a few hundred milliseconds after the process
+starts, so a headless export sampled it empty — and an empty list is not a failed
+backup, it is a successful backup of no extensions. `KakoAddons.installedJson`
+awaits `WebExtensionSupport.awaitInitialization()` now, as `restore` already did.
+
+Four things still do not survive a round trip:
 
 - **Visit timestamps.** `HistoryStorage` has no timestamped write, so restored
   history is dated to the restore. URLs and titles travel; frecency rebuilds.
 - **Per-tab engine state.** Scroll position, form contents and per-tab session
   history are Gecko's opaque blob; restored tabs come back unloaded.
+- **Tracking-protection and cookie-banner exceptions.** `add()` on
+  `TrackingProtectionExceptionStorage` takes an `EngineSession`, not a URL —
+  there is no way to restore one without loading the site.
+- **An extension's own configuration** (`storage.local` — uBlock's filter lists,
+  say). GeckoView exposes no export for it; the add-ons come back, their settings
+  do not.
 
 **The archive contains the Firefox Account session** (白い熊's explicit decision,
 2026-09-09, after being told what it means): the refresh token is in

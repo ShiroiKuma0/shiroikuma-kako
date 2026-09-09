@@ -26,7 +26,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import org.mozilla.fenix.R
-import org.mozilla.fenix.utils.Settings
 import java.io.File
 import java.io.OutputStream
 import java.util.concurrent.ConcurrentHashMap
@@ -346,16 +345,14 @@ class KakoAutomationDataService : Service() {
      * settings missing.
      *
      * An empty synchronous `commit()` is what closes it: it writes the whole current map and
-     * blocks until it is on disk, so it subsumes any `apply()` still queued behind it. Both files
-     * the import touches are flushed — the fork's own theme prefs and Fenix's.
+     * blocks until it is on disk, so it subsumes any `apply()` still queued behind it.
+     *
+     * **Every** preferences file, which [KakoExim.flushPrefs] enumerates off disk. This used to
+     * name two of them — the fork's theme prefs and Fenix's — and the search-engine choice, which
+     * lives in a third, was lost to the force-stop on every restore that ever ran through here.
      */
     private fun flushImportedPrefs() {
-        listOf(
-            runCatching { KakoTheme.prefs(this) },
-            runCatching { getSharedPreferences(Settings.FENIX_PREFERENCES, Context.MODE_PRIVATE) },
-        ).forEach { prefs ->
-            prefs.getOrNull()?.let { runCatching { it.edit().commit() } }
-        }
+        runCatching { KakoExim.flushPrefs(this) }
     }
 
     /**
