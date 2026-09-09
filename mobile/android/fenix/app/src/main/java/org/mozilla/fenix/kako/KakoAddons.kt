@@ -15,6 +15,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import mozilla.components.browser.state.action.WebExtensionAction
+import mozilla.components.browser.state.state.WebExtensionState
 import mozilla.components.browser.state.state.extension.WebExtensionPromptRequest
 import mozilla.components.concept.engine.webextension.InstallationMethod
 import mozilla.components.concept.engine.webextension.PermissionPromptResponse
@@ -55,10 +56,19 @@ object KakoAddons {
      */
     private const val TOTAL_BUDGET_MS = 240_000L
 
-    /** The installed, non-built-in extensions as JSON — id, name, and their state. */
-    fun installedJson(context: Context): JSONArray {
+    /**
+     * The installed, non-built-in extensions as JSON — id, name, and their state.
+     *
+     * **Waits for the engine**, for the same reason [installedIds] does and with far worse
+     * consequences if it does not: a backup runs headlessly, in a service started for the job,
+     * and the store publishes the installed set a few hundred milliseconds after the process
+     * starts. Sampled before that, this answered an empty array — and an empty array is not a
+     * failed backup, it is a *successful* backup of no extensions, which is what a restore then
+     * faithfully reproduces (白い熊, 2026-09-09: "installed plugins not backed up").
+     */
+    suspend fun installedJson(context: Context): JSONArray {
         val array = JSONArray()
-        context.components.core.store.state.extensions.values
+        awaitExtensions(context).values
             .filterNot { it.isBuiltIn }
             .forEach { extension ->
                 array.put(
@@ -134,13 +144,19 @@ object KakoAddons {
      * a quarter of an hour on a slow one, and 応用管理 gives up at ten minutes
      * (応用管理, 2026-09-08 — the whole reason this function exists).
      */
-    private suspend fun installedIds(context: Context): Set<String> {
-        // Bounded: if the engine never finishes enumerating we fall through to whatever the
-        // store does hold, which is no worse than the sample this replaces.
+    private suspend fun installedIds(context: Context): Set<String> = awaitExtensions(context).keys
+
+    /**
+     * The store's extension map, read only once the engine has published it.
+     *
+     * Bounded: if the engine never finishes enumerating we fall through to whatever the store
+     * does hold, which is no worse than the sample this replaces.
+     */
+    private suspend fun awaitExtensions(context: Context): Map<String, WebExtensionState> {
         withTimeoutOrNull(EXTENSION_LIST_TIMEOUT_MS) {
             runCatching { WebExtensionSupport.awaitInitialization() }
         }
-        return context.components.core.store.state.extensions.keys
+        return context.components.core.store.state.extensions
     }
 
     /**
