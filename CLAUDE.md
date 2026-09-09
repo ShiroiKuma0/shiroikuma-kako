@@ -359,6 +359,31 @@ total. `.claude/skills/` has no harness for this; the throwaway is a 40-line
 A desktop reader cannot stand in for either — OpenJDK 21, `unzip`, Python
 `zipfile` and 7z all accept archives Android's native `ZipFile.open` rejects.
 
+**The add-ons themselves travel, not just their names.** The archive used to
+record only *which* extensions were installed and re-download each from AMO at
+restore time, so a restore needed the network, needed AMO to answer, needed every
+add-on to still be listed, and could only ever return whatever version AMO offers
+today. When any of that failed the add-ons simply did not come back — 白い熊,
+2026-09-09, "Plugins not restored", after a restore whose Extensions category ran
+for 16 seconds. `Cat.EXTENSIONS` now carries each XPI from
+`<profile>/extensions/` and installs from the staged file, with AMO as the
+fallback for older archives. The XPIs stage to `kako_pending_addons/`, NOT into
+the profile: an XPI dropped into `<profile>/extensions/` is invisible to Gecko,
+which knows only what its own extension database says.
+
+**`dumpsys diskstats` "App Data Sizes" is CACHED — do not diagnose with it.** It
+reported 0.11 GB for a profile that had just taken a 2 GB restore, which sent a
+whole round of diagnosis in the wrong direction (2026-09-09). Use free space
+instead: `stat -f -c %f /data` before and after, times the 4096-byte block. That
+restore showed **2.92 GB consumed** and settled the question in one command.
+
+**Progress during the unpacking pass reports position 1, not the entry's
+category.** The import streams once and applies afterwards, so reporting whatever
+entry is going past announced "19 of 19" nine seconds in and then began again at
+3. 応用管理 noticed and said so in its log: *"the app started its count again —
+pass 1 over the same data"*. The label says what is happening; the number stays
+where the work has not started.
+
 **Every bulk entry is named for the category that owns it** — `extension_databases/…`,
 not `extdb/…`. A consumer totting up a category's size by entry name otherwise
 finds only the `<id>.json` side-car, and 応用管理 duly reported "Extension

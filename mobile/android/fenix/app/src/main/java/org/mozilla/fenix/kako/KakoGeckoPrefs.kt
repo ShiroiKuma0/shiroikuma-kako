@@ -254,13 +254,29 @@ object KakoGeckoPrefs {
     /**
      * The live Gecko profile directory, or null before Gecko has ever run here.
      *
-     * Salted by the toolkit profile service, so it is found rather than named — and when more
-     * than one is present the newest wins, which is the one the engine is using.
+     * Salted by the toolkit profile service, so it has to be found rather than named — but "the
+     * newest subdirectory of `mozilla/`" is not the way to find it. Gecko puts `Crash Reports` and
+     * `Pending Pings` in there as siblings of the profile, and either can easily be the most
+     * recently touched. Picking one of those hands [KakoExtData] a destination that is not a
+     * profile, and 2.7 GB goes somewhere Gecko will never look.
+     *
+     * So: prefer a directory that actually contains a profile, and fall back on the newest only
+     * when none does.
      */
-    fun profileDir(context: Context): File? =
-        File(context.filesDir, PROFILE_PARENT).listFiles()
-            ?.filter { it.isDirectory }
-            ?.maxByOrNull { it.lastModified() }
+    fun profileDir(context: Context): File? {
+        val dirs = File(context.filesDir, PROFILE_PARENT).listFiles()
+            ?.filter { it.isDirectory && it.name !in NOT_PROFILE_DIRS }
+            .orEmpty()
+        return dirs.filter { looksLikeProfile(it) }.ifEmpty { dirs }.maxByOrNull { it.lastModified() }
+    }
+
+    /** Gecko's own subdirectories of `mozilla/` that are not profiles. */
+    private val NOT_PROFILE_DIRS = setOf("Crash Reports", "Pending Pings")
+
+    private fun looksLikeProfile(dir: File): Boolean =
+        File(dir, PREFS_JS).isFile ||
+            File(dir, "times.json").isFile ||
+            File(dir, "storage").isDirectory
 
     /** `prefs.js` is JS source: backslash escapes, and nothing else. */
     private fun unescape(value: String): String {
