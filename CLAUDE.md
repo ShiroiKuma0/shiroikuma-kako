@@ -308,13 +308,33 @@ first cut did, put every add-on's settings into the gigabytes category, so
 unticking the dictionaries would have silently dropped the settings too. `-shm`
 files are skipped (scratch, rebuilt from the `-wal`); `-wal` files travel.
 
-**The `moz-extension` UUID map is load-bearing.** Those directory names are per
-install — Gecko mints a fresh UUID per extension per profile and records the map
-in `extensions.webextensions.uuids`. Restore the directories without it and they
-belong to nobody: the add-on comes back, asks for storage under a *new* UUID, and
-finds an empty origin with gigabytes sitting beside it referenced by nothing. So
-`Cat.EXT_SETTINGS` carries that pref even though `KakoGeckoPrefs` refuses it as an
-`about:config` value, and the `ExtensionStorageIDB.migrated.*` flags with it.
+**The `moz-extension` UUID map is load-bearing, and it must reach `prefs.js`
+BEFORE the engine starts.** Those directory names are per install — Gecko mints a
+fresh UUID per extension per profile and records the map in
+`extensions.webextensions.uuids`. Restore the directories without it and they
+belong to nobody. `Cat.EXT_SETTINGS` carries that pref even though
+`KakoGeckoPrefs` refuses it as an `about:config` value, and the
+`ExtensionStorageIDB.migrated.*` flags with it.
+
+**Do NOT apply it through `setBrowserPref`.** That write is queued, so it lands
+after Gecko has started the add-ons under UUIDs of its own, and Gecko then
+rewrites the map from memory at shutdown — erasing ours, permanently, because the
+staged copy was consumed on that one attempt. Measured on the restored phone
+(2026-09-09): yomitan's 1.94 GiB of dictionaries sat under
+`moz-extension+++6e7f7466-…` while yomitan ran as `moz-extension+++d2acdd46-…`,
+both origin directories side by side, the data owned by a UUID nothing referred
+to. Restarting could not heal it. It is now **merged** into whatever map Gecko
+holds (built-in add-ons keep their device-local UUIDs) and written straight into
+`prefs.js` from `KakoExtData.applyPending`, which runs before `setupEarlyMain()`
+— the one moment editing that file is correct, and earlier than any queued write
+can land. Retried on every start until it sticks, because the add-ons are
+installed during the import but Gecko flushes `prefs.js` on its own schedule and
+the caller's force-stop is a SIGKILL.
+
+**Not by renaming the origin directories to Gecko's new UUIDs** — which looks
+tidier and is not: each carries a `.metadata-v2` naming the origin it belongs to,
+and a directory whose name and metadata disagree is worse than one Gecko simply
+cannot find.
 
 **Nothing may be written into a profile Gecko is using** — these are live SQLite
 databases. An import unpacks to `filesDir/kako_pending_extdata/` and
