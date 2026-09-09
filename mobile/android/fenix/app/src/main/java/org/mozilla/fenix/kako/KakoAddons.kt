@@ -5,6 +5,7 @@
 package org.mozilla.fenix.kako
 
 import android.content.Context
+import android.net.Uri
 import android.os.SystemClock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -25,6 +26,7 @@ import mozilla.components.support.webextensions.WebExtensionSupport
 import org.json.JSONArray
 import org.json.JSONObject
 import org.mozilla.fenix.ext.components
+import java.io.File
 import kotlin.coroutines.resume
 
 /**
@@ -55,6 +57,8 @@ object KakoAddons {
      * while it runs. Overrunning it drops the remaining add-ons rather than the restore.
      */
     private const val TOTAL_BUDGET_MS = 240_000L
+
+    private const val XPI_SUFFIX = ".xpi"
 
     /**
      * The installed, non-built-in extensions as JSON — id, name, and their state.
@@ -108,16 +112,24 @@ object KakoAddons {
             val enabled = entry.optBoolean("enabled", true)
             val allowedInPrivateBrowsing = entry.optBoolean("allowedInPrivateBrowsing", false)
 
-            val addon = withTimeoutOrNull(LOOKUP_TIMEOUT_MS) {
-                runCatching {
-                    // AMO search by GUID — independent of the configured collection.
-                    context.components.addonsProvider.getAddonByID(
-                        id = id,
-                        readTimeoutInSeconds = LOOKUP_READ_TIMEOUT_S,
-                    )
-                }.getOrNull()
-            } ?: continue
-            val url = addon.downloadUrl.takeIf { it.isNotEmpty() } ?: continue
+            // The XPI the backup carried, if it did — the exact build that was backed up, and no
+            // network in the path. AMO is the fallback, for archives written before the add-ons
+            // themselves travelled and for an add-on whose file did not survive.
+            val staged = stagedXpi(context, id)
+            val url = if (staged != null) {
+                Uri.fromFile(staged).toString()
+            } else {
+                val addon = withTimeoutOrNull(LOOKUP_TIMEOUT_MS) {
+                    runCatching {
+                        // AMO search by GUID — independent of the configured collection.
+                        context.components.addonsProvider.getAddonByID(
+                            id = id,
+                            readTimeoutInSeconds = LOOKUP_READ_TIMEOUT_S,
+                        )
+                    }.getOrNull()
+                } ?: continue
+                addon.downloadUrl.takeIf { it.isNotEmpty() } ?: continue
+            }
 
             val result = runCatching { install(context, url, allowedInPrivateBrowsing) }.getOrNull()
             if (result != null) {
@@ -125,7 +137,29 @@ object KakoAddons {
                 runCatching { applyState(context, id, enabled, allowedInPrivateBrowsing) }
             }
         }
+        // Single-use and megabytes apiece; the add-ons are installed now or they are not coming.
+        KakoExtData.clearStagedAddons(context)
         return installed
+    }
+
+    /**
+     * The XPI an import unpacked for [id], or null.
+     *
+     * Gecko names the file after the add-on id, but that is its convention rather than a promise,
+     * so a file whose name merely contains the id counts too — and any single XPI is accepted when
+     * there is exactly one candidate, because a restore that installs the right add-on from a
+     * differently-named file is better than one that installs nothing.
+     */
+    private fun stagedXpi(context: Context, id: String): File? {
+        val root = KakoExtData.stagedAddonsDir(context)
+        if (!root.isDirectory) return null
+        // `walkTopDown`, not `listFiles`: the entries keep their path relative to the profile, so
+        // an XPI unpacks to `<staging>/extensions/<id>.xpi` — a directory deeper than the staging
+        // root. Listing only the top level found the directory and no files, every lookup missed,
+        // and the restore fell back to AMO exactly as before (caught in the 155.0.1+027 export).
+        val files = root.walkTopDown().filter { it.isFile && it.name.endsWith(XPI_SUFFIX) }.toList()
+        return files.firstOrNull { it.name.removeSuffix(XPI_SUFFIX) == id }
+            ?: files.firstOrNull { it.name.contains(id) }
     }
 
     /**
