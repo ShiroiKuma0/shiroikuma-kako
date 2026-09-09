@@ -359,6 +359,16 @@ total. `.claude/skills/` has no harness for this; the throwaway is a 40-line
 A desktop reader cannot stand in for either — OpenJDK 21, `unzip`, Python
 `zipfile` and 7z all accept archives Android's native `ZipFile.open` rejects.
 
+**Every bulk entry is named for the category that owns it** — `extension_databases/…`,
+not `extdb/…`. A consumer totting up a category's size by entry name otherwise
+finds only the `<id>.json` side-car, and 応用管理 duly reported "Extension
+databases — **40 bytes**" over 1.89 GiB of dictionaries that were all present in
+the archive (白い熊, 2026-09-09). Every byte was there and the report was still
+wrong; an archive should not need outside knowledge to say what is in it. The
+prefixes are derived from `Cat.id` so they cannot drift, and the import still
+accepts the old `extdb/` and `extstore/` names so that archives written by
+155.0.1+023 and +024 restore in full.
+
 **A category that takes minutes must keep talking.** 応用管理 abandons an app silent
 for ten minutes, and the per-category progress the rest of the export leans on
 cannot help inside one category — `EXT_DATA_PROGRESS_BYTES` (32 MB) is how often
