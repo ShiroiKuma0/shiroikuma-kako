@@ -296,12 +296,18 @@ class KakoEximDialog(
         host.scope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatching {
-                    val bytes = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                        ?: error("no input stream")
-                    require(KakoExim.categoriesIn(bytes).isNotEmpty()) {
+                    // Opened twice, and never read whole: an archive carrying the extension
+                    // databases is gigabytes, so the check reads entry names on one pass and the
+                    // import streams on another rather than both sharing one array in memory.
+                    val present = context.contentResolver.openInputStream(uri)?.use {
+                        KakoExim.categoriesIn(it)
+                    } ?: error("no input stream")
+                    require(present.isNotEmpty()) {
                         context.getString(R.string.kako_eim_import_none)
                     }
-                    KakoExim.import(context, bytes, cats)
+                    context.contentResolver.openInputStream(uri)?.use {
+                        KakoExim.import(context, it, cats)
+                    } ?: error("no input stream")
                 }
             }
             result.fold(

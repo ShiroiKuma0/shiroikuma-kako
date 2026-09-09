@@ -137,40 +137,69 @@ object KakoGeckoPrefs {
     /** The user branch as Gecko last wrote it, as `{"prefs":[{name,type,value}]}`. */
     fun export(context: Context): ByteArray {
         val array = JSONArray()
-        prefsJsFile(context)?.let { file ->
-            runCatching { file.readLines() }.getOrDefault(emptyList()).forEach { line ->
-                val match = USER_PREF_LINE.find(line) ?: return@forEach
-                val name = unescape(match.groupValues[1])
-                if (!travels(name)) return@forEach
-                val raw = match.groupValues[2].trim()
-                val entry = JSONObject().put("name", name)
-                when {
-                    raw == "true" || raw == "false" -> entry.put("type", "b").put("value", raw == "true")
-                    raw.length >= 2 && raw.startsWith("\"") && raw.endsWith("\"") ->
-                        entry.put("type", "s").put("value", unescape(raw.substring(1, raw.length - 1)))
-                    // Gecko's integer branch is 32-bit; anything else on the line is not a pref
-                    // we know how to set back, so it is dropped rather than guessed at.
-                    raw.toIntOrNull() != null -> entry.put("type", "i").put("value", raw.toInt())
-                    else -> return@forEach
-                }
-                array.put(entry)
-            }
-        }
+        readUserPrefs(context).filter { travels(it.optString("name")) }.forEach { array.put(it) }
         return JSONObject().put("prefs", array).toString(2).toByteArray()
     }
 
     /**
-     * Parks [bytes] for [applyPending] and answers how many prefs it holds.
+     * Every `user_pref` line in the profile's `prefs.js`, parsed and **unfiltered**.
      *
-     * Written whole, so a half-written file cannot be applied: the count comes from re-reading
-     * what landed, not from what we meant to write.
+     * [export] filters this; [KakoExtData] does not — the per-install `moz-extension` UUID map is
+     * excluded from the `about:config` category precisely because it is per-install, and is
+     * exactly what the extension-storage category has to carry to make its directories findable
+     * again.
+     */
+    fun readUserPrefs(context: Context): List<JSONObject> {
+        val file = prefsJsFile(context) ?: return emptyList()
+        val out = mutableListOf<JSONObject>()
+        runCatching { file.readLines() }.getOrDefault(emptyList()).forEach { line ->
+            val match = USER_PREF_LINE.find(line) ?: return@forEach
+            val raw = match.groupValues[2].trim()
+            val entry = JSONObject().put("name", unescape(match.groupValues[1]))
+            when {
+                raw == "true" || raw == "false" -> entry.put("type", "b").put("value", raw == "true")
+                raw.length >= 2 && raw.startsWith("\"") && raw.endsWith("\"") ->
+                    entry.put("type", "s").put("value", unescape(raw.substring(1, raw.length - 1)))
+                // Gecko's integer branch is 32-bit; anything else on the line is not a pref we
+                // know how to set back, so it is dropped rather than guessed at.
+                raw.toIntOrNull() != null -> entry.put("type", "i").put("value", raw.toInt())
+                else -> return@forEach
+            }
+            out.add(entry)
+        }
+        return out
+    }
+
+    /**
+     * Parks the prefs in [bytes] for [applyPending] and answers how many were added.
+     *
+     * **Merges** rather than overwrites: [Cat.GECKO_PREFS] and [Cat.EXT_SETTINGS] both stage
+     * prefs, in whichever order the archive lists them, and the second must not erase the first.
      */
     fun stagePending(context: Context, bytes: ByteArray): Int {
         val prefs = JSONObject(String(bytes)).optJSONArray("prefs") ?: return 0
         if (prefs.length() == 0) return 0
+        return stage(context, (0 until prefs.length()).mapNotNull { prefs.optJSONObject(it) })
+    }
+
+    /** Merges [prefs] into the staged set, keyed by name; the newest write of a name wins. */
+    fun stage(context: Context, prefs: List<JSONObject>): Int {
+        if (prefs.isEmpty()) return 0
         val file = File(context.filesDir, PENDING_FILE)
-        runCatching { file.writeBytes(bytes) }.getOrElse { return 0 }
-        return prefs.length()
+        val merged = linkedMapOf<String, JSONObject>()
+        runCatching {
+            val existing = JSONObject(file.readText()).optJSONArray("prefs")
+            for (index in 0 until (existing?.length() ?: 0)) {
+                val entry = existing?.optJSONObject(index) ?: continue
+                entry.optString("name").takeIf { it.isNotEmpty() }?.let { merged[it] = entry }
+            }
+        }
+        prefs.forEach { entry ->
+            entry.optString("name").takeIf { it.isNotEmpty() }?.let { merged[it] = entry }
+        }
+        val root = JSONObject().put("prefs", JSONArray(merged.values.toList()))
+        runCatching { file.writeText(root.toString(2)) }.getOrElse { return 0 }
+        return prefs.size
     }
 
     /**
@@ -218,11 +247,19 @@ object KakoGeckoPrefs {
      * The profile directory carries a random salt, so it is found rather than named — and when
      * more than one is present the newest wins, which is the one the engine is using.
      */
-    private fun prefsJsFile(context: Context): File? =
+    private fun prefsJsFile(context: Context): File? = profileDir(context)?.let { dir ->
+        File(dir, PREFS_JS).takeIf { it.isFile }
+    }
+
+    /**
+     * The live Gecko profile directory, or null before Gecko has ever run here.
+     *
+     * Salted by the toolkit profile service, so it is found rather than named — and when more
+     * than one is present the newest wins, which is the one the engine is using.
+     */
+    fun profileDir(context: Context): File? =
         File(context.filesDir, PROFILE_PARENT).listFiles()
             ?.filter { it.isDirectory }
-            ?.map { File(it, PREFS_JS) }
-            ?.filter { it.isFile }
             ?.maxByOrNull { it.lastModified() }
 
     /** `prefs.js` is JS source: backslash escapes, and nothing else. */
