@@ -236,6 +236,36 @@ object KakoGeckoPrefs {
         runCatching { file.delete() }
     }
 
+    /**
+     * Writes one `user_pref` line into the profile's `prefs.js`, replacing any line already there
+     * for that preference. Returns false when there is no profile yet.
+     *
+     * **Only safe before the engine exists**, which is the whole point of it: Gecko owns this file
+     * and rewrites it from memory, so the one moment it can be edited is the moment Gecko is not
+     * running — and that moment, `FenixApplication.onCreate` before `setupEarlyMain()`, is exactly
+     * where [KakoExtData.applyPending] runs. A value written here is read at startup, which is
+     * earlier than any queued `setBrowserPref` can possibly land.
+     */
+    fun writeUserPref(context: Context, name: String, value: String): Boolean {
+        val file = prefsJsFile(context) ?: return false
+        val kept = runCatching { file.readLines() }.getOrElse { return false }
+            .filterNot { line ->
+                USER_PREF_LINE.find(line)?.let { unescape(it.groupValues[1]) == name } == true
+            }
+        val line = "user_pref(\"" + escape(name) + "\", \"" + escape(value) + "\");"
+        // Written whole through a sibling and renamed: a prefs.js truncated by a kill mid-write is
+        // a profile that comes back with every preference at its default.
+        val temp = File(file.parentFile, file.name + ".kako-tmp")
+        return runCatching {
+            temp.writeText((kept + line).joinToString("\n", postfix = "\n"))
+            if (temp.renameTo(file)) true else { temp.copyTo(file, overwrite = true); temp.delete() }
+        }.getOrDefault(false)
+    }
+
+    /** The inverse of [unescape]; `prefs.js` is JS source, so a quote and a backslash need one. */
+    private fun escape(value: String): String =
+        value.replace("\\", "\\\\").replace("\"", "\\\"")
+
     private fun travels(name: String): Boolean =
         name !in EXCLUDE_EXACT &&
             EXCLUDE_PREFIXES.none { name.startsWith(it) } &&
