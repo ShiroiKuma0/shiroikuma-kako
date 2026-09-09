@@ -67,9 +67,27 @@ import java.io.InputStream
  */
 internal object KakoExtData {
 
-    /** ZIP path prefixes. The remainder of the name is the path relative to the profile. */
-    const val SETTINGS_PREFIX = "extstore/"
-    const val DATABASES_PREFIX = "extdb/"
+    /**
+     * ZIP path prefixes: **the category's own id**, so that every entry says which category it
+     * belongs to. The remainder of the name is the path relative to the profile.
+     *
+     * Derived from [KakoExim.Cat.id] rather than spelled out, so they cannot drift from it.
+     *
+     * They used to be `extdb/` and `extstore/`, and that was a real defect even though every byte
+     * was present: a consumer totting up a category's size by entry name found only the `<id>.json`
+     * side-car and reported "Extension databases — 40 bytes" over 1.89 GiB of dictionaries
+     * (応用管理, 2026-09-09). An archive should not need outside knowledge to say what is in it.
+     */
+    val SETTINGS_PREFIX = KakoExim.Cat.EXT_SETTINGS.id + "/"
+    val DATABASES_PREFIX = KakoExim.Cat.EXT_DATABASES.id + "/"
+
+    /**
+     * What 155.0.1+023 and +024 wrote. Still read, so the backups 白い熊 already has restore in
+     * full — dropping 1.89 GiB of an existing archive to tidy up a naming decision would be the
+     * same silent loss this rename exists to prevent.
+     */
+    private const val LEGACY_SETTINGS_PREFIX = "extstore/"
+    private const val LEGACY_DATABASES_PREFIX = "extdb/"
 
     /** Where an import unpacks to, and [applyPending] moves from. Private storage, ours alone. */
     private const val PENDING_DIR = "kako_pending_extdata"
@@ -180,14 +198,17 @@ internal object KakoExtData {
 
     // Import
 
-    /** True when [name] is one of ours, so [KakoExim] streams it here instead of into memory. */
-    fun isExtDataEntry(name: String): Boolean =
-        name.startsWith(SETTINGS_PREFIX) || name.startsWith(DATABASES_PREFIX)
-
-    /** Which category [name] belongs to, so an unticked one can be skipped as it streams past. */
+    /**
+     * Which category [name] belongs to, so an unticked one can be skipped as it streams past —
+     * and null for everything else, which [KakoExim] then reads into memory as before.
+     *
+     * `<id>/` cannot be confused with the `<id>.json` side-car: the separator differs.
+     */
     fun categoryOf(name: String): KakoExim.Cat? = when {
-        name.startsWith(SETTINGS_PREFIX) -> KakoExim.Cat.EXT_SETTINGS
-        name.startsWith(DATABASES_PREFIX) -> KakoExim.Cat.EXT_DATABASES
+        name.startsWith(SETTINGS_PREFIX) || name.startsWith(LEGACY_SETTINGS_PREFIX) ->
+            KakoExim.Cat.EXT_SETTINGS
+        name.startsWith(DATABASES_PREFIX) || name.startsWith(LEGACY_DATABASES_PREFIX) ->
+            KakoExim.Cat.EXT_DATABASES
         else -> null
     }
 
@@ -198,7 +219,9 @@ internal object KakoExtData {
      * an archive is an input: `..` in an entry name would otherwise write anywhere this app can.
      */
     fun stageFile(context: Context, zipName: String, input: InputStream): Long {
-        val relative = zipName.removePrefix(SETTINGS_PREFIX).removePrefix(DATABASES_PREFIX)
+        val relative = zipName
+            .removePrefix(SETTINGS_PREFIX).removePrefix(DATABASES_PREFIX)
+            .removePrefix(LEGACY_SETTINGS_PREFIX).removePrefix(LEGACY_DATABASES_PREFIX)
         val root = pendingDir(context)
         val target = File(root, relative)
         if (!target.canonicalPath.startsWith(root.canonicalPath + File.separator)) return 0L
