@@ -39,7 +39,7 @@ const val KAKO_PALETTE_YELLOW = 0xFFFFFF00.toInt()
 /** The pre-migration default yellow (material #FFEB3B); see [KakoTheme.migratePureYellow]. */
 private const val KAKO_PALETTE_OLD_YELLOW = 0xFFFFEB3B.toInt()
 
-private const val PREFS_NAME = "kako_theme"
+internal const val PREFS_NAME = "kako_theme"
 private const val KEY_ENABLED = "kako_theme_enabled"
 private const val KEY_PURE_YELLOW_MIGRATED = "kako_pure_yellow_migrated"
 const val KAKO_FONT_FAMILY_KEY = "kako_font_family"

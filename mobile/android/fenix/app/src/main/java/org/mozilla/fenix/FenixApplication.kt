@@ -386,6 +386,10 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         // Fork: open (or restore) the restricted-domains fence for this profile. The
         // engine exists by now, and the dispatcher queues the write until Gecko is up.
         org.mozilla.fenix.kako.KakoRestrictedDomains.apply(this)
+        // Fork: hand Gecko any about:config values an app-data restore staged for it. Same
+        // queued-write path, and the same reason it cannot happen during the import itself —
+        // that runs in a service where the engine may never start.
+        org.mozilla.fenix.kako.KakoGeckoPrefs.applyPending(this)
 
         components.appStartReasonProvider.registerInAppOnCreate(this)
         components.startupActivityLog.registerInAppOnCreate(this)
