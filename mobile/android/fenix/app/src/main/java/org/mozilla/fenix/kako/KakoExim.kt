@@ -55,10 +55,16 @@ object KakoExim {
 
     /**
      * 2 since 2026-09-09, when open tabs, history, the search choice and the account joined
-     * the archive. A v1 archive still imports — it simply carries none of those four — so
-     * `MIN_FORMAT_READABLE` on the automation provider stays at 1.
+     * the archive. **3 later the same day**, when a restore onto a fresh phone showed that
+     * "every setting" still was not: Fenix keeps settings in a *second* preferences file, a
+     * custom search engine is a file rather than a preference, `about:config` is neither, and
+     * the pinned shortcuts, per-site permissions, never-save list and collections each live in
+     * a database of their own. All of them travel now.
+     *
+     * An older archive still imports — it simply carries less — so `MIN_FORMAT_READABLE` on the
+     * automation provider stays at 1.
      */
-    const val VERSION = 2
+    const val VERSION = 3
 
     /**
      * Newest visits kept by the history category.
@@ -75,6 +81,18 @@ object KakoExim {
      * search engine is persisted. `private const` in `SearchMetadataStorage`, hence repeated.
      */
     private const val SEARCH_METADATA_PREFS = "mozac_feature_search_metadata"
+
+    /**
+     * Where a **custom** search engine is kept: one XML file per engine under `filesDir`, named
+     * for the URL-safe Base64 of its id (`CustomSearchEngineStorage`, whose `SEARCH_DIR_NAME`
+     * this repeats for the same reason as above).
+     *
+     * The other half of the reverted-search-engine bug. Restoring the metadata preference alone
+     * writes the *id* of the chosen engine; if that engine was one 白い熊 added himself, nothing
+     * on the new phone answers to the id and the middleware silently falls back to the bundled
+     * default. The engines have to travel with the choice.
+     */
+    private const val SEARCH_ENGINES_DIR = "search-engines"
 
     /**
      * The family file-name convention (白い熊, 2026-07-25): every backup any sister app
@@ -135,6 +153,15 @@ object KakoExim {
         HISTORY("history", R.string.kako_eim_cat_history, sensitive = true),
         SEARCH("search", R.string.kako_eim_cat_search),
         ACCOUNT("account", R.string.kako_eim_cat_account, sensitive = true),
+
+        // Added 2026-09-09, after a restore onto a fresh phone came up with default settings and
+        // no extensions. Each of these is somewhere no preferences file reaches: `about:config`
+        // is Gecko's own profile, and the last four are a Room database apiece.
+        GECKO_PREFS("gecko_prefs", R.string.kako_eim_cat_gecko_prefs),
+        TOP_SITES("top_sites", R.string.kako_eim_cat_top_sites),
+        SITE_PERMISSIONS("site_permissions", R.string.kako_eim_cat_site_permissions),
+        LOGIN_EXCEPTIONS("login_exceptions", R.string.kako_eim_cat_login_exceptions),
+        COLLECTIONS("collections", R.string.kako_eim_cat_collections),
         ;
 
         /** This category's JSON entry inside the ZIP. */
@@ -167,6 +194,85 @@ object KakoExim {
         "install", "crash", "first_run", "onboarding", "review_prompt",
         "growth", "usage_reporting", "distribution", "last_", "_time",
     )
+
+    /**
+     * The keyed-store files [Cat.APP_SETTINGS] leaves alone, by exact name.
+     *
+     * Everything else in `shared_prefs/` travels — a deny-list rather than a list of the files
+     * we happen to know about, because [Cat.APP_SETTINGS] claims to be *the app's settings* and
+     * an allow-list quietly stops being true the first time upstream adds a file. That is how
+     * `mozac_feature_search_metadata` went missing for a year.
+     *
+     * What is denied is either owned by another category, or describes this phone rather than
+     * 白い熊: the export directory he picked here, the region this device is in, the push
+     * registration that identifies it, and the icon and thumbnail caches, which are large,
+     * derived, and rebuilt on demand.
+     */
+    private val PREFS_FILE_EXCLUDE = setOf(
+        EXIMPORT_PREFS,
+        PREFS_NAME, // kako_theme — Cat.KAKO_UI and Cat.FONTS
+        SEARCH_METADATA_PREFS, // Cat.SEARCH
+        FXA_STATE_PREFS_KEY, // Cat.ACCOUNT
+
+        // This app's own automation token, and whether the data door is open. A secret, and one
+        // that pairs a *caller* with *this install* — restoring another phone's would break the
+        // pairing 応用管理 already has, and exporting it puts the token in the archive.
+        "kako_automation",
+
+        // Account-scoped caches. The session itself travels in [Cat.ACCOUNT]; these are derived
+        // from it and are rebuilt on the first sync, so a stale copy can only mislead.
+        "SyncAuthInfoCache",
+        "FxaDeviceSettingsCache",
+        "syncPrefs",
+
+        // Migration stamps: restoring one says "already done" about work the new phone has not
+        // done. `custom-search-engines` holds nothing else — one boolean, `pref_search_migrated`;
+        // `sync.logins.prefs` is the "undecryptable logins have been cleaned" flag, and the whole
+        // point of the two key stores above is that a restored profile may need that clean-up.
+        "custom-search-engines",
+        "sync.logins.prefs",
+
+        // Device-local, derived, or telemetry residue.
+        "client_uuid",
+        "app_exit_info",
+        "mozac_feature_search_region",
+        "mozac_feature_push",
+        "mozac_feature_accounts_push",
+        "mozac_browser_icons",
+        "mozac_browser_thumbnails",
+        "mozac_share_cache",
+        "mozac_support_base_shared_ids_helper",
+        "mozac_error_lock",
+    )
+
+    /**
+     * …and by suffix.
+     *
+     * `_kp_pre_m` / `_kp_post_m` are `SecureAbove22Preferences`, which stores the **key to the
+     * logins and autofill databases** — in plaintext on the release channel. `…Crypto` is the
+     * matching pair: application-services keeps a `canaryPhrase` there, encrypted under that key,
+     * and checks it before opening the store.
+     *
+     * Restoring either would be far worse than dropping it. The logins and cards travel as
+     * entries in [Cat.LOGINS] and [Cat.CARDS] and are re-encrypted under the new phone's own key
+     * on the way in; a canary from the old phone then fails to decrypt, and application-services
+     * treats a store whose canary does not match as unreadable.
+     */
+    private val PREFS_FILE_EXCLUDE_SUFFIXES = listOf("_kp_pre_m", "_kp_post_m", "Crypto")
+
+    /**
+     * …and by prefix: the framework's and the (now-absent) telemetry SDK's own scratch files,
+     * which no upstream cycle will stop adding to.
+     */
+    private val PREFS_FILE_EXCLUDE_PREFIXES = listOf(
+        "androidx.",
+        "com.google.android.gms",
+        "mozilla.telemetry.glean",
+        "org.mozilla.fenix.components.metrics.",
+    )
+
+    /** Android's own suffix for a `SharedPreferences` backing file. */
+    private const val PREFS_FILE_SUFFIX = ".xml"
 
     // Directory preference
 
@@ -277,18 +383,26 @@ object KakoExim {
                             put("installed", KakoAddons.installedJson(context))
                         }.toString(2).toByteArray(),
                     )
-                    Cat.APP_SETTINGS -> put(cat.fileName, exportPrefs(fenixPrefs(context)) { key ->
-                        key !in extensionKeys(context) &&
-                            APP_SETTINGS_EXCLUDE_FRAGMENTS.none { key.contains(it, ignoreCase = true) }
-                    })
+                    Cat.APP_SETTINGS -> put(cat.fileName, exportAppSettings(context))
                     Cat.BOOKMARKS -> put(cat.fileName, exportBookmarks(context))
                     Cat.LOGINS -> put(cat.fileName, exportLogins(context))
                     Cat.CARDS -> put(cat.fileName, exportCards(context))
                     Cat.ADDRESSES -> put(cat.fileName, exportAddresses(context))
                     Cat.TABS -> put(cat.fileName, exportTabs(context))
                     Cat.HISTORY -> put(cat.fileName, exportHistory(context))
-                    Cat.SEARCH -> put(cat.fileName, exportPrefs(searchPrefs(context)) { true })
+                    Cat.SEARCH -> {
+                        put(cat.fileName, exportPrefs(searchPrefs(context)) { true })
+                        // The engines 白い熊 added himself ride with the choice that points at one.
+                        customSearchEnginesDir(context).listFiles()?.filter { it.isFile }?.forEach { engine ->
+                            put("$SEARCH_ENGINES_DIR/${engine.name}", engine.readBytes())
+                        }
+                    }
                     Cat.ACCOUNT -> put(cat.fileName, exportAccount(context))
+                    Cat.GECKO_PREFS -> put(cat.fileName, KakoGeckoPrefs.export(context))
+                    Cat.TOP_SITES -> put(cat.fileName, KakoEximStores.exportPinnedSites(context))
+                    Cat.SITE_PERMISSIONS -> put(cat.fileName, KakoEximStores.exportSitePermissions(context))
+                    Cat.LOGIN_EXCEPTIONS -> put(cat.fileName, KakoEximStores.exportLoginExceptions(context))
+                    Cat.COLLECTIONS -> put(cat.fileName, KakoEximStores.exportCollections(context))
                 }
                 onProgress(index + 1, ordered.size, context.getString(cat.labelRes))
             }
@@ -351,18 +465,31 @@ object KakoExim {
                         importPrefsJson(fenixPrefs(context), prefs) { it in extensionKeys(context) } +
                             KakoAddons.restore(context, root.optJSONArray("installed"))
                     }
-                    Cat.APP_SETTINGS -> importPrefs(fenixPrefs(context), bytes) { key ->
-                        key !in extensionKeys(context) &&
-                            APP_SETTINGS_EXCLUDE_FRAGMENTS.none { key.contains(it, ignoreCase = true) }
-                    }
+                    Cat.APP_SETTINGS -> importAppSettings(context, bytes)
                     Cat.BOOKMARKS -> importBookmarks(context, bytes)
                     Cat.LOGINS -> importLogins(context, bytes)
                     Cat.CARDS -> importCards(context, bytes)
                     Cat.ADDRESSES -> importAddresses(context, bytes)
                     Cat.TABS -> importTabs(context, bytes)
                     Cat.HISTORY -> importHistory(context, bytes)
-                    Cat.SEARCH -> importPrefs(searchPrefs(context), bytes) { true }
+                    Cat.SEARCH -> {
+                        var count = importPrefs(searchPrefs(context), bytes) { true }
+                        val dir = customSearchEnginesDir(context)
+                        entries.filterKeys { it.startsWith("$SEARCH_ENGINES_DIR/") }.forEach { (name, data) ->
+                            // Basename only — no path traversal; a bad engine is skipped.
+                            runCatching {
+                                File(dir, File(name).name).writeBytes(data)
+                                count++
+                            }
+                        }
+                        count
+                    }
                     Cat.ACCOUNT -> importAccount(context, bytes)
+                    Cat.GECKO_PREFS -> KakoGeckoPrefs.stagePending(context, bytes)
+                    Cat.TOP_SITES -> KakoEximStores.importPinnedSites(context, bytes)
+                    Cat.SITE_PERMISSIONS -> KakoEximStores.importSitePermissions(context, bytes)
+                    Cat.LOGIN_EXCEPTIONS -> KakoEximStores.importLoginExceptions(context, bytes)
+                    Cat.COLLECTIONS -> KakoEximStores.importCollections(context, bytes)
                 }
             }.getOrDefault(-1)
             if (applied >= 0) lines.add("${context.getString(cat.labelRes)}: $applied")
@@ -371,6 +498,11 @@ object KakoExim {
             // category it never hears about is one it would wait for forever.
             onProgress(index + 1, ordered.size, context.getString(cat.labelRes))
         }
+
+        // Everything written above went in through `edit {}` — that is `apply()`, an in-memory
+        // write plus a *queued* disk write. Whoever asked for this import may kill us the moment
+        // we answer, so the queue is drained here rather than left to luck.
+        flushPrefs(context)
 
         // Caches backing the fork prefs/fonts were swapped underneath; refresh so
         // the running app shows as much of the import as it can before a restart.
@@ -835,6 +967,123 @@ object KakoExim {
 
     private fun fenixPrefs(context: Context): SharedPreferences =
         context.getSharedPreferences(Settings.FENIX_PREFERENCES, Context.MODE_PRIVATE)
+
+    /**
+     * **Fenix keeps its settings in two preferences files, not one.**
+     *
+     * `Settings` reads `fenix_preferences`, and that is the file this fork exported for a year.
+     * But only one settings screen in Fenix (`AccessibilityFragment`) points `preferenceManager`
+     * at it: every other screen leaves the AndroidX default in place, so each switch also
+     * persists itself to `<package>_preferences` — and a handful of settings live *only* there,
+     * read straight back out of it (`pref_key_external_download_manager`,
+     * `pref_key_downloads_clean_up_files_automatically`, the what's-new state).
+     *
+     * Restoring one file and not the other is why a restored phone came up looking untouched
+     * (白い熊, 2026-09-09).
+     */
+    private fun defaultPrefsName(context: Context): String = "${context.packageName}_preferences"
+
+    /**
+     * Every `SharedPreferences` file this app has, minus [PREFS_FILE_EXCLUDE] and the key
+     * stores in [PREFS_FILE_EXCLUDE_SUFFIXES], read off disk rather than listed by name.
+     *
+     * A file that has never been written does not exist yet, so this is also the answer to
+     * "which of them does this profile actually use".
+     */
+    private fun settingsPrefsFiles(context: Context): List<String> {
+        val dir = File(context.applicationInfo.dataDir, "shared_prefs")
+        val names = dir.listFiles()
+            ?.filter { it.isFile && it.name.endsWith(PREFS_FILE_SUFFIX) }
+            ?.map { it.name.removeSuffix(PREFS_FILE_SUFFIX) }
+            .orEmpty()
+        return names.filter { prefsFileTravels(it) }
+    }
+
+    private fun prefsFileTravels(name: String): Boolean =
+        name !in PREFS_FILE_EXCLUDE &&
+            PREFS_FILE_EXCLUDE_SUFFIXES.none { name.endsWith(it) } &&
+            PREFS_FILE_EXCLUDE_PREFIXES.none { name.startsWith(it) }
+
+    /**
+     * Whether [key] in the preferences file [name] belongs to [Cat.APP_SETTINGS].
+     *
+     * The noisy-key filter applies to Fenix's own two files, which is where the telemetry ids,
+     * experiment state and CFR counters are; the component files hold nothing of the sort, and
+     * filtering them on the same fragments would drop real settings for the sake of a substring.
+     * The extension keys are skipped everywhere — [Cat.EXTENSIONS] owns them.
+     */
+    private fun settingsKeyTravels(context: Context, name: String, key: String): Boolean {
+        if (key in extensionKeys(context)) return false
+        val fenixOwned = name == Settings.FENIX_PREFERENCES || name == defaultPrefsName(context)
+        if (!fenixOwned) return true
+        return APP_SETTINGS_EXCLUDE_FRAGMENTS.none { key.contains(it, ignoreCase = true) }
+    }
+
+    /**
+     * `{"files": {"<prefs file>": {<typed key map>}}}`.
+     *
+     * A v2 archive wrote the typed key map alone, being the one file it knew about; [importAppSettings]
+     * still reads that shape.
+     */
+    private fun exportAppSettings(context: Context): ByteArray {
+        val files = JSONObject()
+        settingsPrefsFiles(context).forEach { name ->
+            val prefs = context.getSharedPreferences(name, Context.MODE_PRIVATE)
+            files.put(name, prefsJson(prefs) { settingsKeyTravels(context, name, it) })
+        }
+        return JSONObject().put("files", files).toString(2).toByteArray()
+    }
+
+    private fun importAppSettings(context: Context, bytes: ByteArray): Int {
+        val root = JSONObject(String(bytes))
+        val files = root.optJSONObject("files")
+            // A pre-v3 archive: one flat typed key map, which was Fenix's own file.
+            ?: return importPrefsJson(fenixPrefs(context), root) {
+                settingsKeyTravels(context, Settings.FENIX_PREFERENCES, it)
+            }
+        var applied = 0
+        for (name in files.keys()) {
+            // The archive names the file, so re-check it here too: an archive is an input, and
+            // the one thing that must never come back is a key store from another phone.
+            if (!prefsFileTravels(name)) continue
+            val values = files.optJSONObject(name) ?: continue
+            val prefs = context.getSharedPreferences(name, Context.MODE_PRIVATE)
+            applied += importPrefsJson(prefs, values) { settingsKeyTravels(context, name, it) }
+        }
+        return applied
+    }
+
+    /**
+     * Forces every preferences file this app has onto disk, synchronously.
+     *
+     * An empty `commit()` writes the whole current map and blocks until it is there, so it
+     * subsumes any `apply()` still queued behind it. Called at the end of [import] because the
+     * caller of a headless import force-stops this app the instant it is told the import
+     * succeeded, and a `SIGKILL` runs no shutdown hook and drains no queued write: the restore
+     * reports success over preferences that never reached disk.
+     *
+     * Every file, not the two the import used to name. The search-engine choice went missing
+     * exactly this way — restored into `mozac_feature_search_metadata`, never flushed, killed.
+     */
+    fun flushPrefs(context: Context) {
+        val names = buildSet {
+            add(PREFS_NAME)
+            add(Settings.FENIX_PREFERENCES)
+            add(defaultPrefsName(context))
+            add(SEARCH_METADATA_PREFS)
+            add(FXA_STATE_PREFS_KEY)
+            addAll(settingsPrefsFiles(context))
+        }
+        names.forEach { name ->
+            runCatching {
+                context.getSharedPreferences(name, Context.MODE_PRIVATE).edit().commit()
+            }
+        }
+    }
+
+    /** Where android-components keeps one XML file per search engine 白い熊 added himself. */
+    private fun customSearchEnginesDir(context: Context): File =
+        File(context.filesDir, SEARCH_ENGINES_DIR).also { if (!it.exists()) it.mkdirs() }
 
     /**
      * The Fenix settings that belong to [Cat.EXTENSIONS] rather than to the general
