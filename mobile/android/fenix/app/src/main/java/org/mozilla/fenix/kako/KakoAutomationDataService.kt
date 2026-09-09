@@ -26,7 +26,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import org.mozilla.fenix.R
-import java.io.File
 import java.io.OutputStream
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
@@ -249,73 +248,46 @@ class KakoAutomationDataService : Service() {
         replyPackage: String?,
         reply: (String) -> Unit,
     ) {
-        // Spooled to disk rather than read straight off the descriptor into a ByteArray.
-        // [KakoExim.import] wants the whole archive as bytes, but growing an array from a stream
-        // of unknown length reallocates as it goes and peaks at several times the final size —
-        // and this app's archive carries imported font files and a whole bookmark tree, not just
-        // a settings blob. A spool file has an exact length, so the array is allocated once; the
-        // cap turns a hostile or corrupt descriptor into an ERROR: line instead of an OOM kill.
-        val spool = File(cacheDir, "kako-automation-import-$jobId.zip")
-        val bytes = try {
-            var copied = 0L
-            ParcelFileDescriptor.AutoCloseInputStream(fd).use { input ->
-                spool.outputStream().use { out ->
-                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-                    while (true) {
-                        val read = input.read(buffer)
-                        if (read < 0) break
-                        copied += read
-                        if (copied > MAX_IMPORT_BYTES) {
-                            reply("ERROR:archive too large (over ${MAX_IMPORT_BYTES shr 20} MB)")
-                            return
-                        }
-                        out.write(buffer, 0, read)
-                    }
-                }
-            }
-            if (copied == 0L) {
-                reply("ERROR:empty archive")
-                return
-            }
-            spool.readBytes()
-        } finally {
-            // Never leave the caller's data lying in our cache, on any path out of here.
-            spool.delete()
-        }
-        // Every category the archive actually carries, not every category we know about: asking
-        // for one the archive lacks is how a restore ends up reporting success over nothing.
-        val present = runCatching { KakoExim.categoriesIn(bytes) }.getOrDefault(emptySet())
-        if (present.isEmpty()) {
-            reply("ERROR:archive carries no categories")
-            return
-        }
-        // Enum order, exactly as KakoExim.import walks it — so the position it reports can be
-        // turned back into the category id §3 wants in `item`.
-        val ordered = KakoExim.Cat.entries.filter { it in present }
+        // Read STRAIGHT off the descriptor, in one pass, and never held whole.
+        //
+        // This used to spool to a cache file and then `readBytes()` it, because [KakoExim.import]
+        // wanted the archive as a `ByteArray`. That is no longer survivable: an archive carrying
+        // the extension databases is 2.7 GB on 白い熊's phone, so the array alone would be an OOM
+        // kill and the spool would want another 2.7 GB of cache beside the staging the import is
+        // already writing. [KakoExim.import] streams now, so the descriptor IS the input.
+        //
+        // The cost is that there is no second pass: a pipe cannot be rewound, so the categories
+        // the archive carries are learned *while* importing rather than checked beforehand, and
+        // the request is for everything §3 asked for. A category the archive lacks is skipped
+        // inside the import exactly as it always was.
+        val requested = KakoExim.Cat.entries.toSet()
+        val ordered = KakoExim.Cat.entries.toList()
         var lastProgressAt = 0L
         val summary = withTimeoutOrNull(IMPORT_TIMEOUT_MS) {
-            KakoExim.import(
-                context = this@KakoAutomationDataService,
-                zip = bytes,
-                cats = present,
-                onProgress = { done, total, label ->
-                    val now = SystemClock.elapsedRealtime()
-                    // At most one every 500 ms — but the closing one always goes out.
-                    if (done >= total || now - lastProgressAt >= PROGRESS_MIN_INTERVAL_MS) {
-                        lastProgressAt = now
-                        sendProgress(
-                            progressAction = progressAction,
-                            replyPackage = replyPackage,
-                            jobId = jobId,
-                            item = ordered.getOrNull(done - 1)?.id.orEmpty(),
-                            done = done,
-                            total = total,
-                            label = label,
-                            bytes = bytes.size.toLong(),
-                        )
-                    }
-                },
-            )
+            ParcelFileDescriptor.AutoCloseInputStream(fd).use { input ->
+                KakoExim.import(
+                    context = this@KakoAutomationDataService,
+                    archive = input,
+                    cats = requested,
+                    onProgress = { done, total, label ->
+                        val now = SystemClock.elapsedRealtime()
+                        // At most one every 500 ms — but the closing one always goes out.
+                        if (done >= total || now - lastProgressAt >= PROGRESS_MIN_INTERVAL_MS) {
+                            lastProgressAt = now
+                            sendProgress(
+                                progressAction = progressAction,
+                                replyPackage = replyPackage,
+                                jobId = jobId,
+                                item = ordered.getOrNull(done - 1)?.id.orEmpty(),
+                                done = done,
+                                total = total,
+                                label = label,
+                                bytes = 0L,
+                            )
+                        }
+                    },
+                )
+            }
         }
         // Before the verdict, and on both paths: whatever categories did land must reach disk
         // ahead of the caller's force-stop. A partial import silently undone by SIGKILL is
@@ -331,7 +303,11 @@ class KakoAutomationDataService : Service() {
         //
         // `result` is ONE line: KakoExim.import answers a per-category block, so it is folded onto
         // one before it goes out — a reply the caller has to reassemble is a reply it will get wrong.
-        reply("OK:${present.size} restored|${summary.lines().filter { it.isNotBlank() }.joinToString(" · ")}")
+        // One line per category that actually landed — which, with no pre-pass to consult, is now
+        // the only place the count can come from, and the more honest one for it: it counts what
+        // was restored rather than what the archive claimed to hold.
+        val restored = summary.lines().filter { it.isNotBlank() }
+        reply("OK:${restored.size} restored|${restored.joinToString(" · ")}")
     }
 
     /**
@@ -458,10 +434,16 @@ class KakoAutomationDataService : Service() {
          * shorter than 応用管理's ten-minute silence watchdog, so the caller hears a verdict
          * from us rather than inventing one.
          */
-        private const val IMPORT_TIMEOUT_MS = 360_000L
+        /**
+         * Long enough for the extension databases.
+         *
+         * 6 minutes was right when the archive was a settings blob. 2.7 GB of IndexedDB read off
+         * a descriptor, staged to internal storage and then moved is minutes of pure I/O before
+         * anything else happens, and a restore that works but is declared timed out is the worst
+         * of both — the files are on disk and the caller has been told it failed.
+         */
+        private const val IMPORT_TIMEOUT_MS = 2_700_000L
 
-        /** A ceiling on an incoming archive, so a hostile or corrupt descriptor cannot OOM us. */
-        private const val MAX_IMPORT_BYTES = 512L shl 20
 
         /**
          * The descriptor's way across, because an Intent is the wrong vehicle for one.

@@ -270,6 +270,111 @@ starts, so a headless export sampled it empty — and an empty list is not a fai
 backup, it is a successful backup of no extensions. `KakoAddons.installedJson`
 awaits `WebExtensionSupport.awaitInitialization()` now, as `restore` already did.
 
+## The backup carries the extensions' own data
+
+**This app is the only thing that reads this app's data, and that is the design,
+not a limitation** (白い熊, 2026-09-09). 応用管理 does not need to reach inside
+`/data/data/shiroikuma.kako` and is not supposed to — the app-supplied data door
+exists precisely so that kako reads its own internal data and hands it over. Do
+not read the "Permission denied" from a shell `du` as a problem to solve; nothing
+about a backup gets better by giving the caller more access.
+
+Which means every shortfall in a backup is **ours**, and there is nowhere else to
+look. On 2026-09-09 `KakoExim` exported 229.5 kB of a **2.78 GB** profile: the
+backup finished in 6.8 s and reported success, because the exporter had never been
+told the extension storage existed. (Measured with `dumpsys diskstats`: main phone
+2.78 GB of app data, the phone restored onto 0.09 GB. The 116-byte `data0.tar.zst`
+in 応用管理's log is `/Android/data/shiroikuma.kako`, which this app leaves empty —
+it is not where anything lives.)
+
+Nearly all of the missing bulk is extension storage, which Gecko keeps in the
+profile under quota-manager origin directories:
+
+| Path under the profile | What | Category |
+|---|---|---|
+| `storage/default/moz-extension+++<uuid>^userContextId=4294967295/` | `storage.local` — each add-on's own options | `EXT_SETTINGS` |
+| `browser-extension-data/<id>/` | the pre-IndexedDB JSON backend, same thing | `EXT_SETTINGS` |
+| `storage/default/moz-extension+++<uuid>/` | everything in `indexedDB` — **the bulk**, one 1.94 GiB yomitan `.sqlite` | `EXT_DATABASES` |
+
+Split into two categories on 白い熊's instruction (2026-09-09) so a routine backup
+can leave the gigabytes out; both default on.
+
+**Both live under `default`, and `^userContextId` is the ONLY thing separating
+them.** `ExtensionStorageIDB` opens `storage.local` with an ordinary storage
+principal — `storage/permanent` is empty on this phone — isolated into the
+reserved context `WEBEXT_STORAGE_USER_CONTEXT_ID` = `-1 >>> 0` = 4294967295
+(`ExtensionStorageIDB.sys.mjs:25`). Splitting on the persistence directory, as the
+first cut did, put every add-on's settings into the gigabytes category, so
+unticking the dictionaries would have silently dropped the settings too. `-shm`
+files are skipped (scratch, rebuilt from the `-wal`); `-wal` files travel.
+
+**The `moz-extension` UUID map is load-bearing.** Those directory names are per
+install — Gecko mints a fresh UUID per extension per profile and records the map
+in `extensions.webextensions.uuids`. Restore the directories without it and they
+belong to nobody: the add-on comes back, asks for storage under a *new* UUID, and
+finds an empty origin with gigabytes sitting beside it referenced by nothing. So
+`Cat.EXT_SETTINGS` carries that pref even though `KakoGeckoPrefs` refuses it as an
+`about:config` value, and the `ExtensionStorageIDB.migrated.*` flags with it.
+
+**Nothing may be written into a profile Gecko is using** — these are live SQLite
+databases. An import unpacks to `filesDir/kako_pending_extdata/` and
+`KakoExtData.applyPending` moves the tree into the profile from
+`FenixApplication.onCreate` **before `setupEarlyMain()`**, which is the line that
+creates the engine. The move is a rename inside `filesDir`, so it needs no second
+copy of 2.7 GB. No profile yet (installed, never opened) → the staging is left for
+the next start.
+
+**The import streams; it must never hold the archive.** `KakoExim.import` takes an
+`InputStream` and makes ONE pass: small entries into a map, bulk entries straight
+to staging. The old `ByteArray` + spool-file path, and its 512 MB
+`MAX_IMPORT_BYTES` cap, are gone — both were an instant OOM at this size. There is
+therefore no pre-pass to ask what the archive contains (a pipe cannot be rewound),
+so the reply counts what was *restored* rather than what the archive claimed.
+`IMPORT_TIMEOUT_MS` is 45 min: 2.7 GB is minutes of pure I/O, and a restore that
+works but is declared timed out is the worst of both.
+
+**Never call `ZipOutputStream.setLevel` mid-archive.** The first cut stored the
+bulk entries uncompressed, on the theory that IndexedDB compresses its own
+records. Both halves were wrong. The data deflates **6:1** (1.94 GiB of yomitan
+dictionaries → a 337 MB archive), and `ZipOutputStream` shares one `Deflater`
+across the whole archive, so changing its level between entries makes the next
+`deflate()` call `deflateParams` and flush into the bitstream. Sizes and CRCs stay
+correct, so the central directory looks perfect and `ZipFile` is happy; only a
+reader that inflates sees it — `ZipException: invalid block type`. That is
+`KakoExim.import`'s own reader, so the archive could not have been restored.
+
+**Verify an archive with BOTH readers, and make them agree.** Three checks, three
+disjoint blind spots (learned the hard way alongside the 辞書 chat, 2026-09-09,
+whose mirror-image bug was in the per-entry data descriptors):
+
+| check | sees | blind to |
+|---|---|---|
+| `cen_off + cen_size == EOCD` | central directory placement | descriptors, deflate streams |
+| `ZipFile` | central directory, EOCD/ZIP64 arithmetic | descriptors, deflate streams |
+| `ZipInputStream`, every entry read to EOF | local headers, descriptors, **that bytes inflate** | central directory |
+
+The gate: run both readers on-device and require the same entry count and byte
+total. `.claude/skills/` has no harness for this; the throwaway is a 40-line
+`AndroidZipTest.java` → `d8` → `adb shell CLASSPATH=classes.dex app_process /`.
+A desktop reader cannot stand in for either — OpenJDK 21, `unzip`, Python
+`zipfile` and 7z all accept archives Android's native `ZipFile.open` rejects.
+
+**A category that takes minutes must keep talking.** 応用管理 abandons an app silent
+for ten minutes, and the per-category progress the rest of the export leans on
+cannot help inside one category — `EXT_DATA_PROGRESS_BYTES` (32 MB) is how often
+export and import repeat their position.
+
+**Why the Android ZIP64 bug that broke shiroikuma-jisho cannot reach us**
+(jisho chat, 2026-09-09): Android's `ZipFile.open` is native and follows the ZIP64
+locator only when the ordinary EOCD holds `0xFFFFFFFF` sentinels, so a writer that
+emits the trailer without the sentinels produces an archive desktop readers accept
+and the phone rejects. Two reasons we are clear: `KakoExim.kt` is the *only*
+archive writer in this tree (no native writer, no desktop-side exporter) and
+`java.util.zip.ZipOutputStream` derives `hasZip64` from the same values it clamps;
+and we read with `ZipInputStream`, which walks local file headers and never reads
+the central directory at all. Worth re-checking after any change to either:
+`cen_off + cen_size` must equal the EOCD offset.
+
 Four things still do not survive a round trip:
 
 - **Visit timestamps.** `HistoryStorage` has no timestamped write, so restored
