@@ -235,6 +235,11 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
                 applySecretSettingsOverrides(applicationContext)
             }
 
+            // Fork: move any extension storage an app-data restore staged into the Gecko profile.
+            // BEFORE setupEarlyMain(), and that is the whole point — it creates the engine, and
+            // these are live SQLite databases that must not be replaced under a running Gecko.
+            org.mozilla.fenix.kako.KakoExtData.applyPending(applicationContext)
+
             // Initialization is split into two phases based on if libmegazord is fully initialized.
             setupEarlyMain()
             setupPostMegazord()
