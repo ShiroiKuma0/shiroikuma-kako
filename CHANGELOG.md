@@ -5,6 +5,151 @@ Everything built on top of stock Firefox (release channel) — the Android brows
 `<upstream-base>+<build>`; the fork commits live on `custom`, rebased onto each
 adopted `FIREFOX_*_RELEASE` tag, and one tag covers both products.
 
+## 155.0.1+036 — 2026-09-10
+
+The base stays at Firefox **155.0.1** (`FIREFOX_155_0_1_RELEASE`). One subject, taken
+apart properly this time: **a backup that actually reproduces the browser on another
+phone** — every setting, the extensions themselves, and the gigabytes of data inside
+them. Archive format **3**, nineteen categories.
+
+The previous release's backup was 229.5 kB of a 2.78 GB profile and finished in 6.8
+seconds. Nothing about that was slow; it was empty.
+
+### Settings: the file nobody had looked in
+
+**Fenix keeps its settings in two preference files, not one.** `Settings` reads
+`fenix_preferences`, but only one settings screen in Fenix points `preferenceManager`
+at it — every other screen leaves the AndroidX default in place, so each switch also
+persists to `<package>_preferences`, and a handful of settings live *only* there
+(external download manager, automatic download clean-up, the what's-new state).
+Measured on the phone: **82 keys in the file that was backed up, 112 in the one that
+was not.**
+
+`Cat.APP_SETTINGS` now sweeps **every** file in `shared_prefs/` behind a deny-list,
+so the file upstream adds next cycle travels without anyone noticing it exists. That
+picked up the app language and the reader-view settings on the way past.
+
+Three kinds of file are never swept, and the reasons are not cosmetic:
+
+- `*_kp_pre_m` / `*_kp_post_m` hold the key to the logins and autofill databases
+  (plaintext on the release channel), and `loginsCrypto` / `autofillCrypto` hold the
+  canary encrypted under it. The entries themselves travel and are re-encrypted under
+  the new phone's key; a restored canary then fails to decrypt and the whole store is
+  treated as unreadable.
+- `kako_automation` holds this app's automation token — restoring another phone's
+  breaks the pairing 応用管理 already has, and exporting it puts the token in the
+  archive.
+- Migration stamps (`pref_search_migrated`, `logins_undecryptable_cleaned`) tell the
+  new phone that work it has never done is already done.
+
+### Seven more categories
+
+| Category | Where it actually lives |
+| --- | --- |
+| `about:config` preferences | Gecko's `prefs.js`, inside the salted profile directory |
+| Custom search engines | `filesDir/search-engines/<base64 id>.xml` — files, not preferences |
+| Pinned shortcuts | a Room database |
+| Site permissions | a Room database (read through `OnDiskSitePermissionsStorage`, never the Gecko-backed one, whose `all()` waits on a runtime a headless backup may never start) |
+| Never-save-a-password sites | a Room database |
+| Tab collections | a Room database |
+| Extension settings and databases | the Gecko profile — see below |
+
+`prefs.js` is mostly *not* settings: of 52 user-branch preferences on the phone, four
+were real choices and the rest were GPU capability caches, blocklist stamps and
+per-extension migration flags. The deny-list drops names that state a *time* or a
+*schema*, never a fragment like "cache", which would take `browser.cache.disk.enable`
+with it.
+
+### The extensions, and the 2 GB inside them
+
+The archive recorded *which* add-ons were installed and left the restore to
+re-download each one from AMO — so it needed the network, needed AMO to answer,
+needed every add-on to still be listed, and could only ever return whatever version
+AMO offers today. **The XPIs themselves now travel**, and the restore installs from
+the file: the exact builds that were backed up, with no network in the path.
+
+Their storage travels too, split so a routine backup can leave the bulk out:
+
+- **Extension settings** — each add-on's own options (`storage.local`).
+- **Extension databases** — everything in `indexedDB`. On this phone that is one
+  1.94 GiB SQLite file of yomitan dictionaries.
+
+Both live under `storage/default`, and `^userContextId=4294967295` is the only thing
+separating them — `storage.local` is opened with an ordinary storage principal,
+merely isolated into a reserved user context.
+
+**The `moz-extension` UUID is the whole problem.** Gecko mints one per add-on per
+profile, and the storage directories are named with it, so restored storage belongs
+to nobody unless the add-on comes up under the UUID it was backed up with. That
+cannot be arranged after the fact: an add-on whose UUID is changed once Gecko has
+installed and registered it stays listed and enabled while serving none of its own
+resources.
+
+So the install moves out of the import. A restore stages the XPIs, the storage and
+the map and installs nothing; at the next start, engine still down and add-ons still
+absent, the storage is moved into the profile and the archive's UUIDs are written
+into `prefs.js`; Gecko then adopts them as it installs each add-on. Verified after a
+clean restore: **all thirteen map entries matched the source phone byte for byte**,
+built-in add-ons included.
+
+An id that already has an XPI in the profile is never seeded, at any moment. On a
+phone that already has the add-ons their UUIDs stand and the storage does not travel
+— the honest outcome, and the only one that cannot break a working browser.
+
+### A restored add-on approves itself
+
+Restoring used to queue Fenix's own dialogs in front of the browser, one pair per
+add-on ("Add Text Reflow WE", then "Tranquility Reader was added"). Those permissions
+were granted on the phone the backup came from and the archive records them, so the
+restore now answers for its own add-ons and draws nothing. An add-on added by hand
+prompts exactly as before.
+
+It also no longer answers prompts that are not its own. The store's prompt flow
+carries every prompt in the app, and confirming one raised by hand completed the
+`GeckoResult` the user's own dialog was about to complete — `IllegalStateException:
+result is already complete`, on the main thread, taking the browser with it.
+`WebExtensionPromptFeature` is guarded as well, because "the two can no longer
+collide" is a weaker promise than "a collision cannot crash".
+
+### The import stops holding the archive
+
+It took a `ByteArray` and exploded every entry into a map, and the automation service
+spooled the descriptor to a cache file first — fine for a bookmark tree, an instant
+OOM at 2.7 GB, wanting another 2.7 GB of cache besides. Now it is one streaming pass:
+small entries collected, bulk entries written straight to staging, the descriptor
+itself as the input. The 512 MB archive cap is gone and the import deadline is 45
+minutes, because gigabytes of IndexedDB are minutes of pure I/O and a restore that
+works but is declared timed out is the worst of both.
+
+Every bulk entry is named for the category that owns it, so a consumer totting up a
+category's size finds the data rather than the index — 応用管理 reported "Extension
+databases — 40 bytes" over 1.89 GiB that were all present, because the only entry
+whose name mentioned that category was its 40-byte side-car.
+
+### Fixes
+
+- **A restore no longer silently loses what it just unpacked.** The staging tree was
+  deleted unconditionally while each move was caught separately, so any failure to
+  write the destination threw away everything. It is deleted only when every file
+  moved; a failure now costs disk and a retry on the next start.
+- **The Gecko profile is found, not guessed.** It was "the newest subdirectory of
+  `mozilla/`", which is `Crash Reports` or `Pending Pings` as easily as the profile.
+- **An export waits for the engine before listing extensions.** A headless backup
+  sampled the store before it was filled and recorded an empty list — which is not a
+  failed backup but a successful backup of no extensions.
+- **The search-engine choice survives the force-stop.** It was restored with
+  `apply()` into a third preferences file that the import's flush did not name, and
+  the caller's `SIGKILL` took it every time. Every preferences file is flushed now.
+- **Never `setLevel` mid-archive.** Writing the bulk entries at a different
+  compression level corrupted the deflate stream: sizes and CRCs stayed correct, so
+  the central directory looked perfect and `ZipFile` was happy, but `ZipInputStream`
+  — the import's own reader — answered `invalid block type`. The archive could not
+  have been restored. Found because the 辞書 fork insisted on running both readers.
+
+### Packaging
+
+- The desktop `.deb` and the Android APK ship at this same version, as always.
+
 ## 155.0.1+020 — 2026-09-09
 
 The base stays at Firefox **155.0.1** (`FIREFOX_155_0_1_RELEASE`). Two things, both
