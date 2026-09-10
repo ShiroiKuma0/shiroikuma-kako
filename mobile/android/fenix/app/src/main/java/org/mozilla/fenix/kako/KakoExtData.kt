@@ -101,8 +101,8 @@ internal object KakoExtData {
      */
     private const val PENDING_ADDONS_DIR = "kako_pending_addons"
 
-    /** Where the archive's `moz-extension` UUID map waits for [applyPendingUuids]. */
-    private const val PENDING_UUIDS_FILE = "kako_pending_uuids.json"
+    /** Written by 155.0.1+030; removed on sight so that build's staging cannot be re-applied. */
+    private const val STALE_UUIDS_FILE = "kako_pending_uuids.json"
 
     /**
      * The add-ons' XPI files, under the [KakoExim.Cat.EXTENSIONS] id like every other bulk entry.
@@ -288,65 +288,32 @@ internal object KakoExtData {
     }
 
     /**
-     * Splits the side-car: the migration flags go to [KakoGeckoPrefs]' ordinary staging, and the
-     * UUID map is kept aside for [applyPending].
+     * Applies the migration flags. **The UUID map is deliberately NOT applied.**
      *
-     * The map must NOT go through `setBrowserPref` like an ordinary preference. That write is
-     * queued, so it arrives after Gecko has started the add-ons under UUIDs of its own, and Gecko
-     * then rewrites the map from memory at shutdown — erasing ours. Measured on 白い熊's restored
-     * phone (2026-09-09): yomitan's dictionaries restored under
-     * `moz-extension+++6e7f7466-…` while yomitan itself was running as
-     * `moz-extension+++d2acdd46-…`, both origin directories sitting side by side, 1.94 GiB owned
-     * by a UUID nothing referred to. Restarting did not heal it and could not.
+     * It rides in the archive, because a future restore that gets this right will need it, and it
+     * is read back by the diagnostics. But nothing here writes it, in either direction.
+     *
+     * 155.0.1+029 applied it through `setBrowserPref` after the add-ons were installed: the write
+     * is queued, so Gecko had already registered them under UUIDs of its own, and it rewrote the
+     * map from memory at shutdown. Result: the dictionaries stayed under the archive's UUID and
+     * nothing referred to them. 155.0.1+030 tried to win that race by writing `prefs.js` before
+     * the engine started, and it won it — and that was worse. On 白い熊's phone the five add-ons
+     * whose UUID was forced to the archive's value went on showing as installed and enabled while
+     * serving none of their own resources: `loadIcon` returned null for every one and the toolbar
+     * drew placeholder puzzle pieces. The two add-ons that kept Gecko's own UUID were untouched.
+     *
+     * The lesson is not which moment to write it at. It is that an add-on's UUID cannot be
+     * changed out from under Gecko once it has installed and registered the add-on, and no amount
+     * of timing fixes that. Making the storage travel needs the map to be in place *before* the
+     * add-ons are installed, or another route entirely — and neither is something to guess at a
+     * third time on 白い熊's phone (2026-09-10).
      */
     fun importSettingsJson(context: Context, bytes: ByteArray): Int {
         val prefs = JSONObject(String(bytes)).optJSONArray("prefs") ?: return 0
-        val rest = mutableListOf<JSONObject>()
-        var uuids: String? = null
-        for (index in 0 until prefs.length()) {
-            val entry = prefs.optJSONObject(index) ?: continue
-            if (entry.optString("name") == UUID_PREF) {
-                uuids = entry.optString("value").takeIf { it.isNotEmpty() }
-            } else {
-                rest.add(entry)
-            }
-        }
-        uuids?.let { runCatching { File(context.filesDir, PENDING_UUIDS_FILE).writeText(it) } }
-        return KakoGeckoPrefs.stage(context, rest) + if (uuids != null) 1 else 0
-    }
-
-    /**
-     * Points Gecko at the restored storage, by merging the archive's UUIDs into the map
-     * Gecko already has and writing that into `prefs.js` **before the engine exists**.
-     *
-     * Merged, not replaced: the built-in add-ons (`ads@mozac.org` and friends) hold UUIDs minted
-     * on this device, and their entries have to survive. Only ids the archive knows about are
-     * overridden, and only while the staged map is still present — it is dropped once written, so
-     * this happens exactly once per restore.
-     *
-     * Deliberately NOT done by renaming the origin directories to Gecko's new UUIDs, which looks
-     * tidier and is not: each one carries a `.metadata-v2` naming the origin it belongs to, and a
-     * directory whose name and metadata disagree is worse than one Gecko simply cannot find.
-     */
-    private fun applyPendingUuids(context: Context) {
-        val file = File(context.filesDir, PENDING_UUIDS_FILE)
-        if (!file.isFile) return
-        val archived = runCatching { JSONObject(file.readText()) }.getOrNull() ?: run {
-            runCatching { file.delete() }
-            return
-        }
-        val current = KakoGeckoPrefs.readUserPrefs(context)
-            .firstOrNull { it.optString("name") == UUID_PREF }
-            ?.optString("value")
-            ?.let { runCatching { JSONObject(it) }.getOrNull() }
-            ?: JSONObject()
-        // No profile yet, or no map yet: leave the staging for the next start rather than losing it.
-        val merged = JSONObject()
-        for (key in current.keys()) merged.put(key, current.optString(key))
-        for (key in archived.keys()) merged.put(key, archived.optString(key))
-        if (KakoGeckoPrefs.writeUserPref(context, UUID_PREF, merged.toString())) {
-            runCatching { file.delete() }
-        }
+        val rest = (0 until prefs.length())
+            .mapNotNull { prefs.optJSONObject(it) }
+            .filterNot { it.optString("name") == UUID_PREF }
+        return KakoGeckoPrefs.stage(context, rest)
     }
 
     /**
@@ -357,14 +324,12 @@ internal object KakoExtData {
      * rather than the data being lost to a phone that had not been opened.
      */
     fun applyPending(context: Context) {
+        runCatching { File(context.filesDir, STALE_UUIDS_FILE).delete() }
         val root = File(context.filesDir, PENDING_DIR)
         // The UUID map is tried on every start until it lands: the add-ons are installed during
         // the import, but Gecko writes their UUIDs to `prefs.js` on its own schedule and the
         // caller's force-stop is a SIGKILL, so the map we have to merge into may not exist yet.
-        if (!root.isDirectory) {
-            applyPendingUuids(context)
-            return
-        }
+        if (!root.isDirectory) return
         val profile = KakoGeckoPrefs.profileDir(context) ?: return
         val base = root.path + File.separator
         var failed = 0
@@ -388,7 +353,6 @@ internal object KakoExtData {
         // nothing. A staging tree left standing costs disk and is retried on the next start;
         // a staging tree deleted after a failed move is gone for good.
         if (failed == 0) runCatching { root.deleteRecursively() }
-        applyPendingUuids(context)
     }
 
     private fun pendingDir(context: Context): File =
