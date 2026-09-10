@@ -60,6 +60,9 @@ object KakoAddons {
 
     private const val XPI_SUFFIX = ".xpi"
 
+    /** What the archive wants installed, waiting for the start after the import. */
+    private const val PENDING_INSTALL_FILE = "kako_pending_addons.json"
+
     /**
      * The installed, non-built-in extensions as JSON — id, name, and their state.
      *
@@ -96,6 +99,61 @@ object KakoAddons {
      * caller is waiting on a reply and cannot see what we are doing: an unbounded
      * step here is silence on 応用管理's side, and silence is how it decides an app
      * has died. See [TOTAL_BUDGET_MS].
+     */
+    /**
+     * Records what the archive wants installed, for [installPending] to do at the next start.
+     * Returns how many add-ons were recorded.
+     *
+     * **The install is deliberately deferred rather than done here**, and the whole extension
+     * restore hangs off that. Gecko mints a `moz-extension` UUID the moment it installs an add-on
+     * and registers it under that UUID; the archive's storage is named with the UUID from the old
+     * phone. Two builds tried to reconcile that afterwards and both failed — 155.0.1+029 wrote
+     * the map too late and Gecko overwrote it, 155.0.1+030 wrote it early enough to win and left
+     * five add-ons installed, enabled, and unable to serve a single one of their own resources.
+     *
+     * So nothing is installed while the import runs. [KakoExtData.applyPending] puts the archive's
+     * UUIDs into `prefs.js` at the next start, with the engine still down and the add-ons still
+     * absent, and only then does [installPending] install them. Gecko finds an entry already in
+     * the map, reuses it instead of minting, and registers each add-on under the UUID its restored
+     * storage is named with. Nothing is ever changed out from under Gecko.
+     */
+    fun stageForInstall(context: Context, array: JSONArray?): Int {
+        if (array == null || array.length() == 0) return 0
+        val file = File(context.filesDir, PENDING_INSTALL_FILE)
+        return runCatching {
+            file.writeText(JSONObject().put("addons", array).toString())
+            array.length()
+        }.getOrDefault(0)
+    }
+
+    /**
+     * Installs whatever [stageForInstall] recorded, from the XPIs the archive carried.
+     *
+     * Runs well after startup, from `FenixApplication`'s visual-completeness queue: the engine has
+     * to be up, and this is minutes of downloading in the worst case. The staging survives until
+     * every add-on in it is accounted for, so a start that is killed halfway resumes at the next.
+     */
+    suspend fun installPending(context: Context) {
+        val file = File(context.filesDir, PENDING_INSTALL_FILE)
+        if (!file.isFile) return
+        val array = runCatching { JSONObject(file.readText()).optJSONArray("addons") }.getOrNull()
+        if (array == null) {
+            runCatching { file.delete() }
+            return
+        }
+        restore(context, array)
+        runCatching { file.delete() }
+        KakoExtData.clearStagedAddons(context)
+    }
+
+    /**
+     * Re-installs every extension in [array] that is not installed already and
+     * restores its state; returns how many were installed. Add-ons that are gone
+     * from AMO, or whose install fails or stalls, are skipped without aborting.
+     *
+     * Every step is bounded, because this used to run inside a data-door import where the caller
+     * was waiting on a reply. It no longer does — see [stageForInstall] — but the bounds are worth
+     * keeping: nothing here should be able to wedge a startup either.
      */
     suspend fun restore(context: Context, array: JSONArray?): Int {
         if (array == null) return 0
@@ -137,26 +195,21 @@ object KakoAddons {
                 runCatching { applyState(context, id, enabled, allowedInPrivateBrowsing) }
             }
         }
-        // Single-use and megabytes apiece; the add-ons are installed now or they are not coming.
-        KakoExtData.clearStagedAddons(context)
         return installed
     }
 
     /**
      * The XPI an import unpacked for [id], or null.
      *
+     * `walkTopDown`, not `listFiles`: the entries keep their path relative to the profile, so an
+     * XPI unpacks to `<staging>/extensions/<id>.xpi` — a directory below the staging root.
+     *
      * Gecko names the file after the add-on id, but that is its convention rather than a promise,
-     * so a file whose name merely contains the id counts too — and any single XPI is accepted when
-     * there is exactly one candidate, because a restore that installs the right add-on from a
-     * differently-named file is better than one that installs nothing.
+     * so a file whose name merely contains the id counts too.
      */
     private fun stagedXpi(context: Context, id: String): File? {
         val root = KakoExtData.stagedAddonsDir(context)
         if (!root.isDirectory) return null
-        // `walkTopDown`, not `listFiles`: the entries keep their path relative to the profile, so
-        // an XPI unpacks to `<staging>/extensions/<id>.xpi` — a directory deeper than the staging
-        // root. Listing only the top level found the directory and no files, every lookup missed,
-        // and the restore fell back to AMO exactly as before (caught in the 155.0.1+027 export).
         val files = root.walkTopDown().filter { it.isFile && it.name.endsWith(XPI_SUFFIX) }.toList()
         return files.firstOrNull { it.name.removeSuffix(XPI_SUFFIX) == id }
             ?: files.firstOrNull { it.name.contains(id) }
