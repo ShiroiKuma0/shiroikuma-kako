@@ -612,8 +612,10 @@ object KakoExim {
                     Cat.EXTENSIONS -> {
                         val root = JSONObject(String(bytes))
                         val prefs = root.optJSONObject("prefs") ?: JSONObject()
+                        // Staged, not installed — see [KakoAddons.stageForInstall]. The add-ons
+                        // arrive on the next start, after the archive's UUIDs are in place.
                         importPrefsJson(fenixPrefs(context), prefs) { it in extensionKeys(context) } +
-                            KakoAddons.restore(context, root.optJSONArray("installed"))
+                            KakoAddons.stageForInstall(context, root.optJSONArray("installed"))
                     }
                     Cat.APP_SETTINGS -> importAppSettings(context, bytes)
                     Cat.BOOKMARKS -> importBookmarks(context, bytes)
