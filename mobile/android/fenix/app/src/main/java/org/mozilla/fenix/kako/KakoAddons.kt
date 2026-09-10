@@ -189,7 +189,7 @@ object KakoAddons {
                 addon.downloadUrl.takeIf { it.isNotEmpty() } ?: continue
             }
 
-            val result = runCatching { install(context, url, allowedInPrivateBrowsing) }.getOrNull()
+            val result = runCatching { install(context, id, url, allowedInPrivateBrowsing) }.getOrNull()
             if (result != null) {
                 installed++
                 runCatching { applyState(context, id, enabled, allowedInPrivateBrowsing) }
@@ -257,6 +257,7 @@ object KakoAddons {
      */
     private suspend fun install(
         context: Context,
+        id: String,
         url: String,
         allowedInPrivateBrowsing: Boolean,
     ): Addon? = withContext(Dispatchers.Main) {
@@ -280,6 +281,12 @@ object KakoAddons {
                     .map { it.webExtensionPromptRequest }
                     .filterNotNull()
                     .collect { request ->
+                        // OURS ONLY. This flow carries every prompt in the app, not just the ones
+                        // our installs raise, and answering one 白い熊 raised himself completes the
+                        // GeckoResult his own dialog is about to complete — which crashed the
+                        // browser on his tap (2026-09-10). An add-on we are not installing is left
+                        // strictly alone: not answered, not consumed, not looked at.
+                        if (request.extensionIdOrNull() != id) return@collect
                         if (!answered.add(request)) return@collect
                         when (request) {
                             is WebExtensionPromptRequest.AfterInstallation.Permissions.Required -> {
@@ -319,6 +326,14 @@ object KakoAddons {
             addon
         }
     }
+
+    /**
+     * Which add-on a prompt is about, or null when it is not one we can attribute.
+     *
+     * `AfterInstallation` requests carry the extension; anything else is not ours by definition.
+     */
+    private fun WebExtensionPromptRequest.extensionIdOrNull(): String? =
+        (this as? WebExtensionPromptRequest.AfterInstallation)?.extension?.id
 
     /** Applies the recorded state; the add-on must be re-read so it carries an installed state. */
     private suspend fun applyState(
