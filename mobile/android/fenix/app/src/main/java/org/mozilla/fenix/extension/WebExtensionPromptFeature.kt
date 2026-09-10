@@ -130,6 +130,25 @@ class WebExtensionPromptFeature(
 
     @VisibleForTesting
     internal fun handleAfterInstallationRequest(promptRequest: WebExtensionPromptRequest.AfterInstallation) {
+        // Fork: an add-on the restore is installing answers for itself — silently.
+        //
+        // Its permissions are whatever 白い熊 had already granted on the phone the backup came
+        // from; re-asking is not a decision, it is a queue of dialogs in front of a browser he
+        // just restored, one per add-on ("Add Text Reflow WE", "Tranquility Reader was added",
+        // 2026-09-10). [org.mozilla.fenix.kako.KakoAddons] confirms and consumes these itself, so
+        // this returns without drawing anything and without consuming — consuming here would take
+        // the request away before that answer lands.
+        if (org.mozilla.fenix.kako.KakoAddons.isRestoreInstall(promptRequest.extension.id)) {
+            // The permission prompts are answered AND consumed by KakoAddons' own collector, so
+            // this must not consume them — that would take the request away before the answer
+            // lands. "Added" carries no answer and nobody else consumes it, so it is acknowledged
+            // here instead, silently.
+            if (promptRequest is WebExtensionPromptRequest.AfterInstallation.PostInstallation) {
+                consumePromptRequest()
+            }
+            return
+        }
+
         val installedState = addonManager.toInstalledState(promptRequest.extension)
         val addon = Addon.newFromWebExtension(promptRequest.extension, installedState)
         when (promptRequest) {
