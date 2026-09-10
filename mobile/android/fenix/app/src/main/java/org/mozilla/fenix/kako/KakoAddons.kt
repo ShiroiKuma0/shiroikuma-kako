@@ -264,20 +264,36 @@ object KakoAddons {
         // called from a thread with a Handler — hence Main for the whole exchange.
         coroutineScope {
             val store = context.components.core.store
+            // EXACTLY ONCE per request, by identity.
+            //
+            // The store re-emits on every state change while a prompt is still pending, and the
+            // consume below is a dispatch — asynchronous, so more emissions carrying the SAME
+            // request arrive before it takes effect. Answering each of them calls `onConfirm`
+            // again on a GeckoResult that is already complete, and GeckoView throws
+            // `IllegalStateException: result is already complete` on the main thread: the browser
+            // dies. It never showed while this ran in the headless import service, where nothing
+            // else touched the store; moving the installs to startup put it in a process with
+            // tabs loading and it crashed on the first add-on (白い熊, 2026-09-10).
+            val answered = mutableSetOf<WebExtensionPromptRequest>()
             val prompts = launch {
                 store.flow()
                     .map { it.webExtensionPromptRequest }
                     .filterNotNull()
                     .collect { request ->
+                        if (!answered.add(request)) return@collect
                         when (request) {
                             is WebExtensionPromptRequest.AfterInstallation.Permissions.Required -> {
-                                request.onConfirm(
-                                    PermissionPromptResponse(
-                                        isPermissionsGranted = true,
-                                        isPrivateModeGranted = allowedInPrivateBrowsing,
-                                        isTechnicalAndInteractionDataGranted = false,
-                                    ),
-                                )
+                                // Guarded as well as gated: a double-answer that ever slips
+                                // through must not be able to take the browser down with it.
+                                runCatching {
+                                    request.onConfirm(
+                                        PermissionPromptResponse(
+                                            isPermissionsGranted = true,
+                                            isPrivateModeGranted = allowedInPrivateBrowsing,
+                                            isTechnicalAndInteractionDataGranted = false,
+                                        ),
+                                    )
+                                }
                                 store.dispatch(WebExtensionAction.ConsumePromptRequestWebExtensionAction)
                             }
                             is WebExtensionPromptRequest.AfterInstallation.PostInstallation ->
