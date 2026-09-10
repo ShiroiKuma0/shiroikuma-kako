@@ -101,8 +101,8 @@ internal object KakoExtData {
      */
     private const val PENDING_ADDONS_DIR = "kako_pending_addons"
 
-    /** Written by 155.0.1+030; removed on sight so that build's staging cannot be re-applied. */
-    private const val STALE_UUIDS_FILE = "kako_pending_uuids.json"
+    /** Where the archive's `moz-extension` UUID map waits for [seedPendingUuids]. */
+    private const val PENDING_UUIDS_FILE = "kako_pending_uuids.json"
 
     /**
      * The add-ons' XPI files, under the [KakoExim.Cat.EXTENSIONS] id like every other bulk entry.
@@ -288,32 +288,85 @@ internal object KakoExtData {
     }
 
     /**
-     * Applies the migration flags. **The UUID map is deliberately NOT applied.**
-     *
-     * It rides in the archive, because a future restore that gets this right will need it, and it
-     * is read back by the diagnostics. But nothing here writes it, in either direction.
-     *
-     * 155.0.1+029 applied it through `setBrowserPref` after the add-ons were installed: the write
-     * is queued, so Gecko had already registered them under UUIDs of its own, and it rewrote the
-     * map from memory at shutdown. Result: the dictionaries stayed under the archive's UUID and
-     * nothing referred to them. 155.0.1+030 tried to win that race by writing `prefs.js` before
-     * the engine started, and it won it — and that was worse. On 白い熊's phone the five add-ons
-     * whose UUID was forced to the archive's value went on showing as installed and enabled while
-     * serving none of their own resources: `loadIcon` returned null for every one and the toolbar
-     * drew placeholder puzzle pieces. The two add-ons that kept Gecko's own UUID were untouched.
-     *
-     * The lesson is not which moment to write it at. It is that an add-on's UUID cannot be
-     * changed out from under Gecko once it has installed and registered the add-on, and no amount
-     * of timing fixes that. Making the storage travel needs the map to be in place *before* the
-     * add-ons are installed, or another route entirely — and neither is something to guess at a
-     * third time on 白い熊's phone (2026-09-10).
+     * Applies the migration flags and keeps the UUID map aside for [seedPendingUuids].
      */
     fun importSettingsJson(context: Context, bytes: ByteArray): Int {
         val prefs = JSONObject(String(bytes)).optJSONArray("prefs") ?: return 0
-        val rest = (0 until prefs.length())
-            .mapNotNull { prefs.optJSONObject(it) }
-            .filterNot { it.optString("name") == UUID_PREF }
-        return KakoGeckoPrefs.stage(context, rest)
+        val rest = mutableListOf<JSONObject>()
+        var uuids: String? = null
+        for (index in 0 until prefs.length()) {
+            val entry = prefs.optJSONObject(index) ?: continue
+            if (entry.optString("name") == UUID_PREF) {
+                uuids = entry.optString("value").takeIf { it.isNotEmpty() }
+            } else {
+                rest.add(entry)
+            }
+        }
+        uuids?.let { runCatching { File(context.filesDir, PENDING_UUIDS_FILE).writeText(it) } }
+        return KakoGeckoPrefs.stage(context, rest) + if (uuids != null) 1 else 0
+    }
+
+    /**
+     * Puts the archive's UUIDs into `prefs.js` for add-ons that are **not installed yet**, so that
+     * Gecko adopts them when [KakoAddons.installPending] installs those add-ons later in this same
+     * start — and their restored storage, which is named with those UUIDs, is theirs from the
+     * first moment they exist.
+     *
+     * ## The guard is the whole design
+     *
+     * `id in installedIds` → **leave it alone.** 155.0.1+030 overrode the UUID of add-ons Gecko had
+     * already installed and registered, and every one of them went hollow: still listed, still
+     * enabled, serving none of its own resources, `loadIcon` null, placeholder icons on the
+     * toolbar. The two add-ons it did not touch were fine. So an installed add-on's UUID is never
+     * written here, at any moment, for any reason.
+     *
+     * Which is safe precisely because the install is deferred: on the restore this exists for, the
+     * add-ons are staged and not yet installed, so every id qualifies. On a phone that already has
+     * them, their UUIDs stand and their storage simply does not travel — the honest outcome, and
+     * the one that cannot break a working browser.
+     *
+     * Runs before `setupEarlyMain()`, with the engine down, which is the only moment `prefs.js` may
+     * be written at all.
+     */
+    private fun seedPendingUuids(context: Context) {
+        val file = File(context.filesDir, PENDING_UUIDS_FILE)
+        if (!file.isFile) return
+        val archived = runCatching { JSONObject(file.readText()) }.getOrNull() ?: run {
+            runCatching { file.delete() }
+            return
+        }
+        val installed = installedAddonIds(context)
+        val current = KakoGeckoPrefs.readUserPrefs(context)
+            .firstOrNull { it.optString("name") == UUID_PREF }
+            ?.optString("value")
+            ?.let { runCatching { JSONObject(it) }.getOrNull() }
+            ?: JSONObject()
+        val merged = JSONObject()
+        for (key in current.keys()) merged.put(key, current.optString(key))
+        var seeded = 0
+        for (key in archived.keys()) {
+            if (key in installed) continue
+            merged.put(key, archived.optString(key))
+            seeded++
+        }
+        // Nothing to seed is still a success: the staging has done its job and must not be retried
+        // on every start for the life of the profile.
+        if (seeded == 0 || KakoGeckoPrefs.writeUserPref(context, UUID_PREF, merged.toString())) {
+            runCatching { file.delete() }
+        }
+    }
+
+    /**
+     * The add-ons Gecko has installed, read off disk rather than from the engine — this runs
+     * before the engine exists. Gecko keeps one XPI per add-on, named for its id.
+     */
+    private fun installedAddonIds(context: Context): Set<String> {
+        val profile = KakoGeckoPrefs.profileDir(context) ?: return emptySet()
+        return File(profile, PROFILE_EXTENSIONS_DIR).listFiles()
+            ?.filter { it.isFile && it.name.endsWith(".xpi") }
+            ?.map { it.name.removeSuffix(".xpi") }
+            ?.toSet()
+            .orEmpty()
     }
 
     /**
@@ -324,11 +377,10 @@ internal object KakoExtData {
      * rather than the data being lost to a phone that had not been opened.
      */
     fun applyPending(context: Context) {
-        runCatching { File(context.filesDir, STALE_UUIDS_FILE).delete() }
+        // FIRST, and before the engine exists: the UUIDs have to be in `prefs.js` before
+        // [KakoAddons.installPending] installs anything later in this same start.
+        seedPendingUuids(context)
         val root = File(context.filesDir, PENDING_DIR)
-        // The UUID map is tried on every start until it lands: the add-ons are installed during
-        // the import, but Gecko writes their UUIDs to `prefs.js` on its own schedule and the
-        // caller's force-stop is a SIGKILL, so the map we have to merge into may not exist yet.
         if (!root.isDirectory) return
         val profile = KakoGeckoPrefs.profileDir(context) ?: return
         val base = root.path + File.separator
