@@ -64,6 +64,20 @@ object KakoAddons {
     private const val PENDING_INSTALL_FILE = "kako_pending_addons.json"
 
     /**
+     * The add-ons this object is installing right now.
+     *
+     * Read from the main thread by `WebExtensionPromptFeature`, written from the install loop, so
+     * it is synchronized rather than a plain set. Membership means two things at once: that the
+     * prompt collector below will answer that add-on's prompts, and that Fenix's own prompt UI
+     * must not draw a dialog for them — 白い熊 granted these permissions on the phone the backup
+     * came from, and asking again is a queue of dialogs rather than a decision.
+     */
+    private val installing = java.util.Collections.synchronizedSet(mutableSetOf<String>())
+
+    /** True while the restore is installing [id]; see [installing]. */
+    fun isRestoreInstall(id: String): Boolean = installing.contains(id)
+
+    /**
      * The installed, non-built-in extensions as JSON — id, name, and their state.
      *
      * **Waits for the engine**, for the same reason [installedIds] does and with far worse
@@ -157,6 +171,20 @@ object KakoAddons {
      */
     suspend fun restore(context: Context, array: JSONArray?): Int {
         if (array == null) return 0
+        // Claimed for the WHOLE restore, not per add-on. The "was added" prompt arrives after its
+        // install has already returned, so a claim released when the install finishes is released
+        // too early and the dialog surfaces anyway.
+        val claimed = (0 until array.length())
+            .mapNotNull { array.optJSONObject(it)?.optString("id")?.takeIf { id -> id.isNotEmpty() } }
+        installing.addAll(claimed)
+        try {
+            return restoreClaimed(context, array)
+        } finally {
+            installing.removeAll(claimed.toSet())
+        }
+    }
+
+    private suspend fun restoreClaimed(context: Context, array: JSONArray): Int {
         var installed = 0
         val present = installedIds(context)
         val deadline = SystemClock.elapsedRealtime() + TOTAL_BUDGET_MS
