@@ -83,10 +83,15 @@ force-closed for want of this step.
 
 **Verify by launching, never by scanning.** 155.0.1+006 and +008 scanned clean and
 force-closed. A pid seconds after `monkey` is not proof either — check that no crash
-notification fired, and load a page, which exercises the places storage that crashes:
+notification fired, and load a page, which exercises the places storage that crashes.
+
+**But never run the install yourself** (白い熊, 2026-09-10). Builds are delivered by
+`adb push` and 白い熊 installs them; ask him to install and say when it is done, then
+run the checks below against the installed app. Everything read-only stays available
+— `adb shell`, `logcat`, `dumpsys`, `screencap`, the app's own automation export.
 
 ```bash
-adb install -r ~/tmp/shiroikuma-kako_<ver>_arm64-v8a.apk
+# 白い熊 installs; then:
 adb shell am force-stop shiroikuma.kako && adb logcat -c
 adb shell am start -n shiroikuma.kako/org.mozilla.fenix.HomeActivity
 sleep 18
