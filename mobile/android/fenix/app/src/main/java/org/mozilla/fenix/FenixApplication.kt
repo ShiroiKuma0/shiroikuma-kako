@@ -454,6 +454,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         queueInitStorageAndServices(queue)
         queueMetrics(queue)
         queueEngineWarmup(queue)
+        queueKakoPendingAddons(queue)
         queueIncrementNumberOfAppLaunches(queue)
         queueRestoreLocale(queue)
         queueStorageMaintenance(queue)
@@ -562,6 +563,21 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         runOnVisualCompleteness(queue) {
             applicationScope.launch {
                 components.core.engine.warmUp()
+            }
+        }
+
+    /**
+     * Fork: install the add-ons an app-data restore staged, now that the engine is up.
+     *
+     * Deferred to here, and off the startup path, for two reasons. It is minutes of downloading in
+     * the worst case; and it must happen AFTER `KakoExtData.applyPending` has put the archive's
+     * `moz-extension` UUIDs into `prefs.js` with the engine down, so that Gecko adopts them as it
+     * installs rather than minting its own. A no-op unless a restore staged something.
+     */
+    private fun queueKakoPendingAddons(queue: RunWhenReadyQueue) =
+        runOnVisualCompleteness(queue) {
+            applicationScope.launch(ioDispatcher) {
+                org.mozilla.fenix.kako.KakoAddons.installPending(applicationContext)
             }
         }
 
