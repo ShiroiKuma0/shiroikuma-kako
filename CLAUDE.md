@@ -321,8 +321,24 @@ belong to nobody. `Cat.EXT_SETTINGS` carries that pref even though
 `KakoGeckoPrefs` refuses it as an `about:config` value, and the
 `ExtensionStorageIDB.migrated.*` flags with it.
 
-**An add-on's UUID cannot be changed out from under Gecko at all — this is not a
-timing problem** (白い熊, 2026-09-10). Both attempts failed, in opposite ways:
+**Seeding the UUID map before the add-ons exist is what works** (155.0.1+033,
+verified on 白い熊's phone 2026-09-10). A restore stages the XPIs, the storage and
+the map and installs nothing; at the next start, engine still down and add-ons
+still absent, `KakoExtData.applyPending` moves the storage in and seeds `prefs.js`;
+Gecko then adopts those UUIDs as `KakoAddons.installPending` installs each add-on.
+Proof: after `pm clear` + restore, **all 13 map entries on the target matched the
+source phone byte for byte**, built-in add-ons included, and yomitan came up as
+`6e7f7466-…` — the origin its restored dictionaries occupy.
+
+*Beware the inverse reading of that evidence.* Identical built-in UUIDs look like
+"the profile was never wiped" and mean the opposite: a wiped profile takes the
+archive's whole map. On a profile that was NOT wiped the guard skips every id, so
+the built-ins would still carry locally minted values. This session got that
+backwards and told 白い熊 his test had not tested anything.
+
+**An add-on's UUID cannot be changed out from under Gecko once it is installed —
+this is not a timing problem** (白い熊, 2026-09-10). Both earlier attempts failed,
+in opposite ways:
 
 - 155.0.1+029 applied the map through `setBrowserPref` *after* the add-ons were
   installed. Queued write, so Gecko had already registered them under UUIDs of its
@@ -335,11 +351,17 @@ timing problem** (白い熊, 2026-09-10). Both attempts failed, in opposite ways
   two add-ons that kept Gecko's own UUID were untouched, which is what identified
   the cause. Icons had been fine on that phone under +029.
 
-So 155.0.1+031 carries the map in the archive and **applies it nowhere**. Making
-extension storage travel needs the map in place *before* the add-ons are
-installed, or a different route entirely (asking the extension to export its own
-data). Do not attempt a third variation on 白い熊's phone without a way to test it
-first — the two above cost him a working browser twice.
+Which is why the guard in `seedPendingUuids` is absolute: an id with an XPI
+already in `<profile>/extensions/` is never seeded, at any moment. On a phone that
+already has the add-ons their UUIDs stand and the storage does not travel — the
+honest outcome, and the only one that cannot break a working browser.
+
+**Answer a `WebExtensionPromptRequest` exactly once, by identity.** The store
+re-emits while a prompt is pending because the consume is an async dispatch, so a
+plain `collect` confirms the same request twice, and a GeckoResult completed twice
+throws `IllegalStateException: result is already complete` on the main thread — the
+browser dies. Invisible while installs ran in the headless import service; moving
+them to startup, into a process with tabs loading, crashed on the first add-on.
 
 **Do NOT apply it through `setBrowserPref`.** That write is queued, so it lands
 after Gecko has started the add-ons under UUIDs of its own, and Gecko then
