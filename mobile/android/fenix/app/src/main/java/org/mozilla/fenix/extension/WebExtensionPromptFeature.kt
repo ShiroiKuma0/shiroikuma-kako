@@ -519,18 +519,31 @@ class WebExtensionPromptFeature(
         privateBrowsingAllowed: Boolean,
         technicalAndInteractionDataGranted: Boolean,
     ) {
-        when (promptRequest) {
-            is WebExtensionPromptRequest.AfterInstallation.Permissions.Optional -> {
-                promptRequest.onConfirm(granted)
-            }
+        // Fork: guarded, because answering a prompt twice must not kill the browser.
+        //
+        // `onConfirm` completes a GeckoResult, and a GeckoResult completed twice throws
+        // `IllegalStateException: result is already complete` — here, on the main thread, inside a
+        // button's click handler, which takes the whole app down. Upstream never sees it because
+        // this dialog is the only thing that answers. This fork has a second answerer: the
+        // restore in [org.mozilla.fenix.kako.KakoAddons] confirms the prompts its own installs
+        // raise. It now matches on the add-on it is installing, so it no longer takes a prompt
+        // 白い熊 raised himself — but "the two can no longer collide" is a weaker promise than
+        // "a collision cannot crash", and this is where the second one is kept
+        // (白い熊, 2026-09-10: "Adding text-reflow still crashed the app").
+        runCatching {
+            when (promptRequest) {
+                is WebExtensionPromptRequest.AfterInstallation.Permissions.Optional -> {
+                    promptRequest.onConfirm(granted)
+                }
 
-            is WebExtensionPromptRequest.AfterInstallation.Permissions.Required -> {
-                val response = PermissionPromptResponse(
-                    isPermissionsGranted = granted,
-                    isPrivateModeGranted = privateBrowsingAllowed,
-                    isTechnicalAndInteractionDataGranted = technicalAndInteractionDataGranted,
-                )
-                promptRequest.onConfirm(response)
+                is WebExtensionPromptRequest.AfterInstallation.Permissions.Required -> {
+                    val response = PermissionPromptResponse(
+                        isPermissionsGranted = granted,
+                        isPrivateModeGranted = privateBrowsingAllowed,
+                        isTechnicalAndInteractionDataGranted = technicalAndInteractionDataGranted,
+                    )
+                    promptRequest.onConfirm(response)
+                }
             }
         }
         consumePromptRequest()
