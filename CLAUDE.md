@@ -316,6 +316,26 @@ belong to nobody. `Cat.EXT_SETTINGS` carries that pref even though
 `KakoGeckoPrefs` refuses it as an `about:config` value, and the
 `ExtensionStorageIDB.migrated.*` flags with it.
 
+**An add-on's UUID cannot be changed out from under Gecko at all — this is not a
+timing problem** (白い熊, 2026-09-10). Both attempts failed, in opposite ways:
+
+- 155.0.1+029 applied the map through `setBrowserPref` *after* the add-ons were
+  installed. Queued write, so Gecko had already registered them under UUIDs of its
+  own and rewrote the map from memory at shutdown. The dictionaries stayed under
+  the archive's UUID, referred to by nothing.
+- 155.0.1+030 won that race by writing `prefs.js` before the engine existed — and
+  that was **worse**. The five add-ons whose UUID was forced to the archive's value
+  stayed installed and enabled but served none of their own resources: `loadIcon`
+  returned null for every one and the toolbar drew placeholder puzzle pieces. The
+  two add-ons that kept Gecko's own UUID were untouched, which is what identified
+  the cause. Icons had been fine on that phone under +029.
+
+So 155.0.1+031 carries the map in the archive and **applies it nowhere**. Making
+extension storage travel needs the map in place *before* the add-ons are
+installed, or a different route entirely (asking the extension to export its own
+data). Do not attempt a third variation on 白い熊's phone without a way to test it
+first — the two above cost him a working browser twice.
+
 **Do NOT apply it through `setBrowserPref`.** That write is queued, so it lands
 after Gecko has started the add-ons under UUIDs of its own, and Gecko then
 rewrites the map from memory at shutdown — erasing ours, permanently, because the
