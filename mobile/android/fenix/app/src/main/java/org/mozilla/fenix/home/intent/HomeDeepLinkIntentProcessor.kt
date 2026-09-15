@@ -150,8 +150,8 @@ class HomeDeepLinkIntentProcessor(
                 return
             }
             "share_sheet" -> showShareSheet(deepLink, navController)
-            "protections_dashboard" ->
-            "privacy_report" ->
+            "protections_dashboard" -> Unit
+            "privacy_report" -> Unit
         }
     }
 
