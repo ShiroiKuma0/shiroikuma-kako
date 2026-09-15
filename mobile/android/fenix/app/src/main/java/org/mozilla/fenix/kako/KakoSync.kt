@@ -44,7 +44,8 @@ object KakoSyncAvatar {
     suspend fun prefetch(context: Context, url: String, sizePx: Int): Boolean {
         if (synchronized(cache) { cache.containsKey(key(url, sizePx)) }) return true
 
-        val fetched = context.components.core.client.bitmapForUrl(url) ?: return false
+        val fetched = context.components.core.client.bitmapForUrl(url, targetWidth = sizePx, targetHeight = sizePx)
+            ?: return false
         // The toolbar takes an action's size from its drawable's intrinsic size, so the
         // bitmap is scaled to the icon size and stamped with the device's density —
         // the same honest-intrinsic-size trick the pinned extension icons use.

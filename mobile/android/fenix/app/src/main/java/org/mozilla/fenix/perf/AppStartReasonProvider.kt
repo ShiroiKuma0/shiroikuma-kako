@@ -83,7 +83,6 @@ class AppStartReasonProvider(private val processInfoProvider: ProcessInfoProvide
                         }
                         StartReason.ACTIVITY -> reason // the start reason is already known: do nothing.
                         StartReason.NON_ACTIVITY -> {
-                            Metrics.startReasonProcessError.set(true)
                             logger.error("AppStartReasonProvider.Process...onCreate unexpectedly called twice")
                             reason
                         }

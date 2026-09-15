@@ -13,8 +13,6 @@ import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.ext.PackageManagerWrapper
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.components.attribution.UTMParams
-import java.io.File
-import java.util.Locale
 
 /**
  * This file will be present on vivo devices that have Firefox preinstalled. Note: The file is added by the
