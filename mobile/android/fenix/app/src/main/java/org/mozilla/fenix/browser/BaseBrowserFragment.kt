@@ -1385,7 +1385,7 @@ abstract class BaseBrowserFragment :
                         requireComponents.core.store,
                         context.components.useCases.sessionUseCases.reload,
                         binding.swipeRefresh,
-                        { PullToRefreshInBrowser.executed.record(NoExtras()) },
+                        { },
                         customTabSessionId,
                     ),
                 owner = this,

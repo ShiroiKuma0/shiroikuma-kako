@@ -9,7 +9,6 @@ import android.net.Uri
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.VisibleForTesting.Companion.PRIVATE
 import kotlinx.coroutines.runBlocking
-import mozilla.components.service.nimbus.GleanMetrics.Messaging as GleanMessaging
 import mozilla.components.support.base.log.logger.Logger
 import org.json.JSONObject
 import org.mozilla.experiments.nimbus.NimbusMessagingHelperInterface
