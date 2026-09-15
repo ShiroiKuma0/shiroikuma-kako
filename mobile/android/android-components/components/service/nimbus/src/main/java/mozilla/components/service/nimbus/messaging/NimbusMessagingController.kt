@@ -8,7 +8,6 @@ import android.content.Intent
 import android.net.Uri
 import androidx.annotation.VisibleForTesting
 import androidx.core.net.toUri
-import mozilla.components.service.nimbus.GleanMetrics.Messaging as GleanMessaging
 
 /**
  * Bookkeeping for message actions in terms of Glean messages and the messaging store.

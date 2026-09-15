@@ -519,7 +519,6 @@ private fun RecentlyVisitedSection(
                 }
 
                 is RecentHistoryGroup -> {
-                    History.recentSearchesTapped.record(History.RecentSearchesTappedExtra(pageNumber.toString()))
                     interactor.onRecentHistoryGroupClicked(recentlyVisitedItem)
                 }
             }

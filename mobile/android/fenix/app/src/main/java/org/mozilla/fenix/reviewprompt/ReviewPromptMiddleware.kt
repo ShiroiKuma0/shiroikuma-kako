@@ -136,7 +136,6 @@ class ReviewPromptMiddleware(
 
     /** Send telemetry for a result of [NimbusEventStore.recordEventOrThrow]. */
     private fun recordResult(result: String) {
-        CustomReviewPrompt.recordNimbusEventAttempts[result].add(1)
     }
 }
 
