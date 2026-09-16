@@ -5,6 +5,92 @@ Everything built on top of stock Firefox (release channel) — the Android brows
 `<upstream-base>+<build>`; the fork commits live on `custom`, rebased onto each
 adopted `FIREFOX_*_RELEASE` tag, and one tag covers both products.
 
+## 156.0+001 — 2026-09-16
+
+The base moves to Firefox **156.0** (`FIREFOX_156_0_RELEASE`), a major release on from
+155.0.1. Both products are rebuilt on it and carry the same version. The fork adds
+nothing of its own this time; what follows is what the new base brings, and what it cost
+the patches sitting on top of it.
+
+### What the major release brings
+
+On Android the headline is a **built-in VPN** — 50 GB of protected browsing a month, in
+select countries on a progressive rollout — alongside **media notifications that can
+actually seek**: skip forward and back, and scrub the timeline, without returning to the
+tab. **Media playback keeps its place from the notification shade, which is where you use
+it.** Android 14 and above also get the **native Android share menu**, carrying Firefox's
+own entries (Send tab to device, QR scanning) into the system sheet. Two fixes worth
+naming: picking a file from an Android file provider no longer crashes the browser, and
+date pickers respect a minimum date when a maximum is set too.
+
+On the desktop the **built-in PDF viewer starts up to 45% faster**, and large JPEGs scaled
+to fit a page cost less memory and CPU. The fixes land in ordinary places: dragging an
+image inside a rich-text editor no longer replaces your content with stray text, dragging
+a bookmark folder no longer scatters what was inside it, the find bar comes back after
+reversing panes in Split View, high-sample-rate FLAC inside MP4 plays (Bilibili and
+friends), and Picture-in-Picture subtitles show when switched on after the window is
+already open. Sites load again with DNS over HTTPS enabled against a resolver without
+HTTPS support, and connectivity returns for anyone running the built-in VPN. Security
+fixes on both products, as always.
+
+### The share sheet is Android 14's, and this phone is not
+
+Upstream's new native share menu replaced what had been a **channel** gate with a
+**platform** one: `Build.VERSION.SDK_INT >= UPSIDE_DOWN_CAKE`. This fork's defining patch
+opens Nightly-only *channel* gates on release — it has never forced a capability gate, and
+forcing this one would put a switch in secret settings for an API the phone underneath it
+does not have. So the gate stands as upstream wrote it. In the same screen,
+`pref_key_tab_groups` is simply gone: tab groups shipped, so the flag the fork had flipped
+went with them.
+
+### An upstream reformat, not a collision
+
+156 reformatted Kotlin across Fenix and android-components — `x = Foo(` became
+`x =\n    Foo(`, trailing commas came out — which meant nearly every fork patch landed on
+text that had been rewritten around it. Roughly two hundred conflicts, and almost none of
+them a real disagreement. Every one was resolved by keeping **upstream's new shape** and
+re-applying the fork's change into it, rather than taking the fork's side wholesale: the
+tree stays in upstream's style instead of dragging 155's formatting forward for good.
+Worth stating plainly because it is invisible in the result — of the 546 files the fork
+patched at 155, only two are no longer touched, both because upstream itself deleted the
+telemetry the fork was there to remove.
+
+### Zero trackers, derived again rather than replayed
+
+An upstream adoption brings all of it back, and 156 brought more than it took. The Adjust
+sources returned, lib-crash's two upload services returned, Glean's call sites returned —
+and on top of that **`PdfToolsIntegration` and `LensSearchActivity` are new files in 156
+that record from their first line**, while `HomeActivity`, `TabStrip`, the deep-link
+processor, the home tracking-protection pill, the tab manager, the IP-protection locations
+screen and the history-metadata controller each grew call sites this fork had never seen.
+All removed, along with the `*_TELEMETRY_SOURCE` constants left behind with nothing to
+name. `SyncTelemetry` had reappeared in a second place in `FxaDeviceConstellation`, and the
+nimbus messaging pair still imported a generated `GleanMetrics` that stops existing the
+moment the Glean plugin leaves that module.
+
+Two deep links — `protections_dashboard` and `privacy_report` — did nothing in 156 *but*
+record, so they are now explicit no-ops: the links stay recognised and silently succeed
+instead of falling through to nothing.
+
+**Verified on the built APK, not in the source.** All five tracker signatures — Glean,
+Adjust, Sentry, and lib-crash's `SendCrashReportService` and `SendCrashTelemetryService` —
+count zero in the dex, and the manifest registers neither service. That distinction earned
+itself: a source sweep looked clean, and the compiler then found eight telemetry call sites
+still standing, because a grep only ever answers the signature it was given and these were
+sites the fork had never had reason to grep for.
+
+### One real API change
+
+`Client.bitmapForUrl` now takes `targetWidth` and `targetHeight` and decodes at that size.
+The fork's account-avatar prefetch — the toolbar's one-tap sync button — passes the icon
+size for both, which is better than it was: the decode no longer produces a full-size bitmap
+only to scale it down afterwards.
+
+Also collapsed on the way through: the fork's own Glean commit had been deleting the whole
+`TabsTray(...)` composable — `TabsTray` is both a metrics category and the tab manager's
+Compose function — with a later commit putting it back. Both halves are gone now, so the
+tab manager cannot ship broken even for a single commit.
+
 ## 155.0.1+036 — 2026-09-10
 
 The base stays at Firefox **155.0.1** (`FIREFOX_155_0_1_RELEASE`). One subject, taken
