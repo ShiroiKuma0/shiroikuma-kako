@@ -5,6 +5,85 @@ Everything built on top of stock Firefox (release channel) — the Android brows
 `<upstream-base>+<build>`; the fork commits live on `custom`, rebased onto each
 adopted `FIREFOX_*_RELEASE` tag, and one tag covers both products.
 
+## 156.0.1+001 — 2026-09-27
+
+The base moves to Firefox **156.0.1** (`FIREFOX_156_0_1_RELEASE`), a point release on the
+156 branch. Both products are rebuilt on it and carry the same version. Thirty upstream
+commits, over half of them translations; the fork's own change this cycle is the
+retirement of a build step that had quietly stopped doing anything.
+
+### What the point release brings
+
+Mostly repairs, and the kind that only show up when you hit them. **Alerts and confirms
+raised from an extension's popup or sidebar appear again** instead of being swallowed —
+the sort of bug that makes an add-on look broken rather than the browser. **Picking a
+download location no longer crashes** when the system file picker is missing.
+Onboarding's marketing card gets its link text back. A link's `:active` target is no
+longer overridden on mousedown, so pressed links highlight the element you actually
+pressed.
+
+Accessibility gets a genuine round: **XUL tables expose their table properties on
+macOS**, XUL elements with table roles go through `CachedTableAccessible`, IA2 text
+interfaces are no longer claimed for plain XUL boxes, and a crash is gone where a
+`PDocAccessible` arrived for a `WindowGlobal` that had already stopped being current.
+Underneath, the quota manager now re-validates its `OriginInfo` after reacquiring a lock,
+geolocation reuses a pending MLS fallback rather than starting a second one, and font
+fallback clears its last entry properly when a face fits and then does not. macOS 27
+gains its own feature check and stops shrinking-then-re-expanding a window on a
+title-bar double click. Sardinian gets Wikipedia search. Translations are imported from
+beta for both products.
+
+No security advisory is named in this point release's commits — it is a fix-and-
+translation roll-up, not a chemspill.
+
+### Upstream narrowed Sentry; the fork still has none
+
+The one merge collision was Bug 2071475, *Disable secondary sentry data sources in
+Fenix*, which reworks the very `SentryService` block this fork deletes outright. Upstream
+tightening what a reporter sends changes nothing when the reporter is not in the APK, so
+the deletion stands. Nothing else in 156.0.1 reaches it: `app/build.gradle` keeps only a
+stale comment header, and the `crash-sentry` component is in no dependency graph the app
+touches — Fenix asks for `:components:lib-crash` alone. All five tracker signatures still
+count zero in the dex, and neither crash-upload service appears in the manifest.
+
+### The megazord staging step is retired
+
+`tools/kako/stage-megazord.sh` had been documented as a mandatory step between
+`./mach build` and the gradle assemble since the zero-trackers work in 155.0.1. It was
+doing nothing. It wrote Mozilla's published megazord to
+`dist/geckoview/lib/arm64-v8a/`, a path gradle does not read and which does not even
+survive the gradle run; what ships comes from `dist/geckoview/appservices/lib/arm64-v8a/`,
+which the in-tree build now produces **self-contained** — the library inside this
+release's APK lists NSS plus liblog/libm/libdl/libc, and no `libmozglue.so`.
+
+Which is the good outcome, because had the script's copy actually landed it would have
+caused the failure it was written to prevent, from the opposite direction. The cached
+artifact is `full-megazord-155.0`, and upstream renamed four UniFFI interfaces between
+155.0.1 and 156.0.1 — `autofill`, `logins`, `tabs` and `webext-storage`, where
+`set_last_sync` became `reset_last_sync`, `apply()` took a timestamp, and
+`prepare_for_sync` became `set_clients`. UniFFI verifies a checksum symbol per method as
+each namespace's bindings load, so a 155.0 library under 156.0.1 bindings would break
+saved logins, autofill, synced tabs and extension storage on first use. The script's
+guard only ever looked for a mozglue link, which cannot see a version skew at all.
+
+The hazard it existed for is unchanged and still documented: a megazord linking mozglue
+frees JNA's bionic allocations through mozjemalloc and segfaults in `arena_dalloc` the
+moment `places.sqlite` opens, as 155.0.1+008, +011 and +014 did. It is now guarded by
+inspecting the library that actually ships — `readelf -d` for the mozglue link, `nm -D`
+for an in-tree symbol name — rather than by performing a copy and trusting it. If a
+future upstream change puts mozglue back, the fix is to stage a published megazord of the
+*matching* version, never an older one.
+
+### Verified, not scanned
+
+The Android build was launched on the phone after 白い熊 installed it: zero crash
+notifications after startup and again after a page load, the same pid across both
+samples, GPU, crash-helper and **two tab content processes** alive, and nothing in a
+logcat sweep for UniFFI, checksum, megazord, `UnsatisfiedLinkError`, `SIGSEGV`,
+`arena_dalloc` or tombstones. The page load matters because it is what opens
+`places.sqlite`, which is the path that force-closed three builds during the 155.0.1
+cycle.
+
 ## 156.0+001 — 2026-09-16
 
 The base moves to Firefox **156.0** (`FIREFOX_156_0_RELEASE`), a major release on from
