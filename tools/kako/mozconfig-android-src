@@ -6,14 +6,16 @@
 # That is what takes the APK to zero detected trackers. A full build is ~16 minutes
 # on this machine.
 #
-# MANDATORY EXTRA STEP: run tools/kako/stage-megazord.sh between `./mach build` and
-# `./mach gradle fenix:assembleRelease`. Gecko links libmegazord.so against
-# libmozglue.so -- it links its allocator into every shared library it builds -- but
-# app-services is driven from Kotlin over JNA, where allocations come from bionic.
-# Freeing those through mozjemalloc segfaults in arena_dalloc the moment
-# places.sqlite is opened. The script stages Mozilla's self-contained megazord
-# instead, which uses the system allocator. Skip it and the app force-closes at
-# startup, as 155.0.1+008, +011 and +014 did.
+# MEGAZORD: no extra step is needed any more, but verify the result (2026-09-26).
+# This build produces a self-contained libmegazord.so at
+# dist/geckoview/appservices/lib/arm64-v8a/ -- NEEDED is NSS plus liblog/libm/libdl/
+# libc -- and gradle packages that one. A megazord linking libmozglue.so would free
+# JNA's bionic allocations through mozjemalloc and segfault in arena_dalloc the moment
+# places.sqlite is opened, which is what force-closed 155.0.1+008, +011 and +014.
+# tools/kako/stage-megazord.sh used to substitute Mozilla's published AAR; it is
+# retired, because gradle never read the path it wrote and the cached AAR is now a
+# version behind the in-tree UniFFI bindings. Check the built APK instead -- see the
+# megazord section of CLAUDE.md for the two commands.
 #
 ac_add_options --enable-project=mobile/android
 
