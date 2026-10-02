@@ -36,8 +36,6 @@ import mozilla.components.service.fxa.manager.SCOPE_PROFILE
 import mozilla.components.service.fxa.manager.SCOPE_SYNC
 import mozilla.components.support.utils.ext.isLandscape
 import mozilla.components.support.utils.ext.packageManagerCompatHelper
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.SyncAuth
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.ext.components
@@ -164,7 +162,6 @@ class SendToDevicesDialogFragment : BottomSheetDialogFragment() {
             FenixFxAEntryPoint.ShareMenu,
             setOf(SCOPE_PROFILE, SCOPE_SYNC),
         )
-        SyncAuth.useEmailProblem.record(NoExtras())
     }
 
     private fun removeAccountFromSync() {
