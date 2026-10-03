@@ -5,6 +5,36 @@ Everything built on top of stock Firefox (release channel) — the Android brows
 `<upstream-base>+<build>`; the fork commits live on `custom`, rebased onto each
 adopted `FIREFOX_*_RELEASE` tag, and one tag covers both products.
 
+## 157.0+002 — 2026-10-03
+
+A fix build on Firefox **157.0**, for the account button on the Android toolbar. The
+desktop deb is rebuilt from the same commit so that both products keep one version; its
+code is unchanged.
+
+### Your avatar on the toolbar, reliably
+
+- **The avatar is retried until it arrives.** The button fetched your Mozilla-account
+  picture exactly once, when the account appeared at start-up. If the network was not up
+  yet — a phone just woken, Wi-Fi still connecting — that one fetch failed and the button
+  wore the generic person glyph for the rest of the session, while Sync itself carried on
+  working. It now tries again after 10 s, 30 s, 1 min and 2 min, then every 5 min for as
+  long as the picture is missing, and every finished sync — proof the network is back —
+  tries at once.
+- **Changing the toolbar icon size no longer loses it.** The picture was kept per display
+  size, so moving the 白い熊 火狐 UI icon-size slider looked up a size nobody had fetched and
+  fell back to the glyph until the next restart. One copy is now kept per picture, at the
+  slider's largest size, and every size is scaled from it.
+- **New: “アバター画像をダウンロード” in Account settings**, under “Sync now”. It
+  downloads the picture from the server, skipping the HTTP cache — so a picture you have
+  just changed on your account is picked up — and reports whether it worked. The row
+  wears the picture once it is in, and the toolbar button switches to it straight away.
+
+### Checked on the shipped files
+
+On the signed APK: all five tracker signatures (Glean, Adjust, Sentry and both lib-crash
+upload services) count **zero** in the dex, and the packaged `libmegazord.so` does not
+link `libmozglue.so`. The deb is built from the same commit and carries `157.0+002`.
+
 ## 157.0+001 — 2026-10-03
 
 The base moves to Firefox **157.0** (`FIREFOX_157_0_RELEASE`), a major release: 3,393
