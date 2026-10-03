@@ -5,6 +5,67 @@ Everything built on top of stock Firefox (release channel) — the Android brows
 `<upstream-base>+<build>`; the fork commits live on `custom`, rebased onto each
 adopted `FIREFOX_*_RELEASE` tag, and one tag covers both products.
 
+## 157.0+001 — 2026-10-03
+
+The base moves to Firefox **157.0** (`FIREFOX_157_0_RELEASE`), a major release: 3,393
+upstream commits, Kotlin 2.4.20, a merge-day clobber and a reworked Nimbus manifest. Both
+products are rebuilt from clean object directories and carry the same version. All 127
+fork commits replay; seven needed hand resolution, and none of the fork's features had to
+give way.
+
+### What 157 brings
+
+**Desktop.** Mozilla calls it the biggest visual refresh in years: modernised toolbars,
+sidebar and menus on an updated design system, new built-in light and dark themes, and a
+**compact mode** that tightens toolbar and tab spacing for small screens and split
+layouts. The updated sidebar is now on for everyone (the old one can be restored in
+settings), and the vertical-tabs sidebar comes back in fullscreen. Dialogs and form
+controls follow the page's light or dark scheme. **Tab** from the page now lands straight
+in the address-bar text field instead of on the search-engine button. Amazon leaves the
+default search engines. The site-information panel warns when TLS keys are being
+recorded. WebRTC gains hardware AV1 decoding and stops mis-rotating video from phones and
+tablets; repeated playback-rate changes keep audio and video in sync. For the web
+platform: `at-rule()` in `@supports` and `overscroll-behavior: chain`.
+
+**Android.** Tapping the search field on the home screen offers **recent searches**.
+Download entries can be **swiped away**. History is grouped by exact date. Mozilla's free
+VPN reaches over 200 regions, and a crash when tapping its location row while the VPN was
+unavailable is fixed.
+
+Both carry Mozilla's security fixes for this cycle — see the advisory for Firefox 157.
+
+### Where 157 met the fork
+
+- **The menu's default-browser banner moved into android-components.** Fenix's own
+  `MenuBanner` became a thin wrapper around a shared composable, which would have taken
+  the fork's traced outline with it. The shared banner gains an optional `border`, and
+  Fenix passes the 白い熊 menu-border colour into it — so the banner keeps its outline and
+  stays settable from the 白い熊 火狐 UI page, without reviving the old Fenix-side copy.
+- **The desktop privacy pane** gained a settings-redesign pref beside the fork's
+  "let extensions run on Mozilla's own sites" switch; both are registered, since a missing
+  registration aborts the whole pane.
+- **Upstream changed Adjust's metrics service; the fork keeps it deleted.**
+- **New telemetry in a dozen places** — IP protection, PDF signing, the tab manager, the
+  search middleware, the debug drawer — met the Glean removal. Upstream's real code beside
+  it is kept (PDF signature insertion via `addSignatureToPdf`, the new data-limit
+  snackbar, the listen-to-page and IP-protection stores) and only the metric calls go.
+  Two more calls arrived in files the fork had never touched, `SyncAuth.useEmailProblem`
+  when reconnecting Sync from the share sheet and `AppTheme.oledThemeSelected` in the
+  theme settings; both are stripped.
+- **Startup moved from `GlobalScope` to an application scope.** The fork's deferred
+  install of restored add-ons now launches on that scope like its neighbours.
+- **application-services' error component** reorganised its build script; the in-tree,
+  Glean-free app-services build is unchanged in effect.
+
+### Checked on the shipped files
+
+On the signed APK: all five tracker signatures (Glean, Adjust, Sentry and both lib-crash
+upload services) count **zero** in the dex. The packaged `libmegazord.so` links NSS plus
+liblog/libm/libdl/libc and **no `libmozglue.so`**, and carries the 156+-only
+`reset_last_sync` UniFFI checksum symbol, so the library matches the in-tree bindings
+rather than a stale published one. The deb is built from the same commit and reports
+Gecko 157.0.
+
 ## 156.0.1+001 — 2026-09-27
 
 The base moves to Firefox **156.0.1** (`FIREFOX_156_0_1_RELEASE`), a point release on the
