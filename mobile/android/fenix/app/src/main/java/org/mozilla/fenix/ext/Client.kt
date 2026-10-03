@@ -25,18 +25,20 @@ private const val MAX_IMAGE_BYTES = 5 * 1024 * 1024
  * @param url The image URL to fetch from.
  * @param targetWidth The minimum width, in pixels, the decoded bitmap should have.
  * @param targetHeight The minimum height, in pixels, the decoded bitmap should have.
+ * @param useCaches Fork: false revalidates with the server instead of trusting a cached copy.
  * @return the decoded [Bitmap], or null if it could not be fetched or decoded, or exceeded [MAX_IMAGE_BYTES].
  */
 suspend fun Client.bitmapForUrl(
     url: String,
     targetWidth: Int,
     targetHeight: Int,
+    useCaches: Boolean = true,
 ): Bitmap? =
     withContext(Dispatchers.IO) {
         // Code below will cache it in Gecko's cache, which ensures that as long as we've fetched it once,
         // we will be able to display this avatar as long as the cache isn't purged (e.g. via 'clear user data').
         try {
-            fetch(Request(url, useCaches = true, conservative = true)).use { response ->
+            fetch(Request(url, useCaches = useCaches, conservative = true)).use { response ->
                 if (!response.isSuccess) {
                     return@use null
                 }

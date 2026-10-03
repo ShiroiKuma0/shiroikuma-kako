@@ -83,6 +83,14 @@
     <string name="kako_sync_failed" translatable="false">同期に失敗しました</string>
     <string name="kako_sync_not_started" translatable="false">同期を開始できませんでした</string>
     <string name="kako_sync_timeout" translatable="false">同期が応答しませんでした</string>
+    <!-- Account settings: fetch the avatar the toolbar's account button wears. -->
+    <string name="pref_key_kako_download_avatar" translatable="false">pref_key_kako_download_avatar</string>
+    <string name="kako_download_avatar" translatable="false">アバター画像をダウンロード</string>
+    <string name="kako_download_avatar_summary" translatable="false">ツールバーのアカウントボタンの画像をサーバーから取得し直します</string>
+    <string name="kako_download_avatar_running" translatable="false">ダウンロード中…</string>
+    <string name="kako_download_avatar_done" translatable="false">アバター画像をダウンロードしました</string>
+    <string name="kako_download_avatar_failed" translatable="false">アバター画像をダウンロードできませんでした</string>
+    <string name="kako_download_avatar_none" translatable="false">アカウントのプロフィールがまだ読み込まれていません</string>
     <string name="kako_install_addon_from_file" translatable="false">ファイルから拡張機能をインストール</string>
     <string name="kako_install_addon_from_file_read_failed" translatable="false">ファイルを読み込めませんでした</string>
     <string name="kako_install_addon_from_file_failed" translatable="false">拡張機能をインストールできませんでした</string>
