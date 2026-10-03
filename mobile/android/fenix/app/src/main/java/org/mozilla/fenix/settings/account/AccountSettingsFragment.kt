@@ -51,11 +51,15 @@ import org.mozilla.fenix.ext.getPreferenceKey
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.secure
 import org.mozilla.fenix.ext.showToolbar
+import org.mozilla.fenix.kako.KakoSyncAvatar
 import org.mozilla.fenix.kako.showKako
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.settings.requirePreference
 import org.mozilla.fenix.settings.scrollToPreferenceWithHighlight
 import org.mozilla.fenix.settings.showCustomEditTextPreferenceDialog
+
+// Fork: the account row's avatar, should the glyph it replaces be missing.
+private const val AVATAR_ICON_SIZE_DP = 24
 
 /** Settings screen allowing users to manage their Firefox account and what data to sync through it. */
 @SuppressWarnings("TooManyFunctions", "LargeClass")
@@ -185,6 +189,7 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
         preferenceManageAccount.onPreferenceClickListener = getClickListenerForManageAccount()
 
         setupSignInOutPreferenceListeners()
+        setupDownloadAvatarPreference()
         setupDeviceNamePreferenceListeners()
         setupSyncCategoriesPreferenceListeners()
 
@@ -222,6 +227,54 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
                 isEnabled = true
             }
         }
+    }
+
+    /**
+     * Fork: the account's avatar, downloaded on demand. The toolbar's account button
+     * fetches it by itself and keeps retrying; this is the way to have it now, or to pick
+     * up a picture changed on the server — the fetch bypasses the HTTP cache. The row
+     * wears the picture once it is in memory, so it shows what the toolbar shows.
+     */
+    private fun setupDownloadAvatarPreference() {
+        val preference = requirePreference<Preference>(R.string.pref_key_kako_download_avatar)
+        val glyph = preference.icon?.mutate()?.apply {
+            setTint(requireContext().getColorFromAttr(materialR.attr.colorOnSurface))
+        }
+        // The size of the glyph it replaces.
+        val iconSizePx = glyph?.intrinsicWidth ?: (AVATAR_ICON_SIZE_DP * resources.displayMetrics.density).toInt()
+
+        fun showAvatar() {
+            val url = accountManager.accountProfile()?.avatar?.url
+            preference.icon = url?.let { KakoSyncAvatar.drawable(requireContext(), it, iconSizePx) } ?: glyph
+        }
+        showAvatar()
+
+        preference.onPreferenceClickListener = Preference.OnPreferenceClickListener {
+            val url = accountManager.accountProfile()?.avatar?.url
+            if (url == null) {
+                showAvatarSnackbar(R.string.kako_download_avatar_none)
+                return@OnPreferenceClickListener true
+            }
+            preference.isEnabled = false
+            preference.summary = getString(R.string.kako_download_avatar_running)
+            viewLifecycleOwner.lifecycleScope.launch {
+                val downloaded = KakoSyncAvatar.prefetch(requireContext(), url, force = true)
+                preference.isEnabled = true
+                preference.summary = getString(R.string.kako_download_avatar_summary)
+                showAvatar()
+                showAvatarSnackbar(
+                    if (downloaded) R.string.kako_download_avatar_done else R.string.kako_download_avatar_failed,
+                )
+            }
+            true
+        }
+    }
+
+    private fun showAvatarSnackbar(messageRes: Int) {
+        Snackbar.make(
+            snackBarParentView = requireView(),
+            snackbarState = SnackbarState(message = getString(messageRes)),
+        ).show()
     }
 
     private fun setupDeviceNamePreferenceListeners() {

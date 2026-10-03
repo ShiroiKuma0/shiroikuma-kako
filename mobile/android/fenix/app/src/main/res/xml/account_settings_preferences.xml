@@ -15,6 +15,13 @@
         android:title="@string/preferences_sync_now"
         app:icon="@drawable/mozac_ic_sync_24" />
 
+    <!-- Fork: re-fetch the avatar the toolbar's account button wears. -->
+    <Preference
+        android:key="@string/pref_key_kako_download_avatar"
+        android:summary="@string/kako_download_avatar_summary"
+        android:title="@string/kako_download_avatar"
+        app:icon="@drawable/mozac_ic_avatar_circle_24" />
+
     <EditTextPreference
         android:key="@string/pref_key_sync_device_name"
         android:title="@string/preferences_sync_device_name" />

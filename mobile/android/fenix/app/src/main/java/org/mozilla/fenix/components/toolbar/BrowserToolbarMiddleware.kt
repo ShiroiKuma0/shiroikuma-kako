@@ -194,6 +194,11 @@ private const val SYNC_TIMEOUT_MS = 30_000L
 // starts, hence the grace period rather than an immediate check.
 private const val SYNC_START_GRACE_MS = 8_000L
 
+// Fork: how long the account button waits between attempts at fetching the avatar.
+// The last step repeats for as long as the picture is missing; a finished sync, which
+// proves the network is back, cuts the wait short.
+private val AVATAR_RETRY_DELAYS_MS = longArrayOf(10_000L, 30_000L, 60_000L, 120_000L, 300_000L)
+
 @VisibleForTesting
 internal sealed class DisplayActions(override val source: Source) : BrowserToolbarEvent {
     data class MenuClicked(override val source: Source) : DisplayActions(source)
@@ -368,6 +373,10 @@ class BrowserToolbarMiddleware(
     // Fork: only a sync 白い熊 started from the toolbar gets a flash — background and
     // startup syncs must stay silent.
     private var isSyncRequestedFromToolbar = false
+
+    // Fork: the one fetch-and-retry loop for the account avatar, so that the many
+    // triggers below never run two fetches side by side.
+    private var avatarJob: Job? = null
 
     @Suppress("LongMethod", "CyclomaticComplexMethod", "NestedBlockDepth", "ReturnCount", "CognitiveComplexMethod")
     override fun invoke(
@@ -1071,8 +1080,10 @@ class BrowserToolbarMiddleware(
         )
 
         SyncButtonState.IDLE -> {
-            val avatar = syncStore.state.account?.avatar?.url
-                ?.let { KakoSyncAvatar.drawable(uiContext, it, toolbarIconSizePx()) }
+            val avatarUrl = syncStore.state.account?.avatar?.url
+            val avatar = avatarUrl?.let { KakoSyncAvatar.drawable(uiContext, it, toolbarIconSizePx()) }
+            // A rebuild that finds the picture missing makes sure a fetch is under way.
+            if (avatarUrl != null && avatar == null) ensureAvatar()
             when (avatar) {
                 null -> ActionButtonRes(
                     drawableResId = iconsR.drawable.mozac_ic_avatar_circle_24,
@@ -1164,22 +1175,25 @@ class BrowserToolbarMiddleware(
     private fun observeSyncUpdates(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
         syncStore.observeWhileActive {
             distinctUntilChangedBy { it.accountState to it.account?.avatar?.url }
-                .collect { state ->
+                .collect {
+                    // The rebuild starts the fetch itself when the picture is missing.
                     updateEndBrowserActions(store)
-
-                    // Fetched off the collector: the toolbar must not wait on the network.
-                    val avatarUrl = state.account?.avatar?.url ?: return@collect
-                    scope.launch {
-                        if (KakoSyncAvatar.prefetch(uiContext, avatarUrl, toolbarIconSizePx())) {
-                            updateEndBrowserActions(store)
-                        }
-                    }
                 }
+        }
+
+        // Whoever fetched the picture — the loop below, or the account screen's
+        // download button — the button picks it up from here.
+        scope.launch {
+            KakoSyncAvatar.revision.collect { updateEndBrowserActions(store) }
         }
 
         syncStore.observeWhileActive {
             distinctUntilChangedBy { it.status }
                 .collect { state ->
+                    // Any finished sync, toolbar-started or not, proves the network is up:
+                    // a picture still missing is fetched now rather than at the next retry.
+                    if (state.status == SyncStatus.Idle) ensureAvatar(restart = true)
+
                     if (!isSyncRequestedFromToolbar) return@collect
                     when (state.status) {
                         SyncStatus.Started -> setSyncButtonState(store, SyncButtonState.SYNCING)
@@ -1188,6 +1202,32 @@ class BrowserToolbarMiddleware(
                         SyncStatus.NotInitialized, SyncStatus.LoggedOut -> Unit
                     }
                 }
+        }
+    }
+
+    /**
+     * Fork: makes sure the account avatar is on its way. The first cut fetched it once,
+     * when the account appeared, and a failure — the network not yet up when the app
+     * started — left the generic glyph on the button until the next restart. This keeps
+     * trying, backing off to [AVATAR_RETRY_DELAYS_MS]'s last step, until the picture is
+     * in. [restart] abandons a loop that is waiting out a delay and tries at once.
+     */
+    private fun ensureAvatar(restart: Boolean = false) {
+        val avatarUrl = syncStore.state.account?.avatar?.url ?: return
+        if (KakoSyncAvatar.has(avatarUrl)) return
+        if (avatarJob?.isActive == true) {
+            if (!restart) return
+            avatarJob?.cancel()
+        }
+        avatarJob = scope.launch {
+            var attempt = 0
+            while (true) {
+                // The account may have changed or signed out while we waited.
+                val url = syncStore.state.account?.avatar?.url ?: return@launch
+                if (KakoSyncAvatar.has(url) || KakoSyncAvatar.prefetch(uiContext, url)) return@launch
+                delay(AVATAR_RETRY_DELAYS_MS[attempt.coerceAtMost(AVATAR_RETRY_DELAYS_MS.lastIndex)])
+                attempt++
+            }
         }
     }
 

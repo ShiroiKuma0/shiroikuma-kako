@@ -931,7 +931,7 @@ class KakoUiSettingsFragment : Fragment() {
     private fun indentPx(level: Int): Int =
         dp(ROW_START_DP + (level - 1) * (ROW_L2_START_DP - ROW_START_DP))
 
-    private companion object {
+    internal companion object {
         const val HEADING_START_DP = 36
         const val SUB_START_DP = 54
         const val ROW_START_DP = 72
