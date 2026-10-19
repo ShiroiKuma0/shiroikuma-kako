@@ -5,6 +5,42 @@ Everything built on top of stock Firefox (release channel) — the Android brows
 `<upstream-base>+<build>`; the fork commits live on `custom`, rebased onto each
 adopted `FIREFOX_*_RELEASE` tag, and one tag covers both products.
 
+## 157.0+003 — 2026-10-19
+
+A fix build on Firefox **157.0**, for the desktop browser. The Android APK is rebuilt from
+the same commit so that both products keep one version; its code is unchanged.
+
+### Tabs no longer crash on WebAssembly after a crash-reporter restart
+
+- **The symptom.** After the desktop browser had crashed once and been brought back with
+  the crash reporter's “Restart” button, map sites and other WebAssembly-heavy pages —
+  mapy.com among them — died with “Gah. Your tab just crashed.” every time, and the crash
+  reporter never offered a report for those tabs.
+- **The cause.** On GNU/Linux the crash reporter is launched from inside the crash handler,
+  where every signal is blocked, and that blocked set survives into the program it starts.
+  Its “Restart” therefore handed the blocked set to the new browser and to every tab
+  process. WebAssembly relies on catching SIGILL and SIGSEGV — its loops briefly pause that
+  way whenever the engine needs them to — and a signal that is blocked when it is raised
+  is not caught at all: the system kills the process outright, before any crash report
+  can be written.
+- **The fix.** Every 白い熊 火狐 process now starts by clearing any inherited blocked
+  signals, whoever launched it. A browser started from the desktop menu already began
+  that way, so nothing changes there.
+- **Checked** by starting the browser with every signal blocked: under 157.0+002 the
+  processes kept the blocked set; under 157.0+003 the parent and all eleven child
+  processes start with none.
+
+### Checked on the shipped files
+
+On the signed APK: all five tracker signatures (Glean, Adjust, Sentry and both lib-crash
+upload services) count **zero** in the dex, and the packaged `libmegazord.so` does not
+link `libmozglue.so`. Both files carry `157.0+003`.
+
+### Downloads
+
+- `shiroikuma-kako_157.0+003_amd64.deb` — GNU/Linux desktop (amd64).
+- `shiroikuma-kako_157.0+003_arm64-v8a.apk` — Android (arm64-v8a).
+
 ## 157.0+002 — 2026-10-03
 
 A fix build on Firefox **157.0**, for the account button on the Android toolbar. The
