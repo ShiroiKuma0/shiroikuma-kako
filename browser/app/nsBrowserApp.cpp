@@ -19,6 +19,7 @@
 #  include <sys/resource.h>
 #  include <unistd.h>
 #  include <fcntl.h>
+#  include <signal.h>
 #endif
 
 #include <stdio.h>
@@ -315,6 +316,19 @@ static void ReserveDefaultFileDescriptors() {
     [[maybe_unused]] int r = dup(fd);
   }
 }
+
+// kako: start with no signals blocked, whoever launched us.
+// The signal mask survives fork and exec, and on Linux the crash reporter
+// client is spawned from inside Breakpad's handler, where every signal is
+// blocked; its "Restart" button then hands that mask to the new browser and,
+// through it, to every content process. Wasm traps (SIGILL, SIGSEGV) raised
+// while blocked are not delivered: the kernel kills the process outright, so
+// any wasm-heavy page crashes its tab and leaves no minidump.
+static void UnblockAllSignals() {
+  sigset_t none;
+  sigemptyset(&none);
+  sigprocmask(SIG_SETMASK, &none, nullptr);
+}
 #endif
 
 #ifdef XP_LINUX
@@ -339,6 +353,7 @@ static void ExpandFileDescriptorTable() {
 
 int main(int argc, char* argv[], char* envp[]) {
 #if defined(XP_UNIX)
+  UnblockAllSignals();
   ReserveDefaultFileDescriptors();
 #endif
 
