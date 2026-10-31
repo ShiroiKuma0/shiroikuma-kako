@@ -64,6 +64,25 @@ class BrowserAction extends BrowserActionBase {
     return super.triggerClickOrPopup(tab);
   }
 
+  /**
+   * 白い熊 火狐: the long-press on the action's menu entry. Returns the
+   * manifest's `default_popup` even when the extension has cleared its popup
+   * at runtime with `setPopup({popup: ""})` — that is how an extension takes
+   * the tap for `onClicked` and still keeps its menu reachable. Without a
+   * manifest popup it behaves exactly like a tap.
+   */
+  triggerDefaultPopup(tab = tabTracker.activeTab) {
+    const defaultPopup = this.defaults.popup;
+    if (!defaultPopup || !this.isShownForTab(tab)) {
+      return this.triggerClickOrPopup(tab);
+    }
+
+    this.setActiveTabForPreload(null);
+    this.extension.tabManager.addActiveTabPermission(tab);
+    this.extension.tabManager.activateScripts(tab);
+    return defaultPopup;
+  }
+
   getTab(tabId) {
     return this.helper.getTab(tabId);
   }

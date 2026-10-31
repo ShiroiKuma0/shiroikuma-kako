@@ -46,6 +46,7 @@ import androidx.compose.ui.semantics.collectionItemInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
@@ -231,6 +232,7 @@ internal fun MenuTextItem(
  * @param badgeText WebExtension badge text.
  * @param index The index of the item within the column.
  * @param onClick Called when the user clicks on the item.
+ * @param onLongClick Called when the user long-presses the item.
  * @param onSettingsClick Called when the user clicks on the settings icon.
  */
 @Composable
@@ -242,6 +244,7 @@ internal fun WebExtensionMenuItem(
     badgeText: String?,
     index: Int = 0,
     onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
     onSettingsClick: (() -> Unit)? = null,
 ) {
     IconListItem(
@@ -250,10 +253,17 @@ internal fun WebExtensionMenuItem(
         beforeIconTint = iconTint,
         beforeIconPainter = iconPainter,
         onClick = onClick,
+        onLongClick = onLongClick,
         modifier =
             Modifier.testTag(WEB_EXTENSION_ITEM)
                 .clearAndSetSemantics {
                     onClick?.let { role = Role.Button }
+                    onLongClick?.let { longClick ->
+                        onLongClick {
+                            longClick()
+                            true
+                        }
+                    }
                     contentDescription = label
                     collectionItemInfo =
                         CollectionItemInfo(

@@ -435,6 +435,7 @@ private fun GeckoNativeWebExtensionAction.convert(): Action {
     }
 
     val onClick = { click() }
+    val onLongClick = { openDefaultPopup() }
 
     return Action(
         title,
@@ -444,5 +445,6 @@ private fun GeckoNativeWebExtensionAction.convert(): Action {
         badgeTextColor,
         badgeBackgroundColor,
         onClick,
+        onLongClick,
     )
 }

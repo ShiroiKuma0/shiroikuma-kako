@@ -334,7 +334,15 @@ this.runtime = class extends ExtensionAPIPersistent {
 
         getBrowserInfo: function () {
           const { name, vendor, version, appBuildID } = Services.appinfo;
-          const info = { name, vendor, version, buildID: appBuildID };
+          // 白い熊 火狐: `fork` lets an extension tell this browser from stock
+          // Firefox — here a long-press on an action opens its manifest popup.
+          const info = {
+            name,
+            vendor,
+            version,
+            buildID: appBuildID,
+            fork: "shiroikuma-kako",
+          };
           return Promise.resolve(info);
         },
 

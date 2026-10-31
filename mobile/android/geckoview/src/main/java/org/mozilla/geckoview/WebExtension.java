@@ -1482,6 +1482,30 @@ public class WebExtension {
         throw new IllegalStateException("Unknown Action type");
       }
 
+      showPopup(popupUri);
+    }
+
+    /**
+     * 白い熊 火狐: the long-press on this action. Opens the popup the manifest declares as
+     * <code>default_popup</code>, even when the extension has cleared its popup at runtime, so that
+     * an extension can take the click for <code>onClicked</code> and keep its menu reachable. An
+     * action without a manifest popup, and any page action, behaves exactly like {@link #click()}.
+     */
+    @UiThread
+    public void openDefaultPopup() {
+      if (type != TYPE_BROWSER_ACTION) {
+        click();
+        return;
+      }
+
+      final GeckoBundle bundle = new GeckoBundle(1);
+      bundle.putString("extensionId", mExtension.id);
+      showPopup(
+          EventDispatcher.getInstance()
+              .queryString("GeckoView:BrowserAction:DefaultPopup", bundle));
+    }
+
+    private void showPopup(final GeckoResult<String> popupUri) {
       popupUri.accept(
           uri -> {
             if (uri == null || uri.isEmpty()) {
