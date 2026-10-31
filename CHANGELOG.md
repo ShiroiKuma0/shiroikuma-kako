@@ -5,6 +5,50 @@ Everything built on top of stock Firefox (release channel) — the Android brows
 `<upstream-base>+<build>`; the fork commits live on `custom`, rebased onto each
 adopted `FIREFOX_*_RELEASE` tag, and one tag covers both products.
 
+## 157.0+004 — 2026-10-31
+
+A feature build on Firefox **157.0**, mainly for Android. The desktop deb is rebuilt
+from the same commit so both products keep one version; the only change there is the
+browser marker below.
+
+### A long-press in the menu opens an extension's popup
+
+- **What changed.** In the main menu's extensions list, a tap on an extension still does
+  what it always did. A **long-press** now opens the popup page the extension's manifest
+  declares (`default_popup`), in the normal extension-popup view, with a haptic tick.
+- **Why.** An extension can take over the tap: it clears its popup at runtime with
+  `browserAction.setPopup({popup: ""})` and handles `onClicked` itself. 白い熊 Stylus
+  2.4.10.97 does this, so a tap toggles every style off and on. Fenix offered nothing but
+  the tap, so the menu of an extension like that could not be reached at all. The
+  long-press always opens the popup from the manifest, even after `setPopup` has cleared
+  it, so the menu stays one gesture away.
+- **Any extension.** Nothing is tied to one add-on. The long-press grants the extension
+  access to the current tab the same way a tap does, and it does not fire `onClicked`. An
+  extension whose manifest has no popup gets exactly what a tap would do. So do a
+  disabled or hidden action and a page action.
+- **Why not `browserAction.openPopup()`.** It does not work in Fenix (bug 1817809) and
+  needs a user gesture. Instead the long-press goes through GeckoView, android-components
+  and the Fenix menu, and the page opens the same way a tap opens a popup.
+
+### Extensions can tell they run in 白い熊 火狐
+
+`browser.runtime.getBrowserInfo()` now also returns `fork: "shiroikuma-kako"`, on both
+products. Stock Firefox leaves the field undefined. An extension published for stock
+Firefox too can check it, and take the tap for itself only where the long-press keeps its
+menu reachable.
+
+### Checked on the shipped files
+
+On the signed APK: all five tracker signatures (Glean, Adjust, Sentry and both lib-crash
+upload services) count **zero** in the dex, and the packaged `libmegazord.so` does not
+link `libmozglue.so`. The new code is in the dex, and the JavaScript side and the
+`getBrowserInfo` marker are in the APK's `omni.ja`. Both files carry `157.0+004`.
+
+### Downloads
+
+- `shiroikuma-kako_157.0+004_amd64.deb` — GNU/Linux desktop (amd64).
+- `shiroikuma-kako_157.0+004_arm64-v8a.apk` — Android (arm64-v8a).
+
 ## 157.0+003 — 2026-10-19
 
 A fix build on Firefox **157.0**, for the desktop browser. The Android APK is rebuilt from

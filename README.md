@@ -10,7 +10,7 @@ A fork of [Mozilla Firefox](https://github.com/mozilla-firefox/firefox) (release
 
 Installs **side-by-side** with stock Firefox/Beta/Nightly: app id `shiroikuma.kako` on Android, package `shiroikuma-kako` with its own `~/.mozilla/kako` profile on the desktop.
 
-**📥 Latest release: [`157.0+003`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
+**📥 Latest release: [`157.0+004`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
 
 </div>
 
@@ -100,6 +100,8 @@ Any extension with a browser action can be pinned to the toolbar from its settin
 
 ## ⚙ An extension's own options, on its button
 On the PC, right-clicking an extension's toolbar button offers whatever that extension puts there — Stylus alone offers "Toggle current tab", "Turn all styles off", "Manage" and "Reload". On Android none of it was reachable, because the API behind it does not exist there: `browser.menus` is implemented for the desktop only, and GeckoView's scaffolding for it has answered "Not implemented" since 2019. This fork ships the missing half, so extensions can register those options on the phone at last — and a long press on a pinned button now shows the fork's own move-and-remove entries, a yellow rule, and below it everything the extension itself offers. Checkboxes, radio entries and separators render, and a nested entry is indented rather than lost.
+
+The main menu's extensions list works the same way. A tap does what the extension wants, and a **long-press always opens the popup page the extension's manifest declares**. So an extension that takes the tap for itself still has a reachable menu. 白い熊 Stylus does exactly that: a tap toggles every style, and a long-press opens its menu. An extension can check `browser.runtime.getBrowserInfo()` for `fork: "shiroikuma-kako"` to tell this browser from stock Firefox.
 
 ---
 
