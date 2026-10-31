@@ -247,6 +247,11 @@
           "buildID": {
             "type": "string",
             "description": "The browser's build ID/date, for example '20160101'."
+          },
+          "fork": {
+            "type": "string",
+            "optional": true,
+            "description": "白い熊 火狐 only: 'shiroikuma-kako'."
           }
         }
       },

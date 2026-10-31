@@ -1046,6 +1046,20 @@ export var GeckoViewWebExtension = {
     return browserAction.triggerClickOrPopup();
   },
 
+  async browserActionDefaultPopup(aId) {
+    const policy = WebExtensionPolicy.getByID(aId);
+    if (!policy) {
+      return undefined;
+    }
+
+    const browserAction = this.browserActions.get(policy.extension);
+    if (!browserAction) {
+      return undefined;
+    }
+
+    return browserAction.triggerDefaultPopup();
+  },
+
   async pageActionClick(aId) {
     const policy = WebExtensionPolicy.getByID(aId);
     if (!policy) {
@@ -1188,6 +1202,13 @@ export var GeckoViewWebExtension = {
     switch (aEvent) {
       case "GeckoView:BrowserAction:Click": {
         const popupUrl = await this.browserActionClick(aData.extensionId);
+        aCallback.onSuccess(popupUrl);
+        break;
+      }
+      case "GeckoView:BrowserAction:DefaultPopup": {
+        const popupUrl = await this.browserActionDefaultPopup(
+          aData.extensionId
+        );
         aCallback.onSuccess(popupUrl);
         break;
       }

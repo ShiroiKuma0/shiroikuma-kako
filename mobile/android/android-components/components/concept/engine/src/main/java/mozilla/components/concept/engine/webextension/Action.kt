@@ -16,6 +16,8 @@ import android.graphics.Bitmap
  * @property badgeTextColor The browser action's badge text color.
  * @property badgeBackgroundColor The browser action's badge background color.
  * @property onClick A callback to be executed when this browser action is clicked.
+ * @property onLongClick A callback to be executed when this browser action is long-pressed: opens the
+ *   manifest's popup even when the extension cleared it at runtime (白い熊 火狐).
  */
 data class Action(
     val title: String?,
@@ -25,6 +27,7 @@ data class Action(
     val badgeTextColor: Int?,
     val badgeBackgroundColor: Int?,
     val onClick: () -> Unit,
+    val onLongClick: (() -> Unit)? = null,
 ) {
     /**
      * Returns a copy of this [Action] with the provided override applied e.g. for tab-specific overrides. If the
@@ -44,6 +47,7 @@ data class Action(
                 badgeTextColor = override.badgeTextColor ?: badgeTextColor,
                 loadIcon = override.loadIcon ?: loadIcon,
                 onClick = override.onClick,
+                onLongClick = override.onLongClick ?: onLongClick,
             )
         } else {
             this

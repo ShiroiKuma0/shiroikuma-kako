@@ -146,6 +146,13 @@ class WebExtensionsMenuBinding(
                 onDismiss()
                 action.onClick()
             },
+            onLongClick =
+                action.onLongClick?.let { onLongClick ->
+                    {
+                        onDismiss()
+                        onLongClick()
+                    }
+                },
         )
     }
 }

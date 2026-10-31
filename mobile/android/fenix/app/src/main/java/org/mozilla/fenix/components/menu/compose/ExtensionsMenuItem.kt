@@ -264,6 +264,13 @@ internal fun WebExtensionMenuItems(
                         )
                     }
                 },
+                onLongClick =
+                    extension.onLongClick?.takeIf { accessPoint != MenuAccessPoint.External }?.let { onLongClick ->
+                        {
+                            onWebExtensionMenuItemClick()
+                            onLongClick()
+                        }
+                    },
                 onSettingsClick =
                     if (accessPoint != MenuAccessPoint.External) {
                         { addon?.let { onWebExtensionMenuItemSettingsClick(it) } }

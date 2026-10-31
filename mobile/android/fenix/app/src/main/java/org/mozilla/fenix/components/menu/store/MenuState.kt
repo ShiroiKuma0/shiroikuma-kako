@@ -182,6 +182,7 @@ data class WebExtensionMenuItem(
     val badgeTextColor: Int?,
     val badgeBackgroundColor: Int?,
     val onClick: () -> Unit,
+    val onLongClick: (() -> Unit)? = null,
 )
 
 /**

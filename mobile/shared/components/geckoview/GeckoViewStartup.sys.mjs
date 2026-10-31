@@ -269,6 +269,7 @@ export class GeckoViewStartup {
             ged: [
               "GeckoView:ActionDelegate:Attached",
               "GeckoView:BrowserAction:Click",
+              "GeckoView:BrowserAction:DefaultPopup",
               "GeckoView:PageAction:Click",
               "GeckoView:RegisterWebExtension",
               "GeckoView:UnregisterWebExtension",
