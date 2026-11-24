@@ -10,7 +10,7 @@ A fork of [Mozilla Firefox](https://github.com/mozilla-firefox/firefox) (release
 
 Installs **side-by-side** with stock Firefox/Beta/Nightly: app id `shiroikuma.kako` on Android, package `shiroikuma-kako` with its own `~/.mozilla/kako` profile on the desktop.
 
-**📥 Latest release: [`157.0+004`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
+**📥 Latest release: [`160.0.1+004`](https://github.com/ShiroiKuma0/shiroikuma-kako/releases/latest)** — [all releases & downloads »](https://github.com/ShiroiKuma0/shiroikuma-kako/releases)
 
 </div>
 
@@ -59,12 +59,18 @@ The add-ons list is arranged for this way of working: add-ons installed from a f
 ## 🖥 The same browser on the desktop
 A GNU/Linux `amd64` build, packaged as a `.deb` and wearing the same pure black and `#FFFF00`. Chrome, popups, sidebar and the New Tab page are themed by a built-in theme, in-content dialogs and preferences by a globally registered stylesheet, and the window itself is traced with a yellow frame that dims when it loses focus — 白い熊 火狐 draws its own titlebar, so no window manager will do it for you. Add-on signature enforcement is switched off in the build, which is what makes a self-modified extension installable without a round trip through AMO. It installs alongside stock Firefox with its own package name, its own `/opt` prefix and its own profile, and shares this repository, this version number and this icon with the phone.
 
-Every control the browser draws is repainted along one rule: **a control at rest wears a dim yellow ring, and goes to full yellow the moment it is engaged.** A checkbox or radio carries its whole row — box and label together — inside a pill, so an open question is legible as one before a word of it is read; ticking fills the box solid yellow with a black mark. Dropdowns, text fields and buttons take the same pill and the same two states, with the button that commits filled solid yellow. Nothing keeps a colour from outside the palette: message bars lose their information-blue, destructive buttons their red, badges their green, promo cards their violet, and sliders, scrollbars, selection and tooltips their platform grey.
+Since `160.0.1+003` none of those colours is fixed. The desktop has its own table of **129 colour roles**, each a preference, each settable on a **白い熊 火狐 UI** page that opens from the app menu or from a pill at the top of Settings. Push buttons are outlined pills — the one that commits is thick and bold, a deleting one red, none filled; toggles are an outlined track with a solid dot; menu rows and the app menu are full-width pills with a clear line between groups. The package carries **English and Japanese** and follows the system's language, and every string the fork adds exists in both.
 
 ---
 
 ## 🖤💛 The 白い熊 火狐 UI
-A dedicated settings page (pinned at the top of Settings, or long-press the menu button) themes the whole browser from user-settable color slots — seeded pure black `#000000` / pure yellow `#FFFF00` — with live Compose restyling, external ttf/otf font import (family, weight, 70–160% size scale), and 0.5 dp-stepped border thickness sliders. Chrome is traced Nightly-style: outlined address pill, bordered tabs and menu cards, kako-framed alert dialogs, true-black windows.
+Pure black `#000000` and pure yellow `#FFFF00` are only the defaults. Every colour the browser shows under the theme is a **role** of its own — 118 of them on Android, in fifteen sections: the label, frame and ground of a button, a dialog's title and text, a switch's outline and dot on and off, each kind of menu icon, list dividers, the toolbar, the tabs, the system bars — and each is a swatch on a dedicated settings page, in the section of the thing it colours, with a reset of its own.
+
+The page (pinned at the top of Settings, or long-press the menu button) is a folding accordion. On top, a pill to the browser's own settings and a wrapping index of chips, one per section, each with its section's icon in one of seven colours that say what kind of thing the section is; tap a chip to jump, long-press to drag it, and the sections follow. **App language** is the first of them. Fonts (external ttf/otf import, weight, 70–160 % scale), border widths in half-dp steps and the two-row toolbar live in the sections they belong to.
+
+The same rule shapes the whole app. **Every button is an outlined pill, never filled** — 3 dp and bold for the main action of a block, 1.25 dp otherwise, red for one that deletes. **Switches** are an outlined track with a solid dot. **Menus** — dropdowns, toolbar popups, the long-press menu and the main menu — draw each action as a full-width pill with its icon coloured by what the row does: green connects and reloads, heavy blue writes, light blue is about an account, orange copies and shares, rose blocks, red deletes. Upstream's own screens are not edited for any of this: their layouts name roles, and the stored colours are laid over them when the app runs.
+
+All of it is in **English and Japanese**.
 
 ---
 
@@ -140,7 +146,8 @@ sudo apt install clang-20 libclang-20-dev lld-20 libstdc++-14-dev \
 cargo install cbindgen
 
 export MOZCONFIG=$PWD/tools/kako/mozconfig-desktop
-./mach build && ./mach package
+git clone --depth 1 https://github.com/mozilla-l10n/firefox-l10n.git ~/.mozbuild/l10n-central
+./mach build && ./mach package-multi-locale --locales en-US ja
 tools/kako/deb/build-deb.sh          # → ~/tmp/shiroikuma-kako_<version>_amd64.deb
 ```
 
@@ -153,16 +160,16 @@ A full build, like the desktop one. It has to be: getting Glean out of the APK c
 ```bash
 git clone --branch custom git@github.com:ShiroiKuma0/shiroikuma-kako.git
 cd shiroikuma-kako
-./mach bootstrap          # for the SDK and NDK
+./mach python python/mozboot/mozboot/android.py --ndk-only --no-interactive       # NDK r30
+./mach python python/mozboot/mozboot/android.py --artifact-mode --no-interactive  # SDK
 
 export MOZCONFIG=$PWD/tools/kako/mozconfig-android-src
 ./mach build
-tools/kako/stage-megazord.sh          # MANDATORY — see below
 ./mach gradle fenix:assembleRelease
 # APK: objdir-kako-src/gradle/build/mobile/android/fenix/app/outputs/apk/release/fenix-arm64-v8a-release.apk
 # then zipalign + apksigner with your own keystore
 ```
 
-`stage-megazord.sh` is not optional and the app force-closes without it. Gecko links its own allocator into every shared library it builds, `libmegazord.so` included — but application-services is driven from Kotlin over JNA, where allocations come from bionic, and freeing those through mozjemalloc segfaults the moment `places.sqlite` is opened. The script stages Mozilla's self-contained megazord instead, and refuses to stage one that links mozglue.
+Up to 157 a separate step had to keep Gecko's allocator out of `libmegazord.so`, or the app force-closed the moment `places.sqlite` was opened. From 160 on upstream has removed the cause (bug 2035575) and links the library against `mozglue` again on purpose; nothing extra is needed.
 
 `tools/kako/mozconfig` still builds the old artifact configuration — faster, but the prebuilt application-services binaries carry Glean, so that APK is not tracker-free.

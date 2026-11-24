@@ -5,6 +5,120 @@ Everything built on top of stock Firefox (release channel) — the Android brows
 `<upstream-base>+<build>`; the fork commits live on `custom`, rebased onto each
 adopted `FIREFOX_*_RELEASE` tag, and one tag covers both products.
 
+## 160.0.1+004 — 2026-11-24
+
+An adoption and a rebuild of the look, on Firefox **160.0.1** — three upstream cycles
+after 157.0. Both products are built from one commit: the Android APK and the GNU/Linux
+deb. Builds +001 to +003 were steps on the way and were not published.
+
+### Firefox 160.0.1
+
+- **Upstream.** The fork's 135 commits are rebased from `FIREFOX_157_0_RELEASE` onto
+  `FIREFOX_160_0_1_RELEASE`.
+- **Telemetry that came back is gone again.** Three cycles added Glean call sites in
+  files the fork had never patched: listen-to-page, the privacy report notification, tab
+  groups, the reload cover, power saving mode, collections migration, the VPN menu item,
+  Lens, the search widgets, the onboarding completion migration, the address bar, and two
+  in the vendored application-services Nimbus. The signed APK counts **zero** for Glean,
+  Adjust, Sentry and both crash-upload services.
+- **The megazord links `mozglue` again — on purpose.** Up to 157 `libmegazord.so` had to
+  be kept free of Gecko's allocator, or the app force-closed when `places.sqlite` was
+  opened. Upstream has since removed the cause (bug 2035575) and requires the link in its
+  own build check. The fork's old "must not list `libmozglue.so`" check is retired.
+- **Toolchain.** 160 builds only with NDK r30 and cmdline-tools 23.0.
+- **The fork's own code on new APIs.** The backup reads and writes credit card numbers
+  through the storage's new plain-text interface (the archive format is unchanged); site
+  permissions are read with the scope the storage now asks for; the long-press that opens
+  an extension's manifest popup works on upstream's rewritten extensions menu.
+- **Dropped as redundant.** Upstream fixed the lost signed-in state after a failed
+  profile fetch itself, so the fork's patch for it is gone.
+
+### Android: every colour a role, every button a pill
+
+- **118 colour roles in 15 sections** replace the 18 shared colours. Each kind of thing
+  has its own: a button's label, frame and ground; the main button; a deleting button; a
+  dialog's ground, frame, title and text; a switch's outline and dot, on and off; check
+  boxes, radio buttons and sliders; menu ground, row frame, label, divider and seven icon
+  colours; list text, dividers and cards; text fields; toolbar; tabs; system bars;
+  toasts; and the entries of the colour scheme that upstream's screens read directly.
+  Pure black and pure yellow are the defaults of the two primaries and are written once.
+- **Settings screens follow the colours too.** Until now the View-based screens wore a
+  fixed overlay that no setting could reach. Upstream's layouts stay untouched; the
+  overlay names roles, and the stored colours are laid over them when the app runs
+  (Android 11 and later; below it the defaults show).
+- **Buttons** are outlined pills everywhere: 3 dp and bold for the main action of a
+  block, 1.25 dp otherwise, red on frame and label for one that deletes. Nothing is
+  filled, and no bare-text button is left — dialog buttons included.
+- **Switches** are an outlined track with a solid dot, right and bright when on, left and
+  dim when off. Check boxes and radio buttons stay marks.
+- **Menus.** Dropdowns, toolbar popups, the long-press context menu and the main menu
+  draw each action as a full-width pill with its icon inside, coloured by what the row
+  does; a › where the row opens something; the outlined switch on toggle rows; a clear
+  line between groups. In the main menu this replaces the grouped cards.
+- **Dialogs** are framed and take their ground, title and text from their own roles.
+- **Settings rows** get an icon, coloured by what the row does.
+
+### Android: the 白い熊 火狐 UI page rebuilt
+
+- A thick pill on top opens the browser's own settings.
+- **An index of chips**, one per section, each as wide as its label and carrying the
+  section's icon. A tap unfolds the section and scrolls to it. A long-press drags the
+  chip; the chips reorder under the finger and the sections follow.
+- **Every section folds**, and all are folded on a fresh install. Order and fold state
+  are remembered and travel in the export.
+- **Section icons in seven colours by meaning** — yellow for the base, green for
+  controls, light blue for words, heavy blue for the frame, orange for what reaches out,
+  red for warning, rose for a brief flash — the same icon and colour on heading and chip.
+- **App language** is the first section: one pill, "Language: …", opening a list with the
+  system default first and every shipped language in its own language. It sets the same
+  value as Firefox's own picker in Settings.
+- Rows that do something are pills that hug their label, with the explanation beneath;
+  rows with a switch, a swatch or a slider stay plain. Every row has an icon as tall as
+  its label; explained rows have a bold label and a thin rule down the left.
+- **Maintenance**: Reset section order, Reset all colours, Reset everything.
+
+### Desktop: roles, a UI page, Japanese
+
+- **129 colour roles in 16 sections**, stored as preferences. They reach the toolbar,
+  tabs, URL bar, panels, sidebar, dialogs, menus, in-content pages and New Tab. Web pages
+  never see them. Two rules of the old dialog stylesheet that did reach web pages are
+  scoped to the browser's own documents now.
+- **Pills and switches** in the browser's own documents: push buttons outlined, the
+  accepting one thick and bold, deleting ones red; toggles as the outlined switch; menu
+  rows, the app menu and panel lists as full-width pills.
+- **A 白い熊 火狐 UI page**, from the app menu or a pill at the top of Settings: the same
+  chip index and folding sections as on Android, a swatch and a reset for every role,
+  App language first, Reset section order and Reset all colours.
+- **English and Japanese.** The package carries Mozilla's Japanese translation and follows
+  the system's language.
+- A master switch returns the browser to Firefox's own look.
+
+### Japanese
+
+Every string the fork adds now exists in English and Japanese, on both products: 131
+strings and 133 colour-role labels on Android, 177 on the desktop. On Android the fork's
+strings had been marked untranslatable, most holding Japanese in the default file and
+about a third English only.
+
+### Known limits
+
+- Neither product's new look had been checked on a screen when this was published; the
+  code was reviewed against the rules and the desktop exercised headless.
+- A few menu rows on Android keep an empty icon column; desktop menu rows that have no
+  icon upstream are not given one.
+- Dialogs that re-apply upstream's own theme (share, create collection, QR code) keep
+  upstream's colours.
+- The desktop roles are preferences and are not part of an export.
+
+### Checked on the shipped files
+
+On the signed APK: all five tracker signatures count **zero** in the dex, the packaged
+`libmegazord.so` carries the 156+ UniFFI checksum symbol, and the English and Japanese
+key sets are equal. On the deb: `res/multilocale.txt` lists `ja,en-US`; started headless
+in a Japanese locale the application locale is `ja`, the fork's strings resolve in
+Japanese in the browser window, and the UI page's first chip is “アプリの言語”. Both files
+carry `160.0.1+004`.
+
 ## 157.0+004 — 2026-10-31
 
 A feature build on Firefox **157.0**, mainly for Android. The desktop deb is rebuilt
