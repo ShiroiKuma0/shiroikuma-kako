@@ -7,9 +7,13 @@ package org.mozilla.fenix.kako
 import android.app.AlertDialog
 import android.app.Dialog
 import android.content.Context
+import android.content.res.ColorStateList
 import android.graphics.Typeface
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.InsetDrawable
+import android.graphics.drawable.RippleDrawable
 import android.text.InputType
 import android.util.TypedValue
 import android.view.Gravity
@@ -27,9 +31,12 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import mozilla.components.compose.base.theme.ForkIconRole
 import org.mozilla.fenix.R
 import java.util.Locale
+import androidx.appcompat.R as appcompatR
 import com.google.android.material.R as materialR
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Plain programmatic dialogs for the 白い熊 火狐 UI page — kept free of Fenix's
@@ -40,68 +47,84 @@ private fun Context.dp(value: Int): Int =
     TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value.toFloat(), resources.displayMetrics).toInt()
 
 /**
- * The fork's signature dialog frame: a black rounded panel ringed in the kako
- * yellow border. Shared by both the programmatic dialogs below and every stock
- * Material alert dialog (via [applyKakoBorder]) so every dialog looks the same.
+ * The fork's dialog panel: the dialog ground, rounded, ringed in the dialog frame — both from
+ * their roles. The window background of the dialogs built below.
  */
 internal fun Context.kakoDialogBackground(): GradientDrawable = GradientDrawable().apply {
     cornerRadius = dp(8).toFloat()
-    setColor(KakoTheme.color(this@kakoDialogBackground, KakoSlot.MENU_BACKGROUND))
-    setStroke(dp(1), KakoTheme.color(this@kakoDialogBackground, KakoSlot.BORDER))
+    setColor(KakoTheme.color(this@kakoDialogBackground, KakoSlot.DIALOG_BACKGROUND))
+    setStroke(dp(1), KakoTheme.color(this@kakoDialogBackground, KakoSlot.DIALOG_BORDER))
+}
+
+/** The press highlight of a row built in code: a ripple in its role, nothing else drawn. */
+internal fun Context.kakoRowRipple(): Drawable {
+    val ripple = KakoTheme.color(this, KakoSlot.BUTTON_RIPPLE)
+    return RippleDrawable(ColorStateList.valueOf(ripple), null, ColorDrawable(KakoTheme.alpha(ripple, 1f)))
 }
 
 /**
- * Give any (Material) alert dialog the kako yellow frame; returns the receiver for
- * chaining.
- *
- * The visible rounded panel of a Material alert dialog is a [MaterialShapeDrawable]
- * — but not on the window/decor (which is larger than the panel and floats it in the
- * middle, so a decor-level background or foreground border lands off the panel). So we
- * find that shape in the view tree (the one on the largest view, to skip button shapes)
- * and stroke it in place: the border then sits exactly on the panel edge with Material's
- * own corner radius. The shape only exists once the dialog is laid out, so we stroke in a
- * [Dialog.setOnShowListener] and on the next frame; the immediate pass covers the
- * already-shown prompt-hook path. No call site claims the show listener, so taking it here
- * is safe.
+ * Gives a (Material or AppCompat) alert dialog the fork's frame and text colours; returns the
+ * receiver for chaining. Kept for the call sites that have it; every alert dialog whose button
+ * bar is inflated under the theme gets the same from [KakoPills] without asking, so a new call
+ * site needs none.
  */
 internal fun <T : Dialog> T.applyKakoBorder(): T = apply {
-    val w = window ?: return@apply
-    val decor = w.decorView as? FrameLayout ?: return@apply
-    fun stamp() {
-        // parentPanel is the dialog's content root; the window background's 10dp inset is
-        // applied to it as padding, so its bounds coincide with the visible rounded panel
-        // (the decor itself is larger). We draw the ring as the decor's foreground — which
-        // is painted on top and provably visible — but inset to parentPanel's measured
-        // position so the border lands exactly on the panel rather than out at the decor edge.
-        val panel = w.findViewById<View>(androidx.appcompat.R.id.parentPanel) ?: return
-        if (panel.width == 0 || panel.height == 0) return
-        val pos = IntArray(2).also { panel.getLocationInWindow(it) }
-        val origin = IntArray(2).also { decor.getLocationInWindow(it) }
-        val left = pos[0] - origin[0]
-        val top = pos[1] - origin[1]
-        val ring = GradientDrawable().apply {
-            cornerRadius = context.dp(MATERIAL_DIALOG_CORNER_DP).toFloat()
-            setStroke(context.dp(2), KakoTheme.color(context, KakoSlot.BORDER))
+    val decor = window?.decorView ?: return@apply
+    kakoStampDialog(decor)
+    decor.post { kakoStampDialog(decor) }
+}
+
+/**
+ * Frames the panel of the alert dialog whose decor view is [decor] and colours its title and
+ * message, all from the dialog roles. Does nothing with the theme off, or for a window that
+ * holds no AppCompat alert panel.
+ *
+ * The visible rounded panel is not the window: the decor is larger and floats the panel in the
+ * middle, so a decor-level background or border lands off the panel. `parentPanel` is the
+ * dialog's content root and its bounds coincide with the visible panel, so the ring is drawn as
+ * the decor's foreground — painted on top, provably visible — inset to where the panel was
+ * measured. The panel is watched, so the ring follows when the dialog changes size (a keyboard,
+ * a list that fills in).
+ */
+internal fun kakoStampDialog(decor: View) {
+    val context = decor.context
+    if (decor !is FrameLayout || !KakoTheme.isEnabled(context)) return
+    val panel = decor.findViewById<View>(appcompatR.id.parentPanel) ?: return
+    if (panel.getTag(R.id.kako_dialog_watched) == null) {
+        panel.setTag(R.id.kako_dialog_watched, true)
+        // Only when the panel really moved: stamping asks for a layout itself.
+        panel.addOnLayoutChangeListener { _, l, t, r, b, oldL, oldT, oldR, oldB ->
+            if (l != oldL || t != oldT || r != oldR || b != oldB) kakoStampDialog(decor)
         }
-        decor.foregroundGravity = Gravity.FILL
-        decor.foreground = InsetDrawable(
-            ring,
-            left,
-            top,
-            decor.width - left - panel.width,
-            decor.height - top - panel.height,
-        )
     }
-    stamp()
-    setOnShowListener { stamp() }
-    decor.post { stamp() }
+    panel.findViewById<TextView>(appcompatR.id.alertTitle)
+        ?.setTextColor(KakoTheme.color(context, KakoSlot.DIALOG_TITLE))
+    panel.findViewById<TextView>(android.R.id.message)
+        ?.setTextColor(KakoTheme.color(context, KakoSlot.DIALOG_TEXT))
+    if (panel.width == 0 || panel.height == 0) return
+    val pos = IntArray(2).also { panel.getLocationInWindow(it) }
+    val origin = IntArray(2).also { decor.getLocationInWindow(it) }
+    val left = pos[0] - origin[0]
+    val top = pos[1] - origin[1]
+    val ring = GradientDrawable().apply {
+        cornerRadius = context.dp(MATERIAL_DIALOG_CORNER_DP).toFloat()
+        setStroke(context.dp(2), KakoTheme.color(context, KakoSlot.DIALOG_BORDER))
+    }
+    decor.foregroundGravity = Gravity.FILL
+    decor.foreground = InsetDrawable(
+        ring,
+        left,
+        top,
+        decor.width - left - panel.width,
+        decor.height - top - panel.height,
+    )
 }
 
 /**
  * The same frame for a bottom sheet: a ring on the top and the two sides, with the
  * sheet's own rounded top corners.
  *
- * A sheet cannot use [applyKakoBorder]. That one hangs the ring off the decor inset to
+ * A sheet cannot use [kakoStampDialog]. That one hangs the ring off the decor inset to
  * `parentPanel`, which a sheet has no equivalent of, and the ring would then be frozen
  * where the sheet happened to be when it was stamped -- a sheet slides in, is dragged,
  * and settles at half or full height. Here the ring is the sheet view's own foreground
@@ -118,6 +141,7 @@ internal fun <T : Dialog> T.applyKakoBorder(): T = apply {
  * would leave those sheets collapsed.
  */
 internal fun <T : Dialog> T.applyKakoSheetBorder(): T = apply {
+    if (!KakoTheme.isEnabled(context)) return@apply
     val w = window ?: return@apply
     fun stamp() {
         val sheet = w.findViewById<View>(materialR.id.design_bottom_sheet) as? FrameLayout ?: return
@@ -126,7 +150,7 @@ internal fun <T : Dialog> T.applyKakoSheetBorder(): T = apply {
         val ring = GradientDrawable().apply {
             // Top corners only; the bottom two are square and off-screen anyway.
             cornerRadii = floatArrayOf(radius, radius, radius, radius, 0f, 0f, 0f, 0f)
-            setStroke(stroke, KakoTheme.color(context, KakoSlot.BORDER))
+            setStroke(stroke, KakoTheme.color(context, KakoSlot.SHEET_BORDER))
         }
         sheet.foregroundGravity = Gravity.FILL
         sheet.foreground = InsetDrawable(ring, 0, 0, 0, -stroke)
@@ -143,14 +167,17 @@ internal fun MaterialAlertDialogBuilder.createKako(): AppCompatAlertDialog = cre
 /** [MaterialAlertDialogBuilder.show]-equivalent that adds the kako border first. */
 internal fun MaterialAlertDialogBuilder.showKako(): AppCompatAlertDialog = createKako().also { it.show() }
 
+/**
+ * A dialog of the UI page: its own title line, [content], and Cancel. Panel, title and buttons
+ * come from the dialog and button roles; the buttons are pills, the positive one the main pill.
+ */
 private fun kakoDialog(context: Context, title: CharSequence, content: View): AlertDialog {
-    val text = KakoTheme.color(context, KakoSlot.TEXT)
     val titleView = TextView(context).apply {
         this.text = title
-        setTextColor(text)
+        setTextColor(KakoTheme.color(context, KakoSlot.DIALOG_TITLE))
         setTypeface(typeface, Typeface.BOLD)
         textSize = TITLE_TEXT_SIZE_SP
-        setPadding(context.dp(24), context.dp(20), context.dp(24), context.dp(8))
+        setPadding(context.dp(24), context.dp(16), context.dp(24), context.dp(6))
     }
     return AlertDialog.Builder(context)
         .setCustomTitle(titleView)
@@ -159,13 +186,25 @@ private fun kakoDialog(context: Context, title: CharSequence, content: View): Al
         .create()
         .apply {
             window?.setBackgroundDrawable(context.kakoDialogBackground())
-            setOnShowListener {
-                getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(KakoTheme.color(context, KakoSlot.ACCENT))
-                getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(KakoTheme.color(context, KakoSlot.ACCENT))
-                getButton(AlertDialog.BUTTON_NEUTRAL)?.setTextColor(KakoTheme.color(context, KakoSlot.ACCENT))
-            }
+            setOnShowListener { KakoPills.dialogButtons(this) }
         }
 }
+
+/**
+ * One row of a pure choice list (a font, a weight): the choice drawn as itself, no icon, no
+ * minimum height — only as tall as its text and a little air.
+ */
+private fun choiceRow(context: Context, label: CharSequence, typeface: Typeface, onClick: () -> Unit): TextView =
+    TextView(context).apply {
+        text = label
+        this.typeface = typeface
+        setTextColor(KakoTheme.color(context, KakoSlot.LIST_TEXT))
+        textSize = OPTION_TEXT_SIZE_SP
+        gravity = Gravity.CENTER_VERTICAL
+        setPadding(context.dp(24), context.dp(ROW_PADDING_DP), context.dp(24), context.dp(ROW_PADDING_DP))
+        background = context.kakoRowRipple()
+        setOnClickListener { onClick() }
+    }
 
 /**
  * Color picker: a swatch grid, a hex field, and a "解除" (inherit again) action for
@@ -177,18 +216,13 @@ class KakoColorPickerDialog(
     private val onPicked: (Int?) -> Unit,
 ) {
     fun show() {
-        val textColor = KakoTheme.color(context, KakoSlot.TEXT)
         val current = KakoTheme.color(context, slot)
 
         val hexField = EditText(context).apply {
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
             setText(String.format(Locale.ROOT, "#%08X", current))
-            setTextColor(textColor)
-            setHintTextColor(KakoTheme.color(context, KakoSlot.TEXT_SECONDARY))
-            backgroundTintList = android.content.res.ColorStateList.valueOf(
-                KakoTheme.color(context, KakoSlot.BORDER),
-            )
         }
+        KakoPills.editText(hexField, ownLine = true)
 
         val grid = GridLayout(context).apply {
             columnCount = SWATCH_COLUMNS
@@ -202,7 +236,7 @@ class KakoColorPickerDialog(
                     background = GradientDrawable().apply {
                         shape = GradientDrawable.OVAL
                         setColor(preset)
-                        setStroke(context.dp(2), KakoTheme.color(context, KakoSlot.BORDER))
+                        setStroke(context.dp(2), KakoTheme.color(context, KakoSlot.DIALOG_BORDER))
                     }
                     layoutParams = GridLayout.LayoutParams().apply {
                         width = context.dp(SWATCH_SIZE_DP)
@@ -246,6 +280,9 @@ class KakoColorPickerDialog(
     private companion object {
         const val SWATCH_COLUMNS = 6
         const val SWATCH_SIZE_DP = 40
+
+        // The swatches offered to pick from are data, not the colour of anything: they are
+        // what a role can be set to, and stay literal.
         val PRESETS = listOf(
             0xFF000000, 0xFF101010, 0xFF202020, 0xFF404040, 0xFF808080, 0xFFFFFFFF,
             0xFFFFFF00, 0xFFFFD600, 0xFFFFC107, 0xFFFF9800, 0xFFFF5722, 0xFFF44336,
@@ -265,41 +302,35 @@ class KakoFontPickerDialog(
     private val onPick: (fileName: String) -> Unit,
 ) {
     fun show() {
-        val textColor = KakoTheme.color(context, KakoSlot.TEXT)
-        val accentColor = KakoTheme.color(context, KakoSlot.ACCENT)
         val holder = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(0, context.dp(8), 0, context.dp(8))
+            setPadding(0, context.dp(4), 0, context.dp(4))
         }
 
         lateinit var dialog: AlertDialog
-        fun addRow(label: String, typeface: Typeface, color: Int, onClick: () -> Unit) {
+        // A pure choice list: every font is drawn as itself and no row has an icon.
+        KakoFonts.availableFontOptions(context).forEach { option ->
             holder.addView(
-                TextView(context).apply {
-                    text = label
-                    this.typeface = typeface
-                    setTextColor(color)
-                    textSize = OPTION_TEXT_SIZE_SP
-                    gravity = Gravity.CENTER_VERTICAL
-                    minHeight = context.dp(48)
-                    setPadding(context.dp(24), context.dp(4), context.dp(24), context.dp(4))
-                    setBackgroundResource(android.R.drawable.list_selector_background)
-                    setOnClickListener {
-                        dialog.dismiss()
-                        onClick()
-                    }
+                choiceRow(context, option.displayName, KakoFonts.fontTypeface(context, option.fileName)) {
+                    dialog.dismiss()
+                    onPick(option.fileName)
                 },
             )
         }
-
-        KakoFonts.availableFontOptions(context).forEach { option ->
-            addRow(option.displayName, KakoFonts.fontTypeface(context, option.fileName), textColor) {
-                onPick(option.fileName)
-            }
-        }
-        addRow(context.getString(R.string.kako_font_add), Typeface.DEFAULT, accentColor) {
-            onAddFont()
-        }
+        // The one action under the choices: a pill, with its icon, opening the file picker.
+        holder.addView(
+            TextView(context).apply {
+                text = context.getString(R.string.kako_font_add)
+                textSize = OPTION_TEXT_SIZE_SP
+                gravity = Gravity.CENTER_VERTICAL
+                minHeight = context.dp(ACTION_ROW_HEIGHT_DP)
+                setOnClickListener {
+                    dialog.dismiss()
+                    onAddFont()
+                }
+                KakoMenuRows.actionRow(this, iconsR.drawable.mozac_ic_import_data_24, ForkIconRole.SHARE, opens = true)
+            },
+        )
 
         dialog = kakoDialog(
             context,
@@ -307,10 +338,6 @@ class KakoFontPickerDialog(
             ScrollView(context).apply { addView(holder) },
         )
         dialog.show()
-    }
-
-    private companion object {
-        const val OPTION_TEXT_SIZE_SP = 18f
     }
 }
 
@@ -322,29 +349,23 @@ class KakoFontWeightPickerDialog(
     private val onPick: (Int) -> Unit,
 ) {
     fun show() {
-        val textColor = KakoTheme.color(context, KakoSlot.TEXT)
         val base = KakoFonts.fontTypeface(context, KakoFonts.fontFamily(context))
         val holder = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(0, context.dp(8), 0, context.dp(8))
+            setPadding(0, context.dp(4), 0, context.dp(4))
         }
 
         lateinit var dialog: AlertDialog
+        // A pure choice list: every weight is drawn in itself and no row has an icon.
         WEIGHTS.forEach { (weight, labelRes) ->
             holder.addView(
-                TextView(context).apply {
-                    text = context.getString(labelRes)
-                    typeface = if (weight > 0) Typeface.create(base, weight, false) else base
-                    setTextColor(textColor)
-                    textSize = OPTION_TEXT_SIZE_SP
-                    gravity = Gravity.CENTER_VERTICAL
-                    minHeight = context.dp(48)
-                    setPadding(context.dp(24), context.dp(4), context.dp(24), context.dp(4))
-                    setBackgroundResource(android.R.drawable.list_selector_background)
-                    setOnClickListener {
-                        dialog.dismiss()
-                        onPick(weight)
-                    }
+                choiceRow(
+                    context,
+                    context.getString(labelRes),
+                    if (weight > 0) Typeface.create(base, weight, false) else base,
+                ) {
+                    dialog.dismiss()
+                    onPick(weight)
                 },
             )
         }
@@ -358,7 +379,6 @@ class KakoFontWeightPickerDialog(
     }
 
     private companion object {
-        const val OPTION_TEXT_SIZE_SP = 18f
         val WEIGHTS = listOf(
             0 to R.string.kako_font_weight_inherit,
             100 to R.string.kako_font_weight_100,
@@ -385,15 +405,13 @@ class KakoExtensionOrderDialog(
     private val rows = entries.toMutableList()
 
     fun show() {
-        val textColor = KakoTheme.color(context, KakoSlot.TEXT)
-
         if (rows.isEmpty()) {
             kakoDialog(
                 context,
                 context.getString(R.string.kako_extension_order_row),
                 TextView(context).apply {
                     text = context.getString(R.string.kako_extension_order_empty)
-                    setTextColor(KakoTheme.color(context, KakoSlot.TEXT_SECONDARY))
+                    setTextColor(KakoTheme.color(context, KakoSlot.DIALOG_TEXT))
                     textSize = OPTION_TEXT_SIZE_SP
                     setPadding(context.dp(24), context.dp(8), context.dp(24), context.dp(16))
                 },
@@ -405,24 +423,31 @@ class KakoExtensionOrderDialog(
             override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RowHolder {
                 val handle = TextView(context).apply {
                     text = HANDLE_GLYPH
-                    setTextColor(KakoTheme.color(context, KakoSlot.TEXT_SECONDARY))
+                    setTextColor(KakoTheme.color(context, KakoSlot.LIST_SECONDARY))
                     textSize = OPTION_TEXT_SIZE_SP
                     setPadding(context.dp(24), 0, context.dp(16), 0)
                 }
                 val label = TextView(context).apply {
-                    setTextColor(textColor)
+                    setTextColor(KakoTheme.color(context, KakoSlot.LIST_TEXT))
                     textSize = OPTION_TEXT_SIZE_SP
+                    gravity = Gravity.CENTER_VERTICAL
                     setPadding(0, 0, context.dp(24), 0)
                 }
+                // Every row is an extension: one icon column, in the role of a thing looked at.
+                KakoRowIcons.setLabelIcon(
+                    label,
+                    iconsR.drawable.mozac_ic_extension_24,
+                    KakoTheme.iconColor(context, ForkIconRole.VIEW),
+                )
                 val row = LinearLayout(context).apply {
                     orientation = LinearLayout.HORIZONTAL
                     gravity = Gravity.CENTER_VERTICAL
-                    minimumHeight = context.dp(48)
+                    setPadding(0, context.dp(ROW_PADDING_DP), 0, context.dp(ROW_PADDING_DP))
                     layoutParams = RecyclerView.LayoutParams(
                         RecyclerView.LayoutParams.MATCH_PARENT,
                         RecyclerView.LayoutParams.WRAP_CONTENT,
                     )
-                    setBackgroundResource(android.R.drawable.list_selector_background)
+                    background = context.kakoRowRipple()
                     addView(handle)
                     addView(label)
                 }
@@ -439,7 +464,7 @@ class KakoExtensionOrderDialog(
         val recycler = RecyclerView(context).apply {
             layoutManager = LinearLayoutManager(context)
             this.adapter = adapter
-            setPadding(0, context.dp(8), 0, context.dp(8))
+            setPadding(0, context.dp(4), 0, context.dp(4))
         }
 
         ItemTouchHelper(
@@ -475,12 +500,18 @@ class KakoExtensionOrderDialog(
     private class RowHolder(row: View, val label: TextView) : RecyclerView.ViewHolder(row)
 
     private companion object {
-        const val OPTION_TEXT_SIZE_SP = 18f
         const val HANDLE_GLYPH = "☰"
     }
 }
 
 private const val TITLE_TEXT_SIZE_SP = 18f
+private const val OPTION_TEXT_SIZE_SP = 18f
+
+/** Above and below the text of a row built here: rows are only as tall as their content. */
+private const val ROW_PADDING_DP = 6
+
+/** The height of the one pill row under a choice list — a pill needs room to be hit. */
+private const val ACTION_ROW_HEIGHT_DP = 44
 
 /** Material's own alert-dialog corner radius (@dimen/material_dialog_corner_radius). */
 private const val MATERIAL_DIALOG_CORNER_DP = 28

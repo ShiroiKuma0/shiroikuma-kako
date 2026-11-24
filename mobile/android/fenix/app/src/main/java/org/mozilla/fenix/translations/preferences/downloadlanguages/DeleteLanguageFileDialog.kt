@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.translations.preferences.downloadlanguages
 
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
@@ -13,6 +12,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import java.util.Locale
 import mozilla.components.compose.base.button.TextButton
+import mozilla.components.compose.base.fork.AlertDialog
 import mozilla.components.compose.base.theme.PreviewThemeProvider
 import mozilla.components.compose.base.theme.Theme
 import mozilla.components.feature.downloads.DefaultFileSizeFormatter

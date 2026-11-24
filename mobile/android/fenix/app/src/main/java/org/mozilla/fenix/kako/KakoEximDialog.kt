@@ -4,18 +4,15 @@
 
 package org.mozilla.fenix.kako
 
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
-import android.content.res.ColorStateList
 import android.graphics.Typeface
-import android.graphics.drawable.GradientDrawable
-import android.graphics.drawable.RippleDrawable
 import android.net.Uri
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
-import android.widget.Button
 import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -25,13 +22,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import mozilla.components.compose.base.theme.ForkIconRole
 import org.mozilla.fenix.R
 import kotlin.system.exitProcess
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * The Export/Import panel of the 白い熊 火狐 UI page, Kōjiki-flow with the
  * ArcaneChat button line: an alert dialog whose Cancel sits alone on the left
  * (the neutral slot) while the Import and Export pills group on the right.
+ * Export is the main pill of the panel (3 dp, bold); Import and Cancel are regular.
+ * Every colour is a role; the category boxes are selection marks and stay marks.
  *
  * Success chains close everything beneath them — the info dialog, this panel,
  * and the UI page itself (via [Host.closePage]); failures toast and leave the
@@ -53,7 +54,7 @@ class KakoEximDialog(
 
     private lateinit var dialog: AlertDialog
     private val checks = LinkedHashMap<KakoExim.Cat, CheckBox>()
-    private var folderValueTv: TextView? = null
+    private var directoryValueTv: TextView? = null
     private var statusTv: TextView? = null
 
     private fun dp(value: Int): Int = TypedValue.applyDimension(
@@ -63,9 +64,7 @@ class KakoEximDialog(
     ).toInt()
 
     fun show() {
-        val text = KakoTheme.color(context, KakoSlot.TEXT)
-        val dim = KakoTheme.color(context, KakoSlot.TEXT_SECONDARY)
-        val accent = KakoTheme.color(context, KakoSlot.ACCENT)
+        val text = KakoTheme.color(context, KakoSlot.DIALOG_TEXT)
 
         val root = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
@@ -75,7 +74,7 @@ class KakoEximDialog(
         root.addView(
             TextView(context).apply {
                 this.text = context.getString(R.string.kako_eim_title)
-                setTextColor(accent)
+                setTextColor(KakoTheme.color(context, KakoSlot.DIALOG_TITLE))
                 setTypeface(typeface, Typeface.BOLD)
                 textSize = 18f
                 gravity = Gravity.CENTER_HORIZONTAL
@@ -84,8 +83,7 @@ class KakoEximDialog(
         root.addView(
             TextView(context).apply {
                 this.text = context.getString(R.string.kako_eim_desc)
-                setTextColor(text)
-                alpha = 0.85f
+                setTextColor(KakoTheme.color(context, KakoSlot.NOTE))
                 textSize = 13f
                 setPadding(0, dp(4), 0, dp(6))
             },
@@ -111,10 +109,12 @@ class KakoEximDialog(
             setTextColor(text)
             setTypeface(typeface, Typeface.BOLD)
             textSize = 15f
-            buttonTintList = ColorStateList.valueOf(accent)
             isChecked = KakoExim.Cat.entries.all { it.defaultOn }
-            setPadding(dp(8), dp(7), 0, dp(7))
+            minHeight = 0
+            minimumHeight = 0
+            setPadding(dp(8), dp(2), 0, dp(2))
         }
+        KakoPills.check(selectAll)
         root.addView(selectAll)
 
         // Seeded from the same [KakoExim.Cat.defaultOn] the automation contract's
@@ -125,17 +125,19 @@ class KakoEximDialog(
                 this.text = context.getString(cat.labelRes)
                 setTextColor(text)
                 textSize = 15f
-                buttonTintList = ColorStateList.valueOf(accent)
                 isChecked = cat.defaultOn
-                setPadding(dp(8), dp(7), 0, dp(7))
+                minHeight = 0
+                minimumHeight = 0
+                setPadding(dp(8), dp(2), 0, dp(2))
             }
+            KakoPills.check(box)
             checks[cat] = box
             root.addView(box)
             if (cat.sensitive) {
                 root.addView(
                     TextView(context).apply {
                         this.text = context.getString(R.string.kako_eim_plaintext_warning)
-                        setTextColor(KakoExim.WARN_COLOR)
+                        setTextColor(KakoExim.warnColor(context))
                         textSize = 12f
                         setPadding(dp(38), 0, 0, dp(4))
                     },
@@ -156,7 +158,8 @@ class KakoEximDialog(
             .create()
         dialog.window?.setBackgroundDrawable(context.kakoDialogBackground())
         dialog.show()
-        stylePills(dialog)
+        // Export, the positive button, is the main pill; Import and Cancel are regular ones.
+        KakoPills.dialogButtons(dialog)
 
         // Claim the action buttons after show() so they do not auto-dismiss the panel.
         dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setOnClickListener { onExportClicked() }
@@ -172,44 +175,52 @@ class KakoEximDialog(
     // The bordered, tappable export-directory box (Kōjiki style).
 
     private fun buildDirBox(): View {
-        val accent = KakoTheme.color(context, KakoSlot.ACCENT)
         val box = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             isClickable = true
-            setPadding(dp(12), dp(10), dp(12), dp(10))
-            background = GradientDrawable().apply {
-                cornerRadius = dp(10).toFloat()
-                setColor(KakoTheme.color(context, KakoSlot.MENU_BACKGROUND))
-                setStroke(dp(2), accent)
-            }
+            // A row that opens the directory picker: a regular frame, the ground showing.
+            background = KakoPills.pill(
+                context,
+                main = false,
+                frame = KakoTheme.color(context, KakoSlot.BUTTON_BORDER),
+                ground = null,
+                radiusDp = DIR_BOX_RADIUS_DP,
+            )
+            setPadding(dp(12), dp(6), dp(12), dp(6))
             setOnClickListener { host.pickDirectory() }
         }
-        box.addView(
-            TextView(context).apply {
-                text = context.getString(R.string.kako_eim_dir)
-                setTextColor(accent)
-                textSize = 12f
-            },
-        )
-        folderValueTv = TextView(context).apply {
-            textSize = 15f
-            setTypeface(typeface, Typeface.BOLD)
+        val caption = TextView(context).apply {
+            text = context.getString(R.string.kako_eim_dir)
+            setTextColor(KakoTheme.color(context, KakoSlot.NOTE))
+            textSize = 12f
         }
-        box.addView(folderValueTv)
+        box.addView(caption)
+        directoryValueTv = TextView(context).apply {
+            textSize = 15f
+            gravity = Gravity.CENTER_VERTICAL
+            setTypeface(typeface, Typeface.BOLD)
+        }.also {
+            // Upstream's drawable for a directory carries the word in its name.
+            KakoRowIcons.setLabelIcon(
+                it,
+                iconsR.drawable.mozac_ic_folder_24,
+                KakoTheme.iconColor(context, ForkIconRole.SHARE),
+            )
+        }
+        box.addView(directoryValueTv)
         return box
     }
 
     /** Re-reads the directory + latest-export state into the box and status line. */
     fun refreshStatus() {
-        val text = KakoTheme.color(context, KakoSlot.TEXT)
+        val warning = KakoExim.warnColor(context)
         val name = KakoExim.exportDir(context)?.name ?: KakoExim.dirUri(context)?.lastPathSegment
-        folderValueTv?.text = name ?: context.getString(R.string.kako_eim_dir_unset)
-        folderValueTv?.setTextColor(if (name == null) KakoExim.WARN_COLOR else text)
+        directoryValueTv?.text = name ?: context.getString(R.string.kako_eim_dir_unset)
+        directoryValueTv?.setTextColor(if (name == null) warning else KakoTheme.color(context, KakoSlot.DIALOG_TEXT))
 
         val (msg, warn) = lastExportStatus()
         statusTv?.text = msg
-        statusTv?.setTextColor(if (warn) KakoExim.WARN_COLOR else text)
-        statusTv?.alpha = if (warn) 1f else 0.8f
+        statusTv?.setTextColor(if (warn) warning else KakoTheme.color(context, KakoSlot.NOTE))
     }
 
     private fun lastExportStatus(): Pair<String, Boolean> {
@@ -238,10 +249,10 @@ class KakoEximDialog(
                 val result = withContext(Dispatchers.IO) {
                     runCatching {
                         val file = dir.createFile("application/zip", name)
-                            ?: error("could not create file in folder")
+                            ?: error(context.getString(R.string.kako_eim_err_create))
                         context.contentResolver.openOutputStream(file.uri)?.use { os ->
                             KakoExim.export(context, cats, os)
-                        } ?: error("no output stream")
+                        } ?: error(context.getString(R.string.kako_eim_err_write))
                         name
                     }
                 }
@@ -267,7 +278,7 @@ class KakoEximDialog(
                 runCatching {
                     context.contentResolver.openOutputStream(uri)?.use { os ->
                         KakoExim.export(context, cats, os)
-                    } ?: error("no output stream")
+                    } ?: error(context.getString(R.string.kako_eim_err_write))
                 }
             }
             result.fold(
@@ -301,13 +312,13 @@ class KakoEximDialog(
                     // import streams on another rather than both sharing one array in memory.
                     val present = context.contentResolver.openInputStream(uri)?.use {
                         KakoExim.categoriesIn(it)
-                    } ?: error("no input stream")
+                    } ?: error(context.getString(R.string.kako_eim_err_read))
                     require(present.isNotEmpty()) {
                         context.getString(R.string.kako_eim_import_none)
                     }
                     context.contentResolver.openInputStream(uri)?.use {
                         KakoExim.import(context, it, cats)
-                    } ?: error("no input stream")
+                    } ?: error(context.getString(R.string.kako_eim_err_read))
                 }
             }
             result.fold(
@@ -329,9 +340,9 @@ class KakoEximDialog(
             .create()
         done.window?.setBackgroundDrawable(context.kakoDialogBackground())
         done.show()
-        stylePills(done)
+        KakoPills.dialogButtons(done)
         done.findViewById<TextView>(android.R.id.message)
-            ?.setTextColor(KakoTheme.color(context, KakoSlot.ACCENT))
+            ?.setTextColor(KakoTheme.color(context, KakoSlot.DIALOG_TEXT))
         done.getButton(AlertDialog.BUTTON_POSITIVE)?.setOnClickListener {
             done.dismiss()
             dismiss()
@@ -339,6 +350,7 @@ class KakoEximDialog(
         }
     }
 
+    @SuppressLint("DiscouragedApi")
     private fun showImportDone(summary: String) {
         val done = AlertDialog.Builder(context)
             .setTitle(R.string.kako_eim_import_done_title)
@@ -349,9 +361,14 @@ class KakoEximDialog(
             .create()
         done.window?.setBackgroundDrawable(context.kakoDialogBackground())
         done.show()
-        stylePills(done)
-        val accent = KakoTheme.color(context, KakoSlot.ACCENT)
-        done.findViewById<TextView>(android.R.id.message)?.setTextColor(accent)
+        KakoPills.dialogButtons(done)
+        done.findViewById<TextView>(android.R.id.message)
+            ?.setTextColor(KakoTheme.color(context, KakoSlot.DIALOG_TEXT))
+        // The platform's alert title has no public id.
+        val titleId = context.resources.getIdentifier("alertTitle", "id", "android")
+        if (titleId != 0) {
+            done.findViewById<TextView>(titleId)?.setTextColor(KakoTheme.color(context, KakoSlot.DIALOG_TITLE))
+        }
         done.getButton(AlertDialog.BUTTON_POSITIVE)?.setOnClickListener { restartApp() }
         done.getButton(AlertDialog.BUTTON_NEGATIVE)?.setOnClickListener {
             done.dismiss()
@@ -368,43 +385,8 @@ class KakoEximDialog(
         exitProcess(0)
     }
 
-    // ArcaneChat pill styling for every button of an alert dialog: black stadium
-    // pills with an accent stroke; Cancel stays left in the neutral slot while the
-    // built-in weighted spacer pushes the action buttons right.
-
-    private fun stylePills(target: AlertDialog) {
-        val accent = KakoTheme.color(context, KakoSlot.ACCENT)
-        listOf(AlertDialog.BUTTON_POSITIVE, AlertDialog.BUTTON_NEGATIVE, AlertDialog.BUTTON_NEUTRAL)
-            .mapNotNull { target.getButton(it) }
-            .forEach { button -> button.stylePill(accent) }
-    }
-
-    private fun Button.stylePill(accent: Int) {
-        val density = context.resources.displayMetrics.density
-        val pill = GradientDrawable().apply {
-            setColor(KakoTheme.color(context, KakoSlot.BUTTON_BACKGROUND))
-            cornerRadius = dp(50).toFloat()
-            setStroke((1.5f * density).toInt(), accent)
-        }
-        background = RippleDrawable(
-            ColorStateList.valueOf((accent and 0x00FFFFFF) or 0x33000000),
-            pill,
-            null,
-        )
-        setTextColor(accent)
-        isAllCaps = false
-        stateListAnimator = null
-        minWidth = 0
-        setPadding(dp(20), dp(6), dp(20), dp(6))
-        (layoutParams as? android.view.ViewGroup.MarginLayoutParams)?.let {
-            it.marginStart = dp(8)
-            layoutParams = it
-        }
-    }
-
     private fun divider(): View = View(context).apply {
-        setBackgroundColor(KakoTheme.color(context, KakoSlot.ACCENT))
-        alpha = 0.4f
+        setBackgroundColor(KakoTheme.color(context, KakoSlot.LIST_DIVIDER))
     }
 
     private fun lpMatch() = LinearLayout.LayoutParams(
@@ -414,5 +396,9 @@ class KakoEximDialog(
 
     private fun toast(message: String, long: Boolean = false) {
         Toast.makeText(context, message, if (long) Toast.LENGTH_LONG else Toast.LENGTH_SHORT).show()
+    }
+
+    private companion object {
+        const val DIR_BOX_RADIUS_DP = 10f
     }
 }

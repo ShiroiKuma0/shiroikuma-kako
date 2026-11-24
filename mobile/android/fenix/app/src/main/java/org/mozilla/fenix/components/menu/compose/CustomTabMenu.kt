@@ -33,6 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.browser.state.state.CustomTabMenuItem
+import mozilla.components.compose.base.theme.ForkIconRole
 import mozilla.components.compose.base.theme.PreviewThemeProvider
 import mozilla.components.compose.base.theme.Theme
 import mozilla.components.feature.addons.Addon
@@ -201,6 +202,7 @@ internal fun CustomTabMenu(
                         stringResource(id = R.string.app_name),
                     ),
                 beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_external_link_24),
+                iconRole = ForkIconRole.CONNECT, // Fork: the colour of the icon.
                 onClick = onOpenInFirefoxMenuClick,
                 state =
                     if (isSandboxCustomTab) {
@@ -220,6 +222,7 @@ internal fun CustomTabMenu(
                         stringResource(id = R.string.browser_menu_open_app_link)
                     },
                     beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_more_grid_24),
+                    iconRole = ForkIconRole.CONNECT, // Fork: the colour of the icon.
                     onClick = onOpenInAppMenuClick,
                 )
             }
@@ -229,6 +232,8 @@ internal fun CustomTabMenu(
                     label = stringResource(id = R.string.browser_menu_edit_bookmark),
                     modifier = Modifier.testTag(CustomTabMenuTestTags.EDIT_BOOKMARK_PAGE_ITEM),
                     beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_bookmark_fill_24),
+                    iconRole = ForkIconRole.SHARE, // Fork: the colour of the icon.
+                    opens = true, // Fork: the › of a row that opens something.
                     state = MenuItemState.ACTIVE,
                     onClick = onEditBookmarkMenuClick,
                 )
@@ -237,6 +242,7 @@ internal fun CustomTabMenu(
                     label = stringResource(id = R.string.browser_menu_bookmark_this_page_2),
                     modifier = Modifier.testTag(CustomTabMenuTestTags.BOOKMARK_PAGE_ITEM),
                     beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_bookmark_24),
+                    iconRole = ForkIconRole.SHARE, // Fork: the colour of the icon.
                     onClick = onBookmarkPageMenuClick,
                 )
             }
@@ -244,6 +250,7 @@ internal fun CustomTabMenu(
             MenuItem(
                 label = stringResource(id = R.string.browser_menu_find_in_page),
                 beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_search_24),
+                iconRole = ForkIconRole.VIEW, // Fork: the colour of the icon.
                 onClick = onFindInPageMenuClick,
             )
 
@@ -259,6 +266,8 @@ internal fun CustomTabMenu(
                     },
                 label = stringResource(id = R.string.browser_menu_desktop_site),
                 beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_device_desktop_24),
+                iconRole = ForkIconRole.CONNECT, // Fork: the colour of the icon.
+                forkChecked = isDesktopMode, // Fork: drawn as a switch.
                 state = menuItemState,
                 onClick = onSwitchToDesktopSiteMenuClick,
             ) {

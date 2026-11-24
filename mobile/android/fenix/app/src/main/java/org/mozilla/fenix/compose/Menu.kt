@@ -38,7 +38,12 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.FilledButton
+import mozilla.components.compose.base.fork.ForkMenuPillRow
+import mozilla.components.compose.base.fork.forkMenuIconForName
+import mozilla.components.compose.base.theme.forkIconRoleForName
 import mozilla.components.ui.icons.R as iconsR
+import org.mozilla.fenix.kako.kakoMenuCardBorder
+import org.mozilla.fenix.kako.kakoMenuStyle
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
@@ -76,16 +81,42 @@ private fun Menu(
         mutableIntStateOf(0)
     }
 
+    // Fork: the 白い熊 火狐 UI gives the menu its ground and a frame, and draws action rows as
+    // full-width pills. A list with check marks is a list of choices and stays as it is.
+    val fork = kakoMenuStyle()
+    val forkIconColumn = menuItems.any { forkMenuIconForName("${it.testTag} ${it.title}") != null }
+
     MaterialTheme(shapes = MaterialTheme.shapes.copy(medium = cornerShape)) {
         DropdownMenu(
             expanded = showMenu && menuItems.isNotEmpty(),
             onDismissRequest = onDismissRequest,
             offset = offset,
             scrollState = ScrollState(with(localDensity) { columnHeightDp.toPx() * selectedItemIndex }.toInt()),
-            modifier = Modifier.background(color = MaterialTheme.colorScheme.surfaceBright).then(modifier),
+            modifier =
+                Modifier.background(color = fork?.ground ?: MaterialTheme.colorScheme.surfaceBright).then(modifier),
+            border = kakoMenuCardBorder(),
         ) {
             val hasCheckedItems = menuItems.any { it.isChecked }
             menuItems.forEachIndexed { index, item ->
+                if (fork != null && !hasCheckedItems && !canShowCheckItems) {
+                    val name = "${item.testTag} ${item.title}"
+                    ForkMenuPillRow(
+                        label = item.title,
+                        onClick = {
+                            onDismissRequest()
+                            item.onClick()
+                        },
+                        style = fork,
+                        modifier = Modifier.testTag(item.testTag),
+                        icon = forkMenuIconForName(name)?.let { painterResource(id = it) },
+                        role = forkIconRoleForName(name),
+                        opens = item.title.endsWith("…") || item.title.endsWith("..."),
+                        destructive = item.color == MaterialTheme.colorScheme.error,
+                        iconColumn = forkIconColumn,
+                    )
+                    return@forEachIndexed
+                }
+
                 val checkmarkModifier =
                     if (hasCheckedItems) {
                         Modifier.selectable(

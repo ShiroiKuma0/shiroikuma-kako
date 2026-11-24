@@ -7,6 +7,7 @@ package mozilla.components.compose.base.button
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
@@ -23,6 +24,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.fork.ForkPillButton
+import mozilla.components.compose.base.fork.ForkPillKind
+import mozilla.components.compose.base.fork.LocalForkMainAction
+import mozilla.components.compose.base.fork.weight
+import mozilla.components.compose.base.theme.AcornForkOverrides
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.base.theme.acornPrivateColorScheme
 import mozilla.components.compose.base.theme.privateColorPalette
@@ -47,6 +54,27 @@ fun TextButton(
     colors: ButtonColors = ButtonDefaults.textButtonColors(),
     border: BorderStroke? = null,
 ) {
+    // Fork: no bare-text button remains; the 白い熊 火狐 UI draws it as a pill.
+    val pills = AcornForkOverrides.pills
+    if (pills != null) {
+        val kind = forkTextButtonKind(colors)
+        ForkPillButton(
+            onClick = onClick,
+            style = pills,
+            modifier = modifier,
+            kind = kind,
+            enabled = enabled,
+            contentPadding = ForkTextPillPadding,
+        ) {
+            Text(
+                text = text,
+                style = AcornTheme.typography.button,
+                fontWeight = kind.weight(),
+                maxLines = 1,
+            )
+        }
+        return
+    }
     M3TextButton(
         onClick = onClick,
         modifier = modifier,
@@ -83,6 +111,26 @@ fun TextButton(
     border: BorderStroke? = null,
     content: @Composable RowScope.() -> Unit,
 ) {
+    // Fork: see the text overload above.
+    val pills = AcornForkOverrides.pills
+    if (pills != null) {
+        val kind = forkTextButtonKind(colors)
+        ForkPillButton(
+            onClick = onClick,
+            style = pills,
+            modifier = modifier,
+            kind = kind,
+            enabled = enabled,
+            contentPadding = ForkTextPillPadding,
+        ) {
+            CompositionLocalProvider(
+                LocalTextStyle provides AcornTheme.typography.button.copy(fontWeight = kind.weight()),
+            ) {
+                content()
+            }
+        }
+        return
+    }
     M3TextButton(
         onClick = onClick,
         modifier = modifier,
@@ -93,6 +141,25 @@ fun TextButton(
         CompositionLocalProvider(LocalTextStyle provides AcornTheme.typography.button) {
             content()
         }
+    }
+}
+
+/** Fork: the padding inside a pill that stands where a text button stood. */
+private val ForkTextPillPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+
+/**
+ * Fork: which pill a text button is. The confirm slot of a dialog makes it the main one; a button
+ * its caller coloured with the scheme's error colour is a deleting one.
+ */
+@Composable
+private fun forkTextButtonKind(colors: ButtonColors): ForkPillKind {
+    val main = LocalForkMainAction.current == true
+    val deletes = colors.contentColor == MaterialTheme.colorScheme.error
+    return when {
+        main && deletes -> ForkPillKind.MAIN_DELETE
+        main -> ForkPillKind.MAIN
+        deletes -> ForkPillKind.DELETE
+        else -> ForkPillKind.REGULAR
     }
 }
 

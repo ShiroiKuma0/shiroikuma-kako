@@ -24,6 +24,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.fork.ForkPillButton
+import mozilla.components.compose.base.theme.AcornForkOverrides
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -95,6 +97,18 @@ private fun PillButton(
     border: BorderStroke? = null,
     content: @Composable RowScope.() -> Unit,
 ) {
+    // Fork: the 白い熊 火狐 UI draws it as the outlined pill, never filled.
+    val pills = AcornForkOverrides.pills
+    if (pills != null) {
+        ForkPillButton(
+            onClick = onClick,
+            style = pills,
+            modifier = modifier,
+            contentPadding = PaddingValues(all = 4.dp),
+            content = content,
+        )
+        return
+    }
     Button(
         modifier = modifier,
         onClick = onClick,

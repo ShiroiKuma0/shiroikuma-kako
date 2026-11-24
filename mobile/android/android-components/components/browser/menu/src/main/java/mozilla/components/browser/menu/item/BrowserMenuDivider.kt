@@ -11,6 +11,7 @@ import mozilla.components.browser.menu.BrowserMenuItem
 import mozilla.components.browser.menu.R
 import mozilla.components.concept.menu.candidate.ContainerStyle
 import mozilla.components.concept.menu.candidate.DividerMenuCandidate
+import mozilla.components.support.ktx.android.view.ForkViewStyle
 
 /** A browser menu item to display a horizontal divider. */
 class BrowserMenuDivider : BrowserMenuItem {
@@ -20,7 +21,10 @@ class BrowserMenuDivider : BrowserMenuItem {
 
     override fun getLayoutResource() = R.layout.mozac_browser_menu_item_divider
 
-    override fun bind(menu: BrowserMenu, view: View) = Unit
+    // Fork: the divider takes its colour role.
+    override fun bind(menu: BrowserMenu, view: View) {
+        ForkViewStyle.hook?.menuDivider(view)
+    }
 
     override fun asCandidate(context: Context) =
         DividerMenuCandidate(containerStyle = ContainerStyle(isVisible = visible()))

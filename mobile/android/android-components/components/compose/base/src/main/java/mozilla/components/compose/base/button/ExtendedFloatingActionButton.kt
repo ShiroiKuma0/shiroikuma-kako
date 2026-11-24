@@ -13,12 +13,14 @@ import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FloatingActionButton as M3FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults as M3FloatingActionButtonDefaults
 import androidx.compose.material3.FloatingActionButtonElevation
@@ -37,6 +39,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.modifier.thenConditional
+import mozilla.components.compose.base.theme.AcornForkOverrides
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.ui.icons.R as iconsR
 
@@ -114,11 +117,15 @@ fun ExtendedFloatingActionButton(
     elevation: FloatingActionButtonElevation = M3FloatingActionButtonDefaults.elevation(),
     icon: @Composable () -> Unit,
 ) {
+    // Fork: the 白い熊 火狐 UI draws a floating button as an outlined ring: the ground, a thick
+    // frame and the icon, never a filled slab.
+    val pills = AcornForkOverrides.pills
     M3FloatingActionButton(
         onClick = onClick,
-        modifier = modifier,
-        containerColor = colors.containerColor,
-        contentColor = colors.contentColor,
+        modifier = if (pills != null) modifier.border(pills.thick, pills.mainFrame, CircleShape) else modifier,
+        shape = if (pills != null) CircleShape else M3FloatingActionButtonDefaults.shape,
+        containerColor = pills?.ground ?: colors.containerColor,
+        contentColor = pills?.mainLabel ?: colors.contentColor,
         elevation = elevation,
     ) {
         Row(

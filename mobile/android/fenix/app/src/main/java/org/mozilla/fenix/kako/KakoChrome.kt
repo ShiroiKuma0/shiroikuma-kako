@@ -10,6 +10,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -23,7 +25,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.theme.surfaceDimVariant
+import mozilla.components.compose.base.theme.AcornForkOverrides
+import mozilla.components.compose.base.theme.ForkMenuStyle
 
 /**
  * Compose helpers wiring the 白い熊 火狐 UI traced-border look into Fenix surfaces.
@@ -103,9 +106,22 @@ fun Modifier.kakoInactiveTabLines(
     }
 }
 
+/** The frame width of a row of the main menu that is laid out by its own composable. */
+private val KAKO_MENU_ROW_FRAME = 1.25.dp
+
 /**
- * The traced outline of standalone menu cards drawn by `Surface`-based composables
- * (library tiles, banners); null when off or 0-width.
+ * The menu style of the 白い熊 火狐 UI, or null when the fork theme is off. Reading it makes the
+ * caller recompose when a colour changes.
+ */
+@Composable
+fun kakoMenuStyle(): ForkMenuStyle? {
+    KakoTheme.revision.intValue
+    return AcornForkOverrides.menus
+}
+
+/**
+ * The traced outline of a menu's container and of the cards inside a menu (a banner); null when
+ * off or 0-width.
  */
 @Composable
 fun kakoMenuCardBorder(): BorderStroke? {
@@ -115,55 +131,20 @@ fun kakoMenuCardBorder(): BorderStroke? {
 }
 
 /**
- * The clipped, filled card background of menu items and similar tiles. Items inside
- * a [kakoMenuGroup]-styled container stay untraced — the group draws one shared
- * outline and the separators; standalone cards pass [traced] = true to get their
- * own outline.
+ * The ground of a main-menu row that is laid out by its own composable (the account row, a
+ * recommended add-on). With the fork theme on it is the outlined pill every other row of the menu
+ * is, the ground showing through; with it off, upstream's clipped and filled card of [shape].
  */
-fun Modifier.kakoMenuCard(shape: Shape, traced: Boolean = false): Modifier = composed {
-    KakoTheme.revision.intValue
-    val context = LocalContext.current
-    val border = if (traced) {
-        KakoTheme.borderStroke(context, KakoSlot.MENU_BORDER, KakoDimen.MENU_BORDER_WIDTH)
+fun Modifier.kakoMenuCard(shape: Shape): Modifier = composed {
+    val style = kakoMenuStyle()
+    if (style == null) {
+        this.clip(shape).background(color = MaterialTheme.colorScheme.surfaceBright)
     } else {
-        null
+        this
+            .padding(horizontal = 8.dp, vertical = 3.dp)
+            .clip(CircleShape)
+            .border(KAKO_MENU_ROW_FRAME, style.rowFrame, CircleShape)
     }
-    this
-        .clip(shape)
-        .then(border?.let { Modifier.border(it, shape) } ?: Modifier)
-        .background(color = MaterialTheme.colorScheme.surfaceDimVariant)
-}
-
-/**
- * Group container treatment: one traced outline around the whole group, with the
- * inter-item gaps revealing a border-colored backdrop — adjoining items thus share
- * a single thin separator line instead of stacking two borders.
- */
-fun Modifier.kakoMenuGroup(shape: Shape): Modifier = composed {
-    KakoTheme.revision.intValue
-    val context = LocalContext.current
-    val border = KakoTheme.borderStroke(context, KakoSlot.MENU_BORDER, KakoDimen.MENU_BORDER_WIDTH)
-    this
-        .clip(shape)
-        .then(
-            border?.let {
-                Modifier
-                    .border(it, shape)
-                    .background(Color(KakoTheme.color(context, KakoSlot.MENU_BORDER)))
-            } ?: Modifier,
-        )
-}
-
-/**
- * The spacing between items inside a menu group: the configured separator width
- * when the kako theme traces groups, else the stock 2dp gap.
- */
-@Composable
-fun kakoMenuGroupSpacing(): Dp {
-    KakoTheme.revision.intValue
-    val context = LocalContext.current
-    val width = KakoTheme.dimenDp(context, KakoDimen.MENU_BORDER_WIDTH)
-    return if (KakoTheme.isEnabled(context) && width > 0f) width.dp else 2.dp
 }
 
 /**

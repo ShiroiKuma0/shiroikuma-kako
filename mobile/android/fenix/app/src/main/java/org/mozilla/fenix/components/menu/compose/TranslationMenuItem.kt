@@ -7,6 +7,7 @@ package org.mozilla.fenix.components.menu.compose
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import mozilla.components.compose.base.theme.ForkIconRole
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.store.TranslationInfo
@@ -28,6 +29,8 @@ internal fun TranslationMenuItem(
         MenuItem(
             label = stringResource(id = R.string.browser_menu_translated),
             beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_translate_active_24),
+            iconRole = ForkIconRole.MESSAGE, // Fork: the colour of the icon.
+            opens = true, // Fork: the › of a row that opens something.
             state = MenuItemState.ACTIVE,
             onClick = translationInfo.onTranslatePageMenuClick,
         ) {
@@ -40,6 +43,8 @@ internal fun TranslationMenuItem(
         MenuItem(
             label = stringResource(id = R.string.browser_menu_translate_page_2),
             beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_translate_24),
+            iconRole = ForkIconRole.MESSAGE, // Fork: the colour of the icon.
+            opens = true, // Fork: the › of a row that opens something.
             state = if (isReaderViewActive || translationInfo.isPdf) MenuItemState.DISABLED else MenuItemState.ENABLED,
             onClick = translationInfo.onTranslatePageMenuClick,
         )

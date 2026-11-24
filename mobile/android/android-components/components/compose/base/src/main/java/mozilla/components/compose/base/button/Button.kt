@@ -17,23 +17,30 @@ import androidx.compose.material3.ButtonDefaults.outlinedButtonBorder
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton as M3OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.fork.ForkPillButton
+import mozilla.components.compose.base.fork.ForkPillKind
+import mozilla.components.compose.base.fork.weight
 import mozilla.components.compose.base.theme.AcornForkOverrides
 import mozilla.components.compose.base.theme.AcornTheme
+import mozilla.components.compose.base.theme.ForkPillStyle
 import mozilla.components.compose.base.theme.acornPrivateColorScheme
 import mozilla.components.compose.base.theme.privateColorPalette
 import mozilla.components.ui.icons.R as iconsR
@@ -55,6 +62,7 @@ private fun ButtonContent(
     icon: Painter?,
     modifier: Modifier = Modifier,
     iconTint: Color = LocalContentColor.current,
+    fontWeight: FontWeight? = null,
 ) {
     val fontScale: Float = LocalConfiguration.current.fontScale
 
@@ -72,8 +80,37 @@ private fun ButtonContent(
         text = text,
         textAlign = TextAlign.Center,
         style = AcornTheme.typography.button,
+        // Fork: the label of a main pill is bold.
+        fontWeight = fontWeight,
         maxLines = if (fontScale > 1.0f) Int.MAX_VALUE else DEFAULT_MAX_LINES,
     )
+}
+
+/**
+ * Fork: the pill the 白い熊 火狐 UI draws in place of every button of this file: never filled,
+ * the main action thick and bold.
+ */
+@Composable
+private fun ForkTextPill(
+    text: String,
+    style: ForkPillStyle,
+    kind: ForkPillKind,
+    modifier: Modifier,
+    enabled: Boolean,
+    icon: Painter?,
+    iconModifier: Modifier,
+    onClick: () -> Unit,
+) {
+    ForkPillButton(
+        onClick = onClick,
+        style = style,
+        modifier = modifier,
+        kind = kind,
+        enabled = enabled,
+        contentPadding = AcornTheme.buttonContentPadding(),
+    ) {
+        ButtonContent(text = text, icon = icon, modifier = iconModifier, fontWeight = kind.weight())
+    }
 }
 
 /**
@@ -101,26 +138,29 @@ fun FilledButton(
     iconTint: Color = contentColor,
     onClick: () -> Unit,
 ) {
-    // Fork: the 白い熊 火狐 UI restyles filled buttons app-wide (black fill,
-    // accent text, traced border) via AcornForkOverrides.
-    val fork = AcornForkOverrides.buttonStyle
+    // Fork: a button upstream drew filled is the main action of its block, so the
+    // 白い熊 火狐 UI draws it as the main pill: a thick frame, a bold label, never filled.
+    val pills = AcornForkOverrides.pills
+    if (pills != null) {
+        ForkTextPill(text, pills, ForkPillKind.MAIN, modifier, enabled, icon, iconModifier, onClick)
+        return
+    }
     M3Button(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
         contentPadding = AcornTheme.buttonContentPadding(),
-        border = fork?.border,
         colors =
             ButtonDefaults.buttonColors(
-                containerColor = fork?.containerColor ?: containerColor,
-                contentColor = fork?.contentColor ?: contentColor,
+                containerColor = containerColor,
+                contentColor = contentColor,
             ),
     ) {
         ButtonContent(
             text = text,
             icon = icon,
             modifier = iconModifier,
-            iconTint = fork?.contentColor ?: iconTint,
+            iconTint = iconTint,
         )
     }
 }
@@ -145,17 +185,33 @@ fun FilledButton(
     content: @Composable () -> Unit,
 ) {
     // Fork: see the text overload above.
-    val fork = AcornForkOverrides.buttonStyle
+    val pills = AcornForkOverrides.pills
+    if (pills != null) {
+        ForkPillButton(
+            onClick = onClick,
+            style = pills,
+            modifier = modifier,
+            kind = ForkPillKind.MAIN,
+            enabled = enabled,
+            contentPadding = AcornTheme.buttonContentPadding(),
+        ) {
+            CompositionLocalProvider(
+                LocalTextStyle provides LocalTextStyle.current.copy(fontWeight = ForkPillKind.MAIN.weight()),
+            ) {
+                content()
+            }
+        }
+        return
+    }
     M3Button(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
         contentPadding = AcornTheme.buttonContentPadding(),
-        border = fork?.border,
         colors =
             ButtonDefaults.buttonColors(
-                containerColor = fork?.containerColor ?: containerColor,
-                contentColor = fork?.contentColor ?: contentColor,
+                containerColor = containerColor,
+                contentColor = contentColor,
             ),
     ) {
         content()
@@ -187,6 +243,12 @@ fun OutlinedButton(
     iconModifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
+    // Fork: every other action is the regular pill.
+    val pills = AcornForkOverrides.pills
+    if (pills != null) {
+        ForkTextPill(text, pills, ForkPillKind.REGULAR, modifier, enabled, icon, iconModifier, onClick)
+        return
+    }
     M3OutlinedButton(
         onClick = onClick,
         modifier = modifier,
@@ -226,6 +288,12 @@ fun DestructiveButton(
     iconModifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
+    // Fork: a deleting action lends the delete colour to frame and label, still unfilled.
+    val pills = AcornForkOverrides.pills
+    if (pills != null) {
+        ForkTextPill(text, pills, ForkPillKind.DELETE, modifier, enabled, icon, iconModifier, onClick)
+        return
+    }
     M3OutlinedButton(
         onClick = onClick,
         modifier = modifier,

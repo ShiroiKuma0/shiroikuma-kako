@@ -20,6 +20,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -46,6 +47,8 @@ import mozilla.components.compose.base.button.OutlinedButton
 import mozilla.components.compose.base.theme.PreviewThemeProvider
 import mozilla.components.compose.base.theme.Theme
 import org.mozilla.fenix.R
+import org.mozilla.fenix.kako.kakoMenuCardBorder
+import org.mozilla.fenix.kako.kakoMenuStyle
 import org.mozilla.fenix.perf.ApplicationExitInfoMetrics
 import org.mozilla.fenix.perf.ProcessExitRecord
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -176,9 +179,13 @@ private fun ProcessTypeFilter(
             text = label,
             onClick = { expanded = !expanded },
         )
+        // Fork: the menu takes the ground and the frame of the 白い熊 火狐 UI. Its rows are the
+        // check boxes of a multi-select list, which stay selection marks.
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
+            containerColor = kakoMenuStyle()?.ground ?: MenuDefaults.containerColor,
+            border = kakoMenuCardBorder(),
         ) {
             availableTypes.forEach { type ->
                 DropdownMenuItem(

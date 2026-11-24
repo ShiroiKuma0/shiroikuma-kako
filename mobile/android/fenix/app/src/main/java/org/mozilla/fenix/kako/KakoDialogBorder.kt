@@ -15,7 +15,8 @@ import androidx.fragment.app.FragmentManager
 import com.google.android.material.bottomsheet.BottomSheetDialog
 
 /**
- * Stamps the kako black/yellow frame onto dialogs the fork can't reach at their
+ * Stamps the fork's frame — in the dialog and sheet frame roles, and only while the
+ * theme is on — onto dialogs the fork can't reach at their
  * call site — chiefly the web-content prompts from mozilla-components
  * feature-prompts (JS alert/confirm/prompt, the "Resend data" repost warning,
  * HTTP auth, choice menus, …), which live in a module that can't depend on the
@@ -38,7 +39,9 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
  * every one of them is a DialogFragment carrying a BottomSheetDialog.
  *
  * Fenix's own AlertDialog fragments already carry the border from their call
- * site; re-stamping the identical drawable here is harmless.
+ * site; re-stamping the identical drawable here is harmless. An alert dialog that
+ * is not a DialogFragment at all is caught where its button bar is inflated
+ * ([KakoPills]), which stamps the same frame.
  */
 object KakoDialogBorder {
 

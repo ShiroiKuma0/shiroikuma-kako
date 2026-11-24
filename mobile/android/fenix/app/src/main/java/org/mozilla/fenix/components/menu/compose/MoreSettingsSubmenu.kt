@@ -17,6 +17,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.badge.StatusBadge
+import mozilla.components.compose.base.theme.ForkIconRole
 import mozilla.components.compose.base.theme.PreviewThemeProvider
 import mozilla.components.compose.base.theme.Theme
 import mozilla.components.compose.base.theme.information
@@ -113,6 +114,8 @@ private fun WebCompatReporterMenuItem(
     MenuItem(
         label = stringResource(id = R.string.browser_menu_webcompat_reporter_2),
         beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_lightbulb_24),
+        iconRole = ForkIconRole.MESSAGE, // Fork: the colour of the icon.
+        opens = true, // Fork: the › of a row that opens something.
         state = if (isWebCompatEnabled) MenuItemState.ENABLED else MenuItemState.DISABLED,
         onClick = onWebCompatReporterClick,
     )
@@ -124,6 +127,8 @@ private fun AddToTabGroupMenuItem(onAddToTabGroupClick: () -> Unit) {
         label = stringResource(id = R.string.browser_menu_add_to_tab_group),
         stateDescription = stringResource(id = R.string.browser_menu_page_badge_text),
         beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_tab_group_24),
+        iconRole = ForkIconRole.SHARE, // Fork: the colour of the icon.
+        opens = true, // Fork: the › of a row that opens something.
         state = MenuItemState.ENABLED,
         isBeforeIconHighlighted = true,
         onClick = onAddToTabGroupClick,
@@ -166,6 +171,8 @@ private fun AddToHomeScreenMenuItem(
                     stringResource(id = R.string.browser_menu_add_to_homescreen)
                 },
             beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_add_to_homescreen_24),
+            iconRole = ForkIconRole.SHARE, // Fork: the colour of the icon.
+            opens = true, // Fork: the › of a row that opens something.
             onClick = onAddToHomeScreenMenuClick,
         )
     }
@@ -180,6 +187,8 @@ private fun SaveToCollectionMenuItem(
         MenuItem(
             label = stringResource(id = R.string.browser_menu_save_to_collection_2),
             beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_collection_24),
+            iconRole = ForkIconRole.SHARE, // Fork: the colour of the icon.
+            opens = true, // Fork: the › of a row that opens something.
             onClick = onSaveToCollectionMenuClick,
         )
     }
@@ -194,6 +203,7 @@ private fun MoveToNonPrivateTabMenuItem(
         MenuItem(
             label = stringResource(id = R.string.browser_menu_move_to_non_private_tab),
             beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_external_link_24),
+            iconRole = ForkIconRole.CONNECT, // Fork: the colour of the icon.
             onClick = onMoveToNonPrivateTabMenuClick,
         )
     }
@@ -215,6 +225,7 @@ private fun OpenInAppMenuItem(
                     stringResource(id = R.string.browser_menu_open_app_link)
                 },
             beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_more_grid_24),
+            iconRole = ForkIconRole.CONNECT, // Fork: the colour of the icon.
             isBeforeIconHighlighted = isOpenInAppMenuHighlighted,
             state = MenuItemState.ENABLED,
             onClick = onOpenInAppMenuClick,
@@ -223,6 +234,7 @@ private fun OpenInAppMenuItem(
         MenuItem(
             label = stringResource(id = R.string.browser_menu_open_app_link),
             beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_more_grid_24),
+            iconRole = ForkIconRole.CONNECT, // Fork: the colour of the icon.
             state = MenuItemState.DISABLED,
         )
     }
@@ -233,6 +245,7 @@ private fun SaveAsPdfMenuItem(onSaveAsPDFMenuClick: () -> Unit) {
     MenuItem(
         label = stringResource(id = R.string.browser_menu_save_as_pdf_2),
         beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_save_file_24),
+        iconRole = ForkIconRole.SHARE, // Fork: the colour of the icon.
         onClick = onSaveAsPDFMenuClick,
     )
 }
@@ -246,6 +259,8 @@ private fun PrintMenuItem(
         MenuItem(
             label = stringResource(id = R.string.browser_menu_print_2),
             beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_print_24),
+            iconRole = ForkIconRole.SHARE, // Fork: the colour of the icon.
+            opens = true, // Fork: the › of a row that opens something.
             onClick = onPrintMenuClick,
         )
     }
@@ -269,6 +284,7 @@ private fun ShortcutsMenuItem(
             } else {
                 painterResource(id = iconsR.drawable.mozac_ic_pin_24)
             },
+        iconRole = ForkIconRole.SHARE, // Fork: the colour of the icon.
         state =
             if (isPinned) {
                 MenuItemState.ACTIVE

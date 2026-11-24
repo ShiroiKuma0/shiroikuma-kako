@@ -87,6 +87,7 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.ext.tabsClosedUndoMessage
 import org.mozilla.fenix.home.HomeScreenViewModel
+import org.mozilla.fenix.kako.KakoTheme
 import org.mozilla.fenix.navigation.DefaultNavControllerProvider
 import org.mozilla.fenix.navigation.NavControllerProvider
 import org.mozilla.fenix.pbmlock.registerForVerification
@@ -985,11 +986,13 @@ class TabManagementFragment : Fragment() {
                     DownloadCancelDialogFragment.PromptStyling(
                         gravity = Gravity.BOTTOM,
                         shouldWidthMatchParent = true,
+                        // Fork: no fill under the 白い熊 火狐 UI — the button is an outlined pill.
                         positiveButtonBackgroundColor =
-                            ThemeManager.resolveAttribute(
-                                materialR.attr.colorTertiary,
-                                requireContext(),
-                            ),
+                            if (KakoTheme.isEnabled(requireContext())) {
+                                null
+                            } else {
+                                ThemeManager.resolveAttribute(materialR.attr.colorTertiary, requireContext())
+                            },
                         positiveButtonTextColor =
                             ThemeManager.resolveAttribute(
                                 materialR.attr.colorOnTertiary,

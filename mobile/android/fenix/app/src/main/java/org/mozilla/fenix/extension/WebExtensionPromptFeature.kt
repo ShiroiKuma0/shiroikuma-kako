@@ -390,9 +390,9 @@ class WebExtensionPromptFeature(
                 permissions = permissions,
                 origins = origins,
                 dataCollectionPermissions = dataCollectionPermissions,
-                // Fork: under the 白い熊 火狐 theme the confirm button keeps the theme's
-                // KakoButton style (black fill, yellow text, traced border) instead of
-                // being repainted with the accent fill, matching the Cancel button.
+                // Fork: under the 白い熊 火狐 theme the confirm button keeps the pill the
+                // theme's view inflater gave it (KakoPills) instead of being repainted
+                // with the accent fill.
                 promptsStyling =
                     if (KakoTheme.isEnabled(context)) {
                         AddonDialogFragment.PromptsStyling(
@@ -606,7 +606,7 @@ class WebExtensionPromptFeature(
             val dialog =
                 AddonInstallationDialogFragment.newInstance(
                     addon = addon,
-                    // Fork: same KakoButton fallback as the permissions dialog above.
+                    // Fork: the pill is kept, as in the permissions dialog above.
                     promptsStyling =
                         if (KakoTheme.isEnabled(context)) {
                             AddonDialogFragment.PromptsStyling(

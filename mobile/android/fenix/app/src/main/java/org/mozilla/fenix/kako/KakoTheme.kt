@@ -11,13 +11,16 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.compositeOver
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
 import mozilla.components.compose.base.theme.AcornColors
 import mozilla.components.compose.base.theme.AcornForkOverrides
 import mozilla.components.compose.base.theme.ForkChromeStyle
+import mozilla.components.compose.base.theme.ForkDialogStyle
+import mozilla.components.compose.base.theme.ForkIconRole
+import mozilla.components.compose.base.theme.ForkMenuStyle
+import mozilla.components.compose.base.theme.ForkPillStyle
+import mozilla.components.compose.base.theme.ForkSwitchStyle
 import mozilla.components.compose.base.theme.acornDarkColorScheme
 import mozilla.components.compose.base.theme.darkColorPalette
 import org.mozilla.fenix.R
@@ -25,11 +28,19 @@ import org.mozilla.fenix.R
 /**
  * 白い熊 火狐 UI — the fork's user-themable black/yellow design system.
  *
- * Mirrors the sister repos (shiroikuma-denwa, shiroikuma-messeji): every themable
- * attribute is a [KakoSlot] with a two-tier resolution — an explicit user override
- * stored in SharedPreferences, else a default inherited from the foundation slots.
- * Unset everything and the UI is the seeded black background / yellow text /
- * yellow border look.
+ * Every colour the app shows under this theme is a [KakoSlot]: a role with a two-tier
+ * resolution — an explicit override stored in SharedPreferences, else a default that is one of
+ * the two primaries, a colour that carries meaning, or a value derived from other roles. The
+ * table of roles is generated (tools/kako/gen_roles.py → KakoRoleTable.kt); this object reads
+ * and writes them and hands them to the three consumers:
+ *
+ *  - Compose, through [materialColorScheme] and [acornColors] (read in FirefoxTheme) and the
+ *    widget styles pushed into [AcornForkOverrides] by [refreshChromeOverrides];
+ *  - upstream's XML, through [KakoPalette], which lays the values over the colour resources
+ *    the theme overlay names;
+ *  - the fork's own views, which ask [color] directly.
+ *
+ * The two primaries are written here, once, and nowhere else.
  */
 
 const val KAKO_THEME_UNSET = Int.MIN_VALUE
@@ -50,55 +61,6 @@ const val KAKO_EXTENSION_ICON_SIZE_DEFAULT_DP = 24
 const val KAKO_TOOLBAR_TWO_ROWS_KEY = "kako_toolbar_two_rows"
 
 /**
- * Top-level sections of the 白い熊 火狐 UI page, in display order.
- */
-enum class KakoSection(@param:StringRes val labelRes: Int) {
-    FOUNDATION(R.string.kako_section_foundation),
-    TOOLBAR(R.string.kako_section_toolbar),
-    MENU(R.string.kako_section_menu),
-    TABS(R.string.kako_section_tabs),
-    BUTTONS(R.string.kako_section_buttons),
-}
-
-/**
- * One user-themable color attribute. [key] is the SharedPreferences key of its
- * override; resolution falls back to [KakoTheme.defaultColor] when unset.
- */
-enum class KakoSlot(
-    val key: String,
-    val section: KakoSection,
-    @param:StringRes val labelRes: Int,
-) {
-    // Foundation — everything else inherits from these.
-    BACKGROUND("kako_theme_background", KakoSection.FOUNDATION, R.string.kako_slot_background),
-    TEXT("kako_theme_text", KakoSection.FOUNDATION, R.string.kako_slot_text),
-    TEXT_SECONDARY("kako_theme_text_secondary", KakoSection.FOUNDATION, R.string.kako_slot_text_secondary),
-    ACCENT("kako_theme_accent", KakoSection.FOUNDATION, R.string.kako_slot_accent),
-    BORDER("kako_theme_border", KakoSection.FOUNDATION, R.string.kako_slot_border),
-    TEXT_ON_ACCENT("kako_theme_text_on_accent", KakoSection.FOUNDATION, R.string.kako_slot_text_on_accent),
-
-    // Search bar / toolbar.
-    TOOLBAR_FILL("kako_theme_toolbar_fill", KakoSection.TOOLBAR, R.string.kako_slot_toolbar_fill),
-    ADDRESSBAR_BORDER("kako_theme_addressbar_border", KakoSection.TOOLBAR, R.string.kako_slot_addressbar_border),
-    TOOLBAR_TOP_BORDER("kako_theme_toolbar_top_border", KakoSection.TOOLBAR, R.string.kako_slot_toolbar_top_border),
-
-    // Menus, cards and dialogs.
-    MENU_BACKGROUND("kako_theme_menu_background", KakoSection.MENU, R.string.kako_slot_menu_background),
-    MENU_BORDER("kako_theme_menu_border", KakoSection.MENU, R.string.kako_slot_menu_border),
-
-    // Tab strip.
-    TAB_SELECTED("kako_theme_tab_selected", KakoSection.TABS, R.string.kako_slot_tab_selected),
-    TAB_UNSELECTED("kako_theme_tab_unselected", KakoSection.TABS, R.string.kako_slot_tab_unselected),
-    TAB_BORDER("kako_theme_tab_border", KakoSection.TABS, R.string.kako_slot_tab_border),
-    TAB_ACTIVE_BORDER("kako_theme_tab_active_border", KakoSection.TABS, R.string.kako_slot_tab_active_border),
-
-    // Buttons.
-    BUTTON_BACKGROUND("kako_theme_button_background", KakoSection.BUTTONS, R.string.kako_slot_button_background),
-    BUTTON_TEXT("kako_theme_button_text", KakoSection.BUTTONS, R.string.kako_slot_button_text),
-    BUTTON_BORDER("kako_theme_button_border", KakoSection.BUTTONS, R.string.kako_slot_button_border),
-}
-
-/**
  * One user-settable border thickness in dp (0 hides the border), sister-repo
  * ThemeDimen style.
  */
@@ -113,46 +75,93 @@ enum class KakoDimen(
     MENU_BORDER_WIDTH("kako_dimen_menu_border", KakoSection.MENU, R.string.kako_dimen_menu_border, 1),
     TAB_BORDER_WIDTH("kako_dimen_tab_border", KakoSection.TABS, R.string.kako_dimen_tab_border, 1),
     TAB_ACTIVE_BORDER_WIDTH("kako_dimen_tab_active_border", KakoSection.TABS, R.string.kako_dimen_tab_active_border, 2),
-    BUTTON_BORDER_WIDTH("kako_dimen_button_border", KakoSection.BUTTONS, R.string.kako_dimen_button_border, 1),
+}
+
+/**
+ * What a default in the role table may use: another role, and the two ways a colour is derived
+ * from others. The receiver of [KakoSlot.default].
+ */
+class KakoDefaults(private val resolve: (KakoSlot) -> Int) {
+    /** The current colour of [slot]. */
+    fun c(slot: KakoSlot): Int = resolve(slot)
+
+    /** [f] of the way from [a] to [b], opaque. */
+    fun mix(a: Int, b: Int, f: Float): Int = KakoTheme.mix(a, b, f)
+
+    /** [c] at opacity [f]. */
+    fun alpha(c: Int, f: Float): Int = KakoTheme.alpha(c, f)
 }
 
 object KakoTheme {
 
     /**
      * Bumped on every change made from the UI page; [org.mozilla.fenix.theme.FirefoxTheme]
-     * reads it so Compose surfaces restyle immediately.
+     * reads it so Compose surfaces restyle immediately, and [KakoPalette] compares it with the
+     * value an activity was built at.
      */
     val revision = mutableIntStateOf(0)
 
+    @Volatile
+    private var resolved: IntArray? = null
+
     fun prefs(context: Context): SharedPreferences =
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     fun isEnabled(context: Context): Boolean = prefs(context).getBoolean(KEY_ENABLED, true)
 
     fun setEnabled(context: Context, enabled: Boolean) {
         prefs(context).edit { putBoolean(KEY_ENABLED, enabled) }
-        refreshChromeOverrides(context)
-        bump()
+        changed(context)
     }
 
-    fun color(context: Context, slot: KakoSlot): Int {
-        val override = prefs(context).getInt(slot.key, KAKO_THEME_UNSET)
-        return if (override != KAKO_THEME_UNSET) override else defaultColor(context, slot)
+    /** Every role resolved once: the stored value, else the default, each memoised. */
+    private fun all(context: Context): IntArray {
+        resolved?.let { return it }
+        val prefs = prefs(context)
+        val slots = KakoSlot.entries
+        val out = IntArray(slots.size)
+        val done = BooleanArray(slots.size)
+        lateinit var defaults: KakoDefaults
+        fun get(slot: KakoSlot): Int {
+            val i = slot.ordinal
+            if (done[i]) return out[i]
+            val stored = prefs.getInt(slot.key, KAKO_THEME_UNSET)
+            // Marked before the default is asked for, so a table that names itself cannot loop.
+            done[i] = true
+            out[i] = KAKO_PALETTE_YELLOW
+            out[i] = if (stored != KAKO_THEME_UNSET) stored else slot.default(defaults)
+            return out[i]
+        }
+        defaults = KakoDefaults(::get)
+        slots.forEach { get(it) }
+        resolved = out
+        return out
     }
+
+    fun color(context: Context, slot: KakoSlot): Int = all(context)[slot.ordinal]
 
     fun isOverridden(context: Context, slot: KakoSlot): Boolean =
         prefs(context).getInt(slot.key, KAKO_THEME_UNSET) != KAKO_THEME_UNSET
 
     fun setColor(context: Context, slot: KakoSlot, color: Int) {
         prefs(context).edit { putInt(slot.key, color) }
-        refreshChromeOverrides(context)
-        bump()
+        changed(context)
     }
 
+    /** Back to the default: the role follows the primaries again. */
     fun clearColor(context: Context, slot: KakoSlot) {
         prefs(context).edit { remove(slot.key) }
-        refreshChromeOverrides(context)
-        bump()
+        changed(context)
+    }
+
+    /** The inherited default of [slot], whatever is stored for it. */
+    fun defaultColor(context: Context, slot: KakoSlot): Int =
+        slot.default(KakoDefaults { color(context, it) })
+
+    /** Every colour role back to its default; widths, fonts and the page's arrangement stay. */
+    fun resetAllColors(context: Context) {
+        prefs(context).edit { KakoSlot.entries.forEach { remove(it.key) } }
+        changed(context)
     }
 
     /** Removes every override, falling back to the seeded black/yellow look. */
@@ -167,8 +176,7 @@ object KakoTheme {
             remove(KAKO_TOOLBAR_TWO_ROWS_KEY)
             putBoolean(KEY_ENABLED, true)
         }
-        refreshChromeOverrides(context)
-        bump()
+        changed(context)
     }
 
     /**
@@ -190,6 +198,7 @@ object KakoTheme {
             }
             putBoolean(KEY_PURE_YELLOW_MIGRATED, true)
         }
+        resolved = null
     }
 
     /** Whether the browser toolbar is laid out on two rows (address bar on top,
@@ -199,8 +208,7 @@ object KakoTheme {
 
     fun setToolbarTwoRows(context: Context, enabled: Boolean) {
         prefs(context).edit { putBoolean(KAKO_TOOLBAR_TWO_ROWS_KEY, enabled) }
-        refreshChromeOverrides(context)
-        bump()
+        changed(context)
     }
 
     /** Display size in dp of pinned extension toolbar icons. */
@@ -212,33 +220,16 @@ object KakoTheme {
         bump()
     }
 
-    fun bump() {
-        revision.intValue++
+    /** Call after anything of the theme changed outside this object (an import, a font). */
+    fun changed(context: Context) {
+        resolved = null
+        refreshChromeOverrides(context)
+        bump()
     }
 
-    /**
-     * The inherited default of [slot] — the sister repos' themeDefault() chain.
-     */
-    fun defaultColor(context: Context, slot: KakoSlot): Int = when (slot) {
-        KakoSlot.BACKGROUND -> KAKO_PALETTE_BLACK
-        KakoSlot.TEXT -> KAKO_PALETTE_YELLOW
-        KakoSlot.ACCENT -> KAKO_PALETTE_YELLOW
-        KakoSlot.TEXT_SECONDARY -> color(context, KakoSlot.TEXT).withAlpha(ALPHA_SECONDARY)
-        KakoSlot.BORDER -> color(context, KakoSlot.ACCENT)
-        KakoSlot.TEXT_ON_ACCENT -> color(context, KakoSlot.BACKGROUND)
-        KakoSlot.TOOLBAR_FILL -> color(context, KakoSlot.BACKGROUND)
-        KakoSlot.ADDRESSBAR_BORDER -> color(context, KakoSlot.BORDER)
-        KakoSlot.TOOLBAR_TOP_BORDER -> color(context, KakoSlot.BORDER)
-        KakoSlot.MENU_BACKGROUND -> color(context, KakoSlot.BACKGROUND)
-        KakoSlot.MENU_BORDER -> color(context, KakoSlot.BORDER)
-        // The active tab is marked by its border, not a fill (like Nightly).
-        KakoSlot.TAB_SELECTED -> color(context, KakoSlot.MENU_BACKGROUND)
-        KakoSlot.TAB_UNSELECTED -> color(context, KakoSlot.MENU_BACKGROUND)
-        KakoSlot.TAB_BORDER -> color(context, KakoSlot.BORDER)
-        KakoSlot.TAB_ACTIVE_BORDER -> color(context, KakoSlot.ACCENT)
-        KakoSlot.BUTTON_BACKGROUND -> color(context, KakoSlot.BACKGROUND)
-        KakoSlot.BUTTON_TEXT -> color(context, KakoSlot.ACCENT)
-        KakoSlot.BUTTON_BORDER -> color(context, KakoSlot.BORDER)
+    fun bump() {
+        resolved = null
+        revision.intValue++
     }
 
     /**
@@ -254,8 +245,7 @@ object KakoTheme {
 
     fun setDimenHalfUnits(context: Context, dimen: KakoDimen, halfUnits: Int) {
         prefs(context).edit { putInt(dimen.key, halfUnits) }
-        refreshChromeOverrides(context)
-        bump()
+        changed(context)
     }
 
     /**
@@ -269,30 +259,79 @@ object KakoTheme {
         return BorderStroke(width.dp, Color(color(context, slot)))
     }
 
+    /** The colour of an icon whose row does [role]. */
+    fun iconColor(context: Context, role: ForkIconRole): Int =
+        color(
+            context,
+            when (role) {
+                ForkIconRole.CONNECT -> KakoSlot.MENU_ICON_CONNECT
+                ForkIconRole.MESSAGE -> KakoSlot.MENU_ICON_MESSAGE
+                ForkIconRole.CONTACT -> KakoSlot.MENU_ICON_CONTACT
+                ForkIconRole.SHARE -> KakoSlot.MENU_ICON_SHARE
+                ForkIconRole.VIEW -> KakoSlot.MENU_ICON_VIEW
+                ForkIconRole.BLOCK -> KakoSlot.MENU_ICON_BLOCK
+                ForkIconRole.DELETE -> KakoSlot.MENU_DELETE
+            },
+        )
+
     /**
-     * Pushes the current slot values into the android-components fork hooks
-     * (address-bar outline, app-wide button style). Call after every change and
-     * once at startup.
+     * Pushes the current roles into the android-components fork hooks (address-bar outline,
+     * pills, switches, menus, dialogs, snackbars). Call after every change and once at startup.
      */
     fun refreshChromeOverrides(context: Context) {
         if (!isEnabled(context)) {
             AcornForkOverrides.addressBarBorder = null
-            AcornForkOverrides.buttonStyle = null
             AcornForkOverrides.snackbarStyle = null
+            AcornForkOverrides.pills = null
+            AcornForkOverrides.switches = null
+            AcornForkOverrides.menus = null
+            AcornForkOverrides.dialogs = null
             return
         }
+        fun c(slot: KakoSlot) = Color(color(context, slot))
         AcornForkOverrides.addressBarBorder =
             borderStroke(context, KakoSlot.ADDRESSBAR_BORDER, KakoDimen.ADDRESSBAR_BORDER_WIDTH)
-        AcornForkOverrides.buttonStyle = ForkChromeStyle(
-            containerColor = Color(color(context, KakoSlot.BUTTON_BACKGROUND)),
-            contentColor = Color(color(context, KakoSlot.BUTTON_TEXT)),
-            border = borderStroke(context, KakoSlot.BUTTON_BORDER, KakoDimen.BUTTON_BORDER_WIDTH),
-        )
-        // Snackbars and similar transient flashes follow the menu-card look.
         AcornForkOverrides.snackbarStyle = ForkChromeStyle(
-            containerColor = Color(color(context, KakoSlot.MENU_BACKGROUND)),
-            contentColor = Color(color(context, KakoSlot.TEXT)),
-            border = borderStroke(context, KakoSlot.MENU_BORDER, KakoDimen.MENU_BORDER_WIDTH),
+            containerColor = c(KakoSlot.TOAST_BACKGROUND),
+            contentColor = c(KakoSlot.TOAST_TEXT),
+            border = BorderStroke(PILL_THIN_DP.dp, c(KakoSlot.TOAST_BORDER)),
+        )
+        AcornForkOverrides.pills = ForkPillStyle(
+            ground = c(KakoSlot.BUTTON_BACKGROUND),
+            frame = c(KakoSlot.BUTTON_BORDER),
+            label = c(KakoSlot.BUTTON_TEXT),
+            mainFrame = c(KakoSlot.BUTTON_MAIN_BORDER),
+            mainLabel = c(KakoSlot.BUTTON_MAIN_TEXT),
+            delete = c(KakoSlot.BUTTON_DELETE),
+            ripple = c(KakoSlot.BUTTON_RIPPLE),
+            thin = PILL_THIN_DP.dp,
+            thick = PILL_THICK_DP.dp,
+        )
+        AcornForkOverrides.switches = ForkSwitchStyle(
+            on = c(KakoSlot.SWITCH_ON),
+            onDot = c(KakoSlot.SWITCH_ON_DOT),
+            off = c(KakoSlot.SWITCH_OFF),
+            offDot = c(KakoSlot.SWITCH_OFF_DOT),
+        )
+        AcornForkOverrides.menus = ForkMenuStyle(
+            ground = c(KakoSlot.MENU_BACKGROUND),
+            rowFrame = c(KakoSlot.MENU_ROW_FRAME),
+            label = c(KakoSlot.MENU_LABEL),
+            header = c(KakoSlot.MENU_HEADER),
+            divider = c(KakoSlot.MENU_DIVIDER),
+            delete = c(KakoSlot.MENU_DELETE),
+            iconConnect = c(KakoSlot.MENU_ICON_CONNECT),
+            iconMessage = c(KakoSlot.MENU_ICON_MESSAGE),
+            iconContact = c(KakoSlot.MENU_ICON_CONTACT),
+            iconShare = c(KakoSlot.MENU_ICON_SHARE),
+            iconView = c(KakoSlot.MENU_ICON_VIEW),
+            iconBlock = c(KakoSlot.MENU_ICON_BLOCK),
+        )
+        AcornForkOverrides.dialogs = ForkDialogStyle(
+            ground = c(KakoSlot.DIALOG_BACKGROUND),
+            frame = c(KakoSlot.DIALOG_BORDER),
+            title = c(KakoSlot.DIALOG_TITLE),
+            text = c(KakoSlot.DIALOG_TEXT),
         )
     }
 
@@ -301,60 +340,77 @@ object KakoTheme {
      */
     fun acornColors(context: Context): AcornColors {
         fun c(slot: KakoSlot) = Color(color(context, slot))
-        // Upstream 153 slimmed AcornColors: layer3/ripple/tabActive/tabInactive moved
-        // to the Material scheme (driven by materialColorScheme) and TabStripColors.
-        // 154 dropped textOnColorPrimary/iconOnColor entirely (Bug 2053992); their last
-        // call sites now hardcode white, so there is nothing left to tint here.
+        val ground = c(KakoSlot.BACKGROUND)
         return darkColorPalette.copy(
             formDefault = c(KakoSlot.TEXT_SECONDARY),
+            information = c(KakoSlot.SCHEME_INFORMATION),
+            onInformation = ground,
+            informationContainer = ground,
+            onInformationContainer = c(KakoSlot.SCHEME_INFORMATION),
+            success = c(KakoSlot.SCHEME_SUCCESS),
+            onSuccess = ground,
+            successContainer = ground,
+            onSuccessContainer = c(KakoSlot.SCHEME_SUCCESS),
+            warning = c(KakoSlot.SCHEME_WARNING),
+            onWarning = ground,
+            warningContainer = ground,
+            onWarningContainer = c(KakoSlot.SCHEME_WARNING),
             // The "slightly dimmer surface" grey behind menu items, library tiles
             // and banners — readability comes from traced borders instead.
             surfaceDimVariant = c(KakoSlot.MENU_BACKGROUND),
+            surfaceContainerSelected = c(KakoSlot.LIST_SELECTED),
+            autofillText = c(KakoSlot.TEXT_SECONDARY),
+            selectedText = c(KakoSlot.TEXT_SELECTION),
+            iconPrivate = c(KakoSlot.PRIVATE_ICON),
+            sheetOutline = c(KakoSlot.SHEET_BORDER),
         )
     }
 
     /**
-     * The dynamic Material 3 [ColorScheme] carrying the main tokens
-     * (surfaces, text, accent, outline) resolved from the slots.
+     * The dynamic Material 3 [ColorScheme]: every entry upstream's screens read is a role.
      */
     fun materialColorScheme(context: Context): ColorScheme {
         fun c(slot: KakoSlot) = Color(color(context, slot))
         val background = c(KakoSlot.BACKGROUND)
         val text = c(KakoSlot.TEXT)
-        val textSecondary = c(KakoSlot.TEXT_SECONDARY)
         val accent = c(KakoSlot.ACCENT)
-        val border = c(KakoSlot.BORDER)
         val onAccent = c(KakoSlot.TEXT_ON_ACCENT)
-        val card = c(KakoSlot.MENU_BACKGROUND)
-        val accentContainer = accent.copy(alpha = SELECTED_TAB_FRACTION).compositeOver(background)
+        val card = c(KakoSlot.CARD_BACKGROUND)
+        val container = c(KakoSlot.SCHEME_CONTAINER)
+        val onContainer = c(KakoSlot.SCHEME_ON_CONTAINER)
 
         return acornDarkColorScheme().copy(
             primary = accent,
             onPrimary = onAccent,
-            primaryContainer = accentContainer,
-            onPrimaryContainer = text,
+            primaryContainer = container,
+            onPrimaryContainer = onContainer,
             inversePrimary = accent,
-            secondary = textSecondary,
+            secondary = c(KakoSlot.SCHEME_SECONDARY),
             onSecondary = onAccent,
-            secondaryContainer = accentContainer,
-            onSecondaryContainer = text,
+            secondaryContainer = container,
+            onSecondaryContainer = onContainer,
             tertiary = accent,
             onTertiary = onAccent,
-            tertiaryContainer = accentContainer,
-            onTertiaryContainer = text,
+            tertiaryContainer = container,
+            onTertiaryContainer = onContainer,
             background = background,
             onBackground = text,
             surface = background,
             onSurface = text,
-            surfaceVariant = card,
-            onSurfaceVariant = textSecondary,
+            surfaceVariant = c(KakoSlot.SCHEME_SURFACE_VARIANT),
+            onSurfaceVariant = c(KakoSlot.TEXT_SECONDARY),
             // surfaceTint drives Material tonal elevation: keeping it at the background
             // color stops sheets/dialogs from drifting into olive-grey.
             surfaceTint = background,
-            inverseSurface = text,
-            inverseOnSurface = background,
-            outline = border,
-            outlineVariant = border.copy(alpha = ALPHA_SECONDARY),
+            inverseSurface = c(KakoSlot.SCHEME_INVERSE_SURFACE),
+            inverseOnSurface = c(KakoSlot.SCHEME_INVERSE_TEXT),
+            error = c(KakoSlot.SCHEME_ERROR),
+            onError = c(KakoSlot.SCHEME_ON_ERROR),
+            errorContainer = background,
+            onErrorContainer = c(KakoSlot.SCHEME_ERROR),
+            outline = c(KakoSlot.BORDER),
+            outlineVariant = c(KakoSlot.SCHEME_OUTLINE_VARIANT),
+            scrim = c(KakoSlot.SCRIM),
             surfaceBright = card,
             // The address-bar pill fill in the composable toolbar.
             surfaceDim = c(KakoSlot.TOOLBAR_FILL),
@@ -366,10 +422,33 @@ object KakoTheme {
         )
     }
 
-    private const val ALPHA_SECONDARY = 0.6f
-    private const val SELECTED_TAB_FRACTION = 0.25f
-    private const val RGB_MASK = 0x00FFFFFF
-}
+    /** [f] of the way from [a] to [b], opaque. */
+    fun mix(a: Int, b: Int, f: Float): Int {
+        fun ch(shift: Int): Int {
+            val x = (a shr shift) and BYTE
+            val y = (b shr shift) and BYTE
+            return (x + (y - x) * f + ROUND).toInt().coerceIn(0, BYTE)
+        }
+        return (BYTE shl ALPHA_SHIFT) or (ch(RED_SHIFT) shl RED_SHIFT) or (ch(GREEN_SHIFT) shl GREEN_SHIFT) or ch(0)
+    }
 
-private fun Int.withAlpha(alpha: Float): Int =
-    Color(this).copy(alpha = alpha).toArgb()
+    /** [c] at opacity [f]. */
+    fun alpha(c: Int, f: Float): Int =
+        (c and RGB_MASK) or ((f * BYTE + ROUND).toInt().coerceIn(0, BYTE) shl ALPHA_SHIFT)
+
+    /** The frame of every pill that is not the main action of its block, in dp. */
+    const val PILL_THIN_DP = 1.25f
+
+    /** The frame of the main action of a block, in dp. */
+    const val PILL_THICK_DP = 3f
+
+    /** How much of a disabled control is left. */
+    const val DISABLED_ALPHA = 0.38f
+
+    private const val RGB_MASK = 0x00FFFFFF
+    private const val BYTE = 0xFF
+    private const val ROUND = 0.5f
+    private const val ALPHA_SHIFT = 24
+    private const val RED_SHIFT = 16
+    private const val GREEN_SHIFT = 8
+}

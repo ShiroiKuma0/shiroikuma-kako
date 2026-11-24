@@ -24,7 +24,6 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -60,6 +59,7 @@ import mozilla.components.compose.base.button.FloatingActionButton
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.button.RadioButton
 import mozilla.components.compose.base.button.TextButton
+import mozilla.components.compose.base.fork.AlertDialog
 import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.snackbar.Snackbar

@@ -17,6 +17,8 @@ android {
 
 dependencies {
     implementation platform(libs.androidx.compose.bom)
+    // Fork: the dialog and its buttons come from compose-base, where they take the fork's look.
+    implementation project(':components:compose-base')
     implementation project(':components:lib-state')
     api project(':components:concept-bookmarks-file')
 

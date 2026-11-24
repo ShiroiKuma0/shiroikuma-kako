@@ -17,6 +17,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import mozilla.components.compose.base.badge.StatusBadge
+import mozilla.components.compose.base.theme.ForkIconRole
 import mozilla.components.compose.base.theme.ThemedValue
 import mozilla.components.compose.base.theme.ThemedValueProvider
 import mozilla.components.compose.base.theme.information
@@ -63,6 +64,7 @@ internal fun SummarizationMenuItem(
             label = stringResource(id = R.string.browser_menu_summarize_page),
             labelModifier = Modifier.wrapContentWidth(),
             beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_lightning_24),
+            iconRole = ForkIconRole.MESSAGE, // Fork: the colour of the icon.
             isBeforeIconHighlighted = summarizationMenuState.highlighted,
             onClick = onSummarizePageClick,
             state = state,

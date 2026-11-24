@@ -46,6 +46,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.fork.ForkMenuPillRow
+import mozilla.components.compose.base.theme.ForkIconRole
 import mozilla.components.compose.base.theme.PreviewThemeProvider
 import mozilla.components.compose.base.theme.Theme
 import mozilla.components.compose.base.theme.ThemedValue
@@ -65,7 +67,7 @@ import org.mozilla.fenix.components.menu.MenuDialogTestTag.MORE_OPTION_CHEVRON
 import org.mozilla.fenix.components.menu.compose.header.MozillaAccountMenuItem
 import org.mozilla.fenix.components.menu.store.IPProtectionMenuState
 import org.mozilla.fenix.components.menu.store.WebExtensionMenuItem
-import org.mozilla.fenix.kako.kakoMenuCard
+import org.mozilla.fenix.kako.kakoMenuStyle
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
@@ -245,6 +247,8 @@ fun MainMenu(
                 MenuItem(
                     label = stringResource(id = R.string.browser_menu_customize_reader_view_2),
                     beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_tool_24),
+                    iconRole = ForkIconRole.MESSAGE, // Fork: the colour of the icon.
+                    opens = true, // Fork: the › of a row that opens something.
                     onClick = onCustomizeReaderViewMenuClick,
                 )
             }
@@ -329,6 +333,8 @@ fun MainMenu(
                 MenuItem(
                     label = stringResource(id = R.string.browser_menu_customize_homepage),
                     beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_home_24),
+                    iconRole = ForkIconRole.VIEW, // Fork: the colour of the icon.
+                    opens = true, // Fork: the › of a row that opens something.
                     onClick = onCustomizeHomepageButtonClick,
                 )
             }
@@ -336,6 +342,8 @@ fun MainMenu(
             MenuItem(
                 label = stringResource(id = R.string.browser_menu_settings),
                 beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_settings_24),
+                iconRole = ForkIconRole.VIEW, // Fork: the colour of the icon.
+                opens = true, // Fork: the › of a row that opens something.
                 onClick = onSettingsButtonClick,
             )
         }
@@ -371,7 +379,7 @@ private fun KakoVersionLine() {
 
     Text(
         text = version,
-        color = MaterialTheme.colorScheme.primary,
+        color = kakoMenuStyle()?.header ?: MaterialTheme.colorScheme.primary,
         style = MaterialTheme.typography.bodySmall,
         modifier = Modifier
             .fillMaxWidth()
@@ -389,6 +397,7 @@ private fun QuitMenuGroup(onQuitMenuClick: () -> Unit) {
                     stringResource(id = R.string.app_name),
                 ),
             beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_cross_circle_fill_24),
+            iconRole = ForkIconRole.DELETE, // Fork: the colour of the icon.
             state = MenuItemState.WARNING,
             onClick = onQuitMenuClick,
         )
@@ -434,6 +443,8 @@ private fun ToolsAndActionsMenuGroup(
             MenuItem(
                 label = stringResource(id = R.string.browser_menu_edit_bookmark),
                 beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_bookmark_fill_24),
+                iconRole = ForkIconRole.SHARE, // Fork: the colour of the icon.
+                opens = true, // Fork: the › of a row that opens something.
                 state = MenuItemState.ACTIVE,
                 onClick = onEditBookmarkButtonClick,
             )
@@ -441,6 +452,7 @@ private fun ToolsAndActionsMenuGroup(
             MenuItem(
                 label = stringResource(id = R.string.browser_menu_bookmark_this_page_2),
                 beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_bookmark_24),
+                iconRole = ForkIconRole.SHARE, // Fork: the colour of the icon.
                 onClick = onBookmarkPageMenuClick,
             )
         }
@@ -448,6 +460,7 @@ private fun ToolsAndActionsMenuGroup(
         MenuItem(
             label = stringResource(id = R.string.browser_menu_find_in_page),
             beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_search_24),
+            iconRole = ForkIconRole.VIEW, // Fork: the colour of the icon.
             onClick = onFindInPageMenuClick,
         )
 
@@ -464,6 +477,8 @@ private fun ToolsAndActionsMenuGroup(
             label = stringResource(id = labelId),
             stateDescription = badgeText,
             beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_device_desktop_24),
+            iconRole = ForkIconRole.CONNECT, // Fork: the colour of the icon.
+            forkChecked = isDesktopMode, // Fork: drawn as a switch.
             state = menuItemState,
             onClick = onSwitchToDesktopSiteMenuClick,
         ) {
@@ -511,6 +526,7 @@ private fun MoreMenuButtonGroup(
         label = stringResource(id = R.string.browser_menu_more_settings),
         stateDescription = "Collapsed",
         beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_ellipsis_horizontal_24),
+        iconRole = ForkIconRole.VIEW, // Fork: the colour of the icon.
         isBeforeIconHighlighted = isMoreMenuHighlighted,
         onClick = onMoreMenuClick,
     ) {
@@ -548,6 +564,50 @@ private fun LibraryMenuGroup(
     onDownloadsMenuClick: () -> Unit,
     onPasswordsMenuClick: () -> Unit,
 ) {
+    // Fork: in the 白い熊 火狐 UI the library entries are rows like every other: full-width pills,
+    // one icon column, one label edge.
+    val fork = kakoMenuStyle()
+    if (fork != null) {
+        Column {
+            ForkMenuPillRow(
+                label = stringResource(id = R.string.library_history),
+                onClick = onHistoryMenuClick,
+                style = fork,
+                icon = painterResource(id = iconsR.drawable.mozac_ic_history_24),
+                role = ForkIconRole.VIEW,
+                opens = true,
+            )
+            ForkMenuPillRow(
+                label = stringResource(id = R.string.library_bookmarks),
+                onClick = onBookmarksMenuClick,
+                style = fork,
+                icon = painterResource(id = iconsR.drawable.mozac_ic_bookmark_tray_fill_24),
+                role = ForkIconRole.SHARE,
+                opens = true,
+            )
+            ForkMenuPillRow(
+                label = stringResource(id = R.string.library_downloads),
+                onClick = onDownloadsMenuClick,
+                style = fork,
+                icon = painterResource(id = iconsR.drawable.mozac_ic_download_24),
+                role = ForkIconRole.SHARE,
+                opens = true,
+                highlighted = isDownloadHighlighted,
+            )
+            if (showPasswords) {
+                ForkMenuPillRow(
+                    label = stringResource(id = R.string.browser_menu_passwords),
+                    onClick = onPasswordsMenuClick,
+                    style = fork,
+                    icon = painterResource(id = iconsR.drawable.mozac_ic_login_24),
+                    role = ForkIconRole.CONTACT,
+                    opens = true,
+                )
+            }
+        }
+        return
+    }
+
     val spacerWidth = 2.dp
 
     val leftShape =
@@ -724,6 +784,19 @@ private fun MoreExtensionsMenuItem(
     onClick: () -> Unit,
     label: String,
 ) {
+    // Fork: a pill like every other row; it leaves the menu for the add-ons page.
+    val fork = kakoMenuStyle()
+    if (fork != null) {
+        ForkMenuPillRow(
+            label = label,
+            onClick = onClick,
+            style = fork,
+            icon = painterResource(id = iconsR.drawable.mozac_ic_external_link_24),
+            role = ForkIconRole.CONNECT,
+            opens = true,
+        )
+        return
+    }
     Column(
         modifier =
             Modifier.clickable(
@@ -737,7 +810,8 @@ private fun MoreExtensionsMenuItem(
                     contentDescription = label
                 }
                 .wrapContentSize()
-                .kakoMenuCard(shape = MaterialTheme.shapes.extraSmall)
+                .clip(shape = MaterialTheme.shapes.extraSmall)
+                .background(color = MaterialTheme.colorScheme.surfaceBright)
     ) {
         MenuTextItem(
             label = label,

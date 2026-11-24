@@ -4,87 +4,232 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
 <!--
-  白い熊 火狐 UI — static black/yellow overlay for the classic (XML/View) screens,
-  chiefly the preference fragments. The Compose surfaces are themed dynamically in
-  FirefoxTheme from the KakoTheme slots; XML theme attributes cannot change at
-  runtime, so this overlay carries the fixed seeded palette instead. Applied on
-  top of Normal/PrivateTheme by ThemeManager.setActivityTheme when the kako theme
-  is enabled.
+  白い熊 火狐 UI: the overlay for the classic (XML/View) screens, the MIXED way. Upstream's
+  layouts are not edited for colour; instead every colour attribute they read, upstream's own
+  and Material's, points here at a colour ROLE (@color/kako_role_…, values/kako_roles.xml),
+  and KakoPalette lays the values stored on the UI page over those resources at run time with
+  a ResourcesLoader (Android 11 and later; below that each role's default shows).
+
+  No colour VALUE may be written in this file. A new attribute gets the role of what it paints.
+  Applied on top of Normal/PrivateTheme by ThemeManager.setActivityTheme when the theme is on.
+  Widgets take their shapes (pills, outlined switches) from KakoViewInflater, named below.
 -->
-<resources>
-    <color name="kako_black">#FF000000</color>
-    <color name="kako_yellow">#FFFFFF00</color>
-    <color name="kako_yellow_secondary">#99FFFF00</color>
-    <color name="kako_yellow_disabled">#61FFFF00</color>
-    <color name="kako_yellow_faint">#1FFFFF00</color>
+<resources xmlns:tools="http://schemas.android.com/tools">
 
     <style name="KakoThemeOverlay">
-        <!-- Android framework -->
-        <item name="android:windowBackground">@color/kako_black</item>
-        <item name="android:colorBackground">@color/kako_black</item>
-        <item name="android:textColorPrimary">@color/kako_yellow</item>
-        <item name="android:textColorSecondary">@color/kako_yellow_secondary</item>
-        <item name="android:textColorTertiary">@color/kako_yellow_secondary</item>
-        <item name="android:textColorLink">@color/kako_yellow</item>
-        <item name="android:colorAccent">@color/kako_yellow</item>
-        <item name="android:colorEdgeEffect">@color/kako_yellow</item>
-        <item name="android:navigationBarColor">@color/kako_black</item>
+        <!-- The one hook every inflated widget passes through. -->
+        <item name="viewInflaterClass">org.mozilla.fenix.kako.KakoViewInflater</item>
 
-        <!-- Material 3 -->
-        <item name="colorPrimary">@color/kako_yellow</item>
-        <item name="colorOnPrimary">@color/kako_black</item>
-        <!-- Filled buttons: black fill, yellow text, traced yellow outline. -->
-        <item name="materialButtonStyle">@style/KakoButton</item>
-        <item name="colorPrimaryContainer">@color/kako_yellow_faint</item>
-        <item name="colorOnPrimaryContainer">@color/kako_yellow</item>
-        <item name="colorSecondary">@color/kako_yellow_secondary</item>
-        <item name="colorOnSecondary">@color/kako_black</item>
-        <item name="colorSecondaryContainer">@color/kako_yellow_faint</item>
-        <item name="colorOnSecondaryContainer">@color/kako_yellow</item>
-        <item name="colorTertiary">@color/kako_yellow</item>
-        <item name="colorOnTertiary">@color/kako_black</item>
-        <item name="colorTertiaryContainer">@color/kako_yellow_faint</item>
-        <item name="colorOnTertiaryContainer">@color/kako_yellow</item>
-        <item name="colorOnBackground">@color/kako_yellow</item>
-        <item name="colorSurface">@color/kako_black</item>
-        <item name="colorOnSurface">@color/kako_yellow</item>
-        <item name="colorSurfaceVariant">@color/kako_black</item>
-        <item name="colorOnSurfaceVariant">@color/kako_yellow_secondary</item>
-        <item name="colorOutline">@color/kako_yellow</item>
-        <item name="colorOutlineVariant">@color/kako_yellow_secondary</item>
-        <!-- Destructive actions (e.g. the DestructiveButton "Delete browsing data") read
-             ?attr/colorError for their text/icon; keep the fork monochrome by tracing them
-             yellow on black rather than the stock pink-on-grey. -->
-        <item name="colorError">@color/kako_yellow</item>
-        <item name="colorOnError">@color/kako_black</item>
-        <item name="colorSurfaceBright">@color/kako_black</item>
-        <item name="colorSurfaceDim">@color/kako_black</item>
-        <item name="colorSurfaceContainer">@color/kako_black</item>
-        <item name="colorSurfaceContainerHigh">@color/kako_black</item>
-        <item name="colorSurfaceContainerHighest">@color/kako_black</item>
-        <item name="colorSurfaceContainerLow">@color/kako_black</item>
-        <item name="colorSurfaceContainerLowest">@color/kako_black</item>
+        <!-- Android framework -->
+        <item name="android:windowBackground">@color/kako_role_background</item>
+        <item name="android:colorBackground">@color/kako_role_background</item>
+        <item name="android:colorForeground">@color/kako_role_text</item>
+        <item name="android:textColorPrimary">@color/kako_text_primary</item>
+        <item name="android:textColorSecondary">@color/kako_text_secondary</item>
+        <item name="android:textColorTertiary">@color/kako_role_text_secondary</item>
+        <item name="android:textColorPrimaryInverse">@color/kako_role_scheme_inverse_text</item>
+        <item name="android:textColorSecondaryInverse">@color/kako_role_scheme_inverse_text</item>
+        <item name="android:textColorHint">@color/kako_role_field_hint</item>
+        <item name="android:textColorHighlight">@color/kako_role_text_selection</item>
+        <item name="android:textColorLink">@color/kako_role_text_link</item>
+        <item name="android:textColorAlertDialogListItem">@color/kako_role_dialog_text</item>
+        <item name="android:colorAccent">@color/kako_role_accent</item>
+        <item name="android:colorEdgeEffect">@color/kako_role_accent</item>
+        <item name="android:colorControlNormal">@color/kako_role_icon_button</item>
+        <item name="android:colorControlActivated">@color/kako_role_accent</item>
+        <item name="android:colorControlHighlight">@color/kako_role_button_ripple</item>
+        <item name="android:navigationBarColor">@color/kako_role_navigation_bar</item>
+
+        <!-- AppCompat -->
+        <item name="colorAccent">@color/kako_role_accent</item>
+        <item name="colorPrimaryDark">@color/kako_role_status_bar</item>
+        <item name="colorControlNormal">@color/kako_role_icon_button</item>
+        <item name="colorControlActivated">@color/kako_role_accent</item>
+        <item name="colorControlHighlight">@color/kako_role_button_ripple</item>
+        <item name="colorSwitchThumbNormal">@color/kako_role_switch_off_dot</item>
+        <item name="colorButtonNormal">@color/kako_role_button_background</item>
+        <item name="colorError">@color/kako_role_scheme_error</item>
+
+        <!-- Material 3: the scheme, entry for entry as KakoTheme.materialColorScheme has it -->
+        <item name="colorPrimary">@color/kako_role_accent</item>
+        <item name="colorOnPrimary">@color/kako_role_text_on_accent</item>
+        <item name="colorPrimaryContainer">@color/kako_role_scheme_container</item>
+        <item name="colorOnPrimaryContainer">@color/kako_role_scheme_on_container</item>
+        <item name="colorPrimaryInverse">@color/kako_role_accent</item>
+        <item name="colorPrimaryFixed">@color/kako_role_scheme_container</item>
+        <item name="colorPrimaryFixedDim">@color/kako_role_scheme_container</item>
+        <item name="colorOnPrimaryFixed">@color/kako_role_scheme_on_container</item>
+        <item name="colorOnPrimaryFixedVariant">@color/kako_role_scheme_on_container</item>
+        <item name="colorPrimaryVariant">@color/kako_role_accent</item>
+        <item name="colorPrimarySurface">@color/kako_role_top_bar_ground</item>
+        <item name="colorOnPrimarySurface">@color/kako_role_top_bar_title</item>
+        <item name="colorSecondary">@color/kako_role_scheme_secondary</item>
+        <item name="colorOnSecondary">@color/kako_role_text_on_accent</item>
+        <item name="colorSecondaryContainer">@color/kako_role_scheme_container</item>
+        <item name="colorOnSecondaryContainer">@color/kako_role_scheme_on_container</item>
+        <item name="colorSecondaryFixed">@color/kako_role_scheme_container</item>
+        <item name="colorSecondaryFixedDim">@color/kako_role_scheme_container</item>
+        <item name="colorOnSecondaryFixed">@color/kako_role_scheme_on_container</item>
+        <item name="colorOnSecondaryFixedVariant">@color/kako_role_scheme_on_container</item>
+        <item name="colorSecondaryVariant">@color/kako_role_scheme_secondary</item>
+        <item name="colorTertiary">@color/kako_role_accent</item>
+        <item name="colorOnTertiary">@color/kako_role_text_on_accent</item>
+        <item name="colorTertiaryContainer">@color/kako_role_scheme_container</item>
+        <item name="colorOnTertiaryContainer">@color/kako_role_scheme_on_container</item>
+        <item name="colorTertiaryFixed">@color/kako_role_scheme_container</item>
+        <item name="colorTertiaryFixedDim">@color/kako_role_scheme_container</item>
+        <item name="colorOnTertiaryFixed">@color/kako_role_scheme_on_container</item>
+        <item name="colorOnTertiaryFixedVariant">@color/kako_role_scheme_on_container</item>
+        <item name="colorOnBackground">@color/kako_role_text</item>
+        <item name="colorSurface">@color/kako_role_background</item>
+        <item name="colorOnSurface">@color/kako_role_text</item>
+        <item name="colorSurfaceVariant">@color/kako_role_scheme_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/kako_role_text_secondary</item>
+        <item name="colorSurfaceInverse">@color/kako_role_scheme_inverse_surface</item>
+        <item name="colorOnSurfaceInverse">@color/kako_role_scheme_inverse_text</item>
+        <item name="colorOutline">@color/kako_role_border</item>
+        <item name="colorOutlineVariant">@color/kako_role_scheme_outline_variant</item>
+        <item name="colorOnError">@color/kako_role_scheme_on_error</item>
+        <item name="colorErrorContainer">@color/kako_role_background</item>
+        <item name="colorOnErrorContainer">@color/kako_role_scheme_error</item>
+        <item name="colorSurfaceBright">@color/kako_role_card_background</item>
+        <item name="colorSurfaceDim">@color/kako_role_toolbar_fill</item>
+        <item name="colorSurfaceContainer">@color/kako_role_card_background</item>
+        <item name="colorSurfaceContainerHigh">@color/kako_role_card_background</item>
+        <item name="colorSurfaceContainerHighest">@color/kako_role_card_background</item>
+        <item name="colorSurfaceContainerLow">@color/kako_role_background</item>
+        <item name="colorSurfaceContainerLowest">@color/kako_role_background</item>
+        <item name="scrimBackground">@color/kako_role_scrim</item>
+        <!-- No tonal elevation: a raised surface keeps its own ground. -->
+        <item name="elevationOverlayEnabled">false</item>
+        <item name="elevationOverlayColor">@color/kako_role_background</item>
+
+        <!-- Material's sub-themes and component styles a theme may set -->
+        <item name="materialAlertDialogTheme">@style/KakoAlertDialogOverlay</item>
+        <item name="alertDialogTheme">@style/KakoAppCompatDialogOverlay</item>
+        <item name="bottomSheetDialogTheme">@style/KakoBottomSheetOverlay</item>
+        <item name="snackbarStyle">@style/KakoSnackbar</item>
+        <item name="snackbarTextViewStyle">@style/KakoSnackbarText</item>
+        <item name="materialDividerStyle">@style/KakoDivider</item>
+
+        <!-- Fenix's own colour attributes (values/attrs.xml), as KakoTheme.acornColors has them -->
+        <item name="layer2">@color/kako_role_card_background</item>
+        <item name="scrim">@color/kako_role_scrim</item>
+        <item name="actionPrimaryDisabled">@color/kako_role_scheme_container</item>
+        <item name="textActionPrimaryDisabled">@color/kako_role_text_disabled</item>
+        <item name="colorInformation">@color/kako_role_scheme_information</item>
+        <item name="colorOnInformation">@color/kako_role_background</item>
+        <item name="colorInformationContainer">@color/kako_role_background</item>
+        <item name="colorOnInformationContainer">@color/kako_role_scheme_information</item>
+        <item name="colorSuccess">@color/kako_role_scheme_success</item>
+        <item name="colorOnSuccess">@color/kako_role_background</item>
+        <item name="colorSuccessContainer">@color/kako_role_background</item>
+        <item name="colorOnSuccessContainer">@color/kako_role_scheme_success</item>
+        <item name="colorWarning">@color/kako_role_scheme_warning</item>
+        <item name="colorOnWarning">@color/kako_role_background</item>
+        <item name="colorWarningContainer">@color/kako_role_background</item>
+        <item name="colorOnWarningContainer">@color/kako_role_scheme_warning</item>
+        <item name="colorSurfaceDimVariant">@color/kako_role_menu_background</item>
+        <item name="colorSurfaceContainerSelected">@color/kako_role_list_selected</item>
+        <item name="colorSheetOutline">@color/kako_role_sheet_border</item>
+        <item name="colorAutofillText">@color/kako_role_text_secondary</item>
+        <item name="colorSelectedText">@color/kako_role_text_selection</item>
+        <item name="colorIconPrivate">@color/kako_role_private_icon</item>
+        <item name="awesomeBarIndicatorColor">@color/kako_role_list_icon</item>
+        <item name="awesomeBarIndicatorBookmarkColor">@color/kako_role_list_icon</item>
+
+        <!-- android-components' colour attributes -->
+        <item name="mozac_primary_text_color">@color/kako_role_text</item>
+        <item name="mozac_caption_text_color">@color/kako_role_text_secondary</item>
+        <item name="mozac_widget_favicon_background_color">@color/kako_role_card_background</item>
+        <item name="mozac_widget_favicon_border_color">@color/kako_role_card_border</item>
+        <item name="mozacPromptLoginEditTextCursorColor">@color/kako_role_text_cursor</item>
+        <item name="mozacInputLayoutErrorTextColor">@color/kako_role_text_error</item>
+        <item name="mozacInputLayoutErrorIconColor">@color/kako_role_text_error</item>
+        <item name="mozacProtectionsDashboardChipBackground" tools:ignore="UnusedResources">@color/kako_role_card_background</item>
+        <item name="mozacProtectionsDashboardChipText" tools:ignore="UnusedResources">@color/kako_role_text</item>
+        <item name="mozacProtectionsDashboardProgressBar" tools:ignore="UnusedResources">@color/kako_role_progress</item>
+        <item name="mozacProtectionsDashboardGradientStart" tools:ignore="UnusedResources">@color/kako_role_background</item>
+        <item name="mozacProtectionsDashboardGradientEnd" tools:ignore="UnusedResources">@color/kako_role_background</item>
+        <item name="tabCounterTintColor">@color/kako_role_toolbar_icon</item>
+        <!-- The private-browsing mask button on the homepage header. -->
+        <item name="mozac_ic_private_mode_circle_fill_icon_color">@color/kako_role_private_icon</item>
+        <item name="mozac_ic_private_mode_circle_fill_background_color">@color/kako_role_background</item>
+        <!-- The two-colour warning icons: the mark in the error role, its ground in the text's. -->
+        <item name="mozac_ic_shield_slash_bg_fill_critical">@color/kako_role_text</item>
+        <item name="mozac_ic_shield_slash_fill_critical">@color/kako_role_scheme_error</item>
+        <item name="mozac_ic_extensions_warning_bg_fill_critical">@color/kako_role_text_secondary</item>
+        <item name="mozac_ic_extensions_warning_fill_critical">@color/kako_role_scheme_error</item>
+        <item name="mozac_ic_avatar_warning_bg_fill_critical">@color/kako_role_text_secondary</item>
+        <item name="mozac_ic_avatar_warning_fill_critical">@color/kako_role_scheme_error</item>
+        <item name="mozac_ic_lock_slash_bg_fill_critical">@color/kako_role_text_secondary</item>
+        <item name="mozac_ic_lock_slash_fill_critical">@color/kako_role_scheme_error</item>
 
         <!-- Fork branding: the 白い熊 火狐 logo replaces the Firefox wordmark on the
              homepage header and the Settings → About page. -->
         <item name="fenixLogo">@drawable/ic_kako_wordmark</item>
         <item name="fenixWordmarkLogo">@drawable/ic_kako_wordmark</item>
-
-        <!-- The private-browsing mask button on the homepage header. -->
-        <item name="mozac_ic_private_mode_circle_fill_icon_color">@color/kako_yellow</item>
-        <item name="mozac_ic_private_mode_circle_fill_background_color">@color/kako_black</item>
-
-        <!-- Fenix design system attributes -->
-        <item name="layer2">@color/kako_black</item>
     </style>
 
-    <!-- Filled XML buttons under the kako theme: black fill, yellow text/border. -->
-    <style name="KakoButton" parent="Widget.Material3.Button">
-        <item name="backgroundTint">@color/kako_black</item>
-        <item name="strokeColor">@color/kako_yellow</item>
-        <item name="strokeWidth">1dp</item>
-        <item name="android:textColor">@color/kako_yellow</item>
-        <item name="iconTint">@color/kako_yellow</item>
-        <item name="rippleColor">@color/kako_yellow_faint</item>
+    <!-- What a dialog's own theme lays over the activity's: the panel and its text take the
+         dialog roles. The button bar is pills (KakoViewInflater), the frame is drawn in code
+         (KakoDialogs). Shared by normal and private browsing. -->
+    <style name="KakoAlertDialogOverlay" parent="BaseDialogStyle">
+        <item name="colorSurface">@color/kako_role_dialog_background</item>
+        <item name="colorSurfaceContainer">@color/kako_role_dialog_background</item>
+        <item name="colorSurfaceContainerHigh">@color/kako_role_dialog_background</item>
+        <item name="colorSurfaceContainerHighest">@color/kako_role_dialog_background</item>
+        <item name="colorOnSurface">@color/kako_role_dialog_title</item>
+        <item name="colorOnSurfaceVariant">@color/kako_role_dialog_text</item>
+        <item name="android:colorBackground">@color/kako_role_dialog_background</item>
+        <item name="android:textColorPrimary">@color/kako_role_dialog_text</item>
+        <item name="android:textColorSecondary">@color/kako_role_dialog_text</item>
+        <item name="android:textColorAlertDialogListItem">@color/kako_role_dialog_text</item>
+    </style>
+
+    <style name="KakoAppCompatDialogOverlay" parent="ThemeOverlay.Material3.Dialog.Alert">
+        <item name="colorSurface">@color/kako_role_dialog_background</item>
+        <item name="colorSurfaceContainer">@color/kako_role_dialog_background</item>
+        <item name="colorSurfaceContainerHigh">@color/kako_role_dialog_background</item>
+        <item name="colorSurfaceContainerHighest">@color/kako_role_dialog_background</item>
+        <item name="colorOnSurface">@color/kako_role_dialog_title</item>
+        <item name="colorOnSurfaceVariant">@color/kako_role_dialog_text</item>
+        <item name="android:colorBackground">@color/kako_role_dialog_background</item>
+        <item name="android:textColorPrimary">@color/kako_role_dialog_text</item>
+        <item name="android:textColorSecondary">@color/kako_role_dialog_text</item>
+        <item name="android:textColorAlertDialogListItem">@color/kako_role_dialog_text</item>
+    </style>
+
+    <!-- A bottom sheet. Upstream's sheet overlay descends from a day/night Material one that
+         resets the text and control colours, so they are named again here. -->
+    <style name="KakoBottomSheetOverlay" parent="BottomSheet">
+        <item name="colorSurface">@color/kako_role_sheet_background</item>
+        <item name="colorSurfaceContainerLow">@color/kako_role_sheet_background</item>
+        <item name="colorOnSurface">@color/kako_role_text</item>
+        <item name="colorOnSurfaceVariant">@color/kako_role_text_secondary</item>
+        <item name="colorPrimary">@color/kako_role_accent</item>
+        <item name="colorOnPrimary">@color/kako_role_text_on_accent</item>
+        <item name="colorControlNormal">@color/kako_role_icon_button</item>
+        <item name="colorControlActivated">@color/kako_role_accent</item>
+        <item name="colorControlHighlight">@color/kako_role_button_ripple</item>
+        <item name="android:colorBackground">@color/kako_role_sheet_background</item>
+        <item name="android:textColorPrimary">@color/kako_text_primary</item>
+        <item name="android:textColorSecondary">@color/kako_text_secondary</item>
+        <item name="android:textColorHint">@color/kako_role_field_hint</item>
+        <item name="android:navigationBarColor">@color/kako_role_navigation_bar</item>
+    </style>
+
+    <!-- A view Snackbar: ground and text from the toast roles. Its action button is a pill. -->
+    <style name="KakoSnackbar" parent="Widget.Material3.Snackbar">
+        <item name="backgroundTint">@color/kako_role_toast_background</item>
+        <item name="actionTextColorAlpha">1.0</item>
+    </style>
+
+    <style name="KakoSnackbarText" parent="Widget.Material3.Snackbar.TextView">
+        <item name="android:textColor">@color/kako_role_toast_text</item>
+    </style>
+
+    <style name="KakoDivider" parent="Widget.Material3.MaterialDivider">
+        <item name="dividerColor">@color/kako_role_list_divider</item>
     </style>
 </resources>

@@ -5,12 +5,14 @@
 package mozilla.components.compose.base.button
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FloatingActionButton as M3FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults as M3FloatingActionButtonDefaults
 import androidx.compose.material3.FloatingActionButtonElevation
@@ -29,6 +31,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.modifier.animateRotation
+import mozilla.components.compose.base.theme.AcornForkOverrides
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.ui.icons.R as iconsR
 
@@ -89,11 +92,15 @@ fun FloatingActionButton(
     elevation: FloatingActionButtonElevation = M3FloatingActionButtonDefaults.elevation(),
     onClick: () -> Unit,
 ) {
+    // Fork: the 白い熊 火狐 UI draws a floating button as an outlined ring: the ground, a thick
+    // frame and the icon, never a filled slab.
+    val pills = AcornForkOverrides.pills
     M3FloatingActionButton(
         onClick = onClick,
-        modifier = modifier,
-        containerColor = colors.containerColor,
-        contentColor = colors.contentColor,
+        modifier = if (pills != null) modifier.border(pills.thick, pills.mainFrame, CircleShape) else modifier,
+        shape = if (pills != null) CircleShape else M3FloatingActionButtonDefaults.shape,
+        containerColor = pills?.ground ?: colors.containerColor,
+        contentColor = pills?.mainLabel ?: colors.contentColor,
         elevation = elevation,
     ) {
         Row(

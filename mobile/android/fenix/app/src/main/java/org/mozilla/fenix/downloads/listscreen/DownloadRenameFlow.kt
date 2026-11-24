@@ -6,7 +6,6 @@ package org.mozilla.fenix.downloads.listscreen
 
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -30,6 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import java.io.File
 import mozilla.components.compose.base.button.TextButton
+import mozilla.components.compose.base.fork.AlertDialog
 import mozilla.components.compose.base.theme.PreviewThemeProvider
 import mozilla.components.compose.base.theme.Theme
 import mozilla.components.compose.base.theme.ThemedValue

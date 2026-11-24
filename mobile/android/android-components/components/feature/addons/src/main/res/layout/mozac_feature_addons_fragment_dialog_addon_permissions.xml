@@ -140,9 +140,10 @@
                 android:textColor="?android:attr/textColorPrimary"
                 android:text="@string/mozac_feature_addons_permissions_dialog_heading_optional_settings" />
 
-            <!-- Fork (白い熊 火狐): the row is a pill (kako_checkbox_pill), box and
-                 label enclosed together. Padding is the pill's inner room; the
-                 top margin keeps consecutive pills from touching. -->
+            <!-- Fork (白い熊 火狐): the row is a pill, box and label enclosed together;
+                 its frame is drawn in code from the colour roles (Fenix, KakoPills.checkRow).
+                 Padding is the pill's inner room; the top margin keeps consecutive
+                 pills from touching. -->
             <androidx.appcompat.widget.AppCompatCheckBox
                 android:id="@+id/allow_in_private_browsing"
                 android:layout_width="match_parent"
@@ -152,7 +153,6 @@
                 android:layout_alignEnd="@id/optional_settings_title"
                 android:layout_gravity="center"
                 android:layout_marginTop="4dp"
-                android:background="@drawable/kako_checkbox_pill"
                 android:paddingStart="14dp"
                 android:paddingEnd="16dp"
                 android:paddingTop="8dp"
@@ -172,7 +172,6 @@
                 android:layout_alignEnd="@id/allow_in_private_browsing"
                 android:layout_gravity="center"
                 android:layout_marginTop="8dp"
-                android:background="@drawable/kako_checkbox_pill"
                 android:paddingStart="14dp"
                 android:paddingEnd="16dp"
                 android:paddingTop="8dp"

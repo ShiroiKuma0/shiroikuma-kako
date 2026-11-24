@@ -8,7 +8,6 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_gravity="center"
-    android:background="@drawable/kako_checkbox_pill"
     android:paddingStart="14dp"
     android:paddingEnd="16dp"
     android:paddingTop="8dp"

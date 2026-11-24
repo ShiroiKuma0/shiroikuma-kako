@@ -17,6 +17,7 @@ import mozilla.components.concept.menu.candidate.DecorativeTextMenuCandidate
 import mozilla.components.concept.menu.candidate.MenuCandidate
 import mozilla.components.concept.menu.candidate.TextMenuCandidate
 import mozilla.components.concept.menu.candidate.TextStyle
+import mozilla.components.support.ktx.android.view.ForkViewStyle
 
 /**
  * A simple browser menu item displaying text.
@@ -57,6 +58,8 @@ class SimpleBrowserMenuItem(
             // Remove the ripple effect
             textView.background = null
         }
+        // Fork: an action row is a full-width pill with its icon.
+        if (listener != null) ForkViewStyle.hook?.menuRow(textView, "")
     }
 
     override fun asCandidate(context: Context): MenuCandidate {

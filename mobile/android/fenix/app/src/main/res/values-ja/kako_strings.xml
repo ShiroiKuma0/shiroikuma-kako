@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
+<resources>
+
+    <!-- 白い熊 火狐 UI — the fork's own strings. English here, Japanese in values-ja/kako_strings.xml;
+         every key that is not marked untranslatable exists in both. -->
+
+    <!-- The UI page -->
+    <string name="kako_app_settings">アプリの設定</string>
+    <string name="kako_app_settings_desc">検索、プライバシー、アドオンなど、Firefox 本体の設定です。</string>
+    <string name="kako_section_maintenance">メンテナンス</string>
+    <string name="kako_master_switch">黒黄テーマを使う</string>
+    <string name="kako_master_switch_desc">オフにすると Firefox 本来の外観になり、下の色は使われません。</string>
+    <string name="kako_subgroup_colors">色</string>
+    <string name="kako_subgroup_font">文字とフォント</string>
+    <string name="kako_subgroup_widths">線の太さ</string>
+    <string name="kako_subgroup_layout">配置</string>
+    <string name="kako_subgroup_automation">自動処理</string>
+    <string name="kako_dimen_addressbar_border">アドレスバーの枠線の太さ</string>
+    <string name="kako_dimen_toolbar_top_border">ツールバーの境界線の太さ</string>
+    <string name="kako_dimen_menu_border">メニューとカードの枠線の太さ</string>
+    <string name="kako_dimen_tab_border">タブの枠線の太さ</string>
+    <string name="kako_dimen_tab_active_border">選択中のタブの枠線の太さ</string>
+    <string name="kako_font_row">フォント</string>
+    <string name="kako_font_weight_row">太さ</string>
+    <string name="kako_font_scale_row">大きさ</string>
+    <string name="kako_font_system_default">システム既定</string>
+    <string name="kako_font_monospace">等幅</string>
+    <string name="kako_font_add">フォントを追加…</string>
+    <string name="kako_font_weight_inherit">指定なし</string>
+    <string name="kako_font_weight_100">極細 (100)</string>
+    <string name="kako_font_weight_300">細字 (300)</string>
+    <string name="kako_font_weight_400">標準 (400)</string>
+    <string name="kako_font_weight_500">中字 (500)</string>
+    <string name="kako_font_weight_700">太字 (700)</string>
+    <string name="kako_font_weight_900">極太 (900)</string>
+    <string name="kako_toolbar_two_rows">ツールバーを二段にする</string>
+    <string name="kako_toolbar_two_rows_desc">一段目にアドレスバー、二段目に新しいタブ・拡張機能・タブ数・メニューを置きます。</string>
+    <string name="kako_extension_icon_size_row">拡張機能アイコンの大きさ</string>
+    <string name="kako_addon_add_to_toolbar">ツールバーに追加</string>
+    <string name="kako_addon_remove_from_toolbar">ツールバーから削除</string>
+    <string name="kako_addon_move_left">左へ移動</string>
+    <string name="kako_addon_move_right">右へ移動</string>
+    <string name="kako_extension_order_row">拡張機能の並び順</string>
+    <string name="kako_extension_order_desc">ツールバーに並ぶ拡張機能ボタンの順序です。</string>
+    <string name="kako_extension_order_title">拡張機能の並び順（ドラッグで並べ替え）</string>
+    <string name="kako_extension_order_empty">ツールバーに追加された拡張機能はありません</string>
+    <string name="kako_color_inherit">既定に戻す</string>
+    <string name="kako_reset_section_order">セクションの順序を元に戻す</string>
+    <string name="kako_reset_section_order_desc">このページのセクションを最初の順序に戻します。</string>
+    <string name="kako_reset_colors">すべての色を元に戻す</string>
+    <string name="kako_reset_colors_desc">すべての色を既定値に戻します。フォント、線の太さ、ページの並びは変わりません。</string>
+    <string name="kako_reset_colors_message">すべての色を既定値に戻しますか？</string>
+    <string name="kako_reset">すべて既定値に戻す</string>
+    <string name="kako_reset_desc">色、線の太さ、フォント、ツールバーの配置をすべて既定の黒黄に戻します。</string>
+    <string name="kako_reset_message">このページのすべての設定を既定の黒黄に戻しますか？</string>
+
+    <!-- The account avatar left of the toolbar menu — tap runs "Sync now". -->
+    <string name="kako_sync_now">今すぐ同期</string>
+    <string name="kako_sync_running">同期中…</string>
+    <string name="kako_sync_done">同期しました</string>
+    <string name="kako_sync_failed">同期に失敗しました</string>
+    <string name="kako_sync_not_started">同期を開始できませんでした</string>
+    <string name="kako_sync_timeout">同期が応答しませんでした</string>
+
+    <!-- Account settings: fetch the avatar the toolbar's account button wears. -->
+    <string name="kako_download_avatar">アバター画像をダウンロード</string>
+    <string name="kako_download_avatar_summary">ツールバーのアカウントボタンの画像をサーバーから取得し直します</string>
+    <string name="kako_download_avatar_running">ダウンロード中…</string>
+    <string name="kako_download_avatar_done">アバター画像をダウンロードしました</string>
+    <string name="kako_download_avatar_failed">アバター画像をダウンロードできませんでした</string>
+    <string name="kako_download_avatar_none">アカウントのプロフィールがまだ読み込まれていません</string>
+    <string name="kako_install_addon_from_file">ファイルから拡張機能をインストール</string>
+    <string name="kako_install_addon_from_file_read_failed">ファイルを読み込めませんでした</string>
+    <string name="kako_install_addon_from_file_failed">拡張機能をインストールできませんでした</string>
+
+    <!-- Export / Import (Kōjiki flow, ArcaneChat button line) -->
+    <string name="kako_eim_heading">エクスポート／インポート</string>
+    <string name="kako_eim_row_summary">このブラウザが持つすべて（色、フォント、拡張機能、Firefox と about:config の全設定、タブ、ブックマーク、履歴）を項目ごとにエクスポート・インポートします。</string>
+    <string name="kako_eim_title">エクスポート／インポート — 白い熊 火狐</string>
+    <string name="kako_eim_desc">このブラウザが持つすべて（色、フォント、拡張機能、Firefox と about:config の全設定、タブ、ブックマーク、履歴）を、選んだ項目ごとに保存・読み込みします。</string>
+    <string name="kako_eim_dir">エクスポート先ディレクトリ（タップして選択）</string>
+    <string name="kako_eim_dir_choose">エクスポート先ディレクトリを選ぶ</string>
+    <string name="kako_eim_dir_named">エクスポート先: %1$s</string>
+    <string name="kako_eim_dir_unset">未設定 — タップしてディレクトリを選択</string>
+    <string name="kako_eim_warn_nodir">ディレクトリが未設定です。選ぶとワンタップでエクスポートできます。</string>
+    <string name="kako_eim_warn_none">このディレクトリにはまだエクスポートがありません。</string>
+    <string name="kako_eim_last">最後のエクスポート: %1$s</string>
+    <string name="kako_eim_select_all">すべて選択</string>
+    <string name="kako_eim_cat_ui">白い熊 UI（色・枠線・ツールバー）</string>
+    <string name="kako_eim_cat_fonts">フォント</string>
+    <string name="kako_eim_cat_extensions">拡張機能（インストール済み・固定・並び順）</string>
+    <string name="kako_eim_cat_app_settings">Firefox の設定</string>
+    <string name="kako_eim_cat_bookmarks">ブックマーク</string>
+    <string name="kako_eim_cat_logins">保存したパスワード</string>
+    <string name="kako_eim_cat_cards">クレジットカード</string>
+    <string name="kako_eim_cat_addresses">住所</string>
+    <string name="kako_eim_cat_tabs">開いているタブ</string>
+    <string name="kako_eim_cat_history">閲覧履歴</string>
+    <string name="kako_eim_cat_search">検索エンジン（選択・カスタムエンジン）</string>
+    <string name="kako_eim_cat_account">Firefox アカウントのログイン状態</string>
+    <string name="kako_eim_cat_gecko_prefs">about:config の設定</string>
+    <string name="kako_eim_cat_top_sites">固定したショートカット</string>
+    <string name="kako_eim_cat_site_permissions">サイトの許可設定（カメラ・マイク・位置情報・自動再生）</string>
+    <string name="kako_eim_cat_login_exceptions">パスワードを保存しないサイト</string>
+    <string name="kako_eim_cat_collections">タブコレクション</string>
+    <string name="kako_eim_cat_ext_settings">拡張機能の設定（各アドオン自身のオプション）</string>
+    <string name="kako_eim_cat_ext_databases">拡張機能のデータベース（yomitan の辞書 — 数ギガバイト、時間がかかります）</string>
+    <string name="kako_eim_plaintext_warning">暗号化された保管場所から取り出され、ZIP に平文で保存されます。</string>
+    <string name="kako_eim_export">エクスポート</string>
+    <string name="kako_eim_import">インポート</string>
+    <string name="kako_eim_none_selected">項目が選択されていません。</string>
+    <string name="kako_eim_unpacking">アーカイブを展開中…</string>
+    <string name="kako_eim_importing">インポート中…</string>
+    <string name="kako_eim_export_ok">エクスポートしました: %1$s</string>
+    <string name="kako_eim_export_fail">エクスポートに失敗しました: %1$s</string>
+    <string name="kako_eim_import_fail">インポートに失敗しました: %1$s</string>
+    <string name="kako_eim_import_none">このファイルに 白い熊 火狐 のエクスポートは見つかりませんでした。</string>
+    <string name="kako_eim_import_done_title">✓ インポート完了</string>
+    <string name="kako_eim_import_done_body">復元した項目:\n\n%1$s\n\nすべてを反映するには再起動してください。</string>
+    <string name="kako_eim_restart_now">今すぐ再起動</string>
+    <string name="kako_eim_restart_later">あとで</string>
+
+    <!-- Automation export (the sister-app state-export contract) — the last rows of the Export / Import section. -->
+    <string name="kako_automation_switch">自動エクスポート</string>
+    <string name="kako_automation_switch_desc">姉妹アプリが画面なしでこのエクスポートを実行し、このアプリのデータをバックアップ・復元できるようにします。</string>
+    <string name="kako_automation_require_token">認証トークンを使う</string>
+    <string name="kako_automation_require_token_desc">オフ: どの姉妹アプリも自動処理を実行できます。オン: 呼び出し側は下のトークンも提示する必要があります。どちらの場合も、データの受け渡し口は呼び出し元のパッケージ、UID、署名証明書を確認します。</string>
+    <string name="kako_automation_token_row">自動処理のトークン（タップしてコピー）</string>
+    <string name="kako_automation_token_copied">自動処理のトークンをコピーしました</string>
+    <string name="kako_automation_regenerate">再生成</string>
+    <string name="kako_automation_regenerate_desc">新しいトークンを作ります。他の場所に貼り付けた古いものは使えなくなります。</string>
+    <string name="kako_automation_regenerated">自動処理のトークンを再生成しました — 貼り付け済みのものを更新してください</string>
+    <string name="kako_automation_files_title">すべてのファイルへのアクセス</string>
+    <string name="kako_automation_files_body">この権限がないと、自動処理が指定したディレクトリにバックアップを書き込めず、上で設定したエクスポート先ディレクトリが代わりに使われます。\n\n今すぐ許可しますか？</string>
+    <string name="kako_automation_files_grant">設定を開く</string>
+    <string name="kako_automation_channel">自動処理のデータ</string>
+    <string name="kako_automation_exporting">データを書き出しています</string>
+    <string name="kako_automation_restoring">データを復元しています</string>
+    <string name="kako_eim_err_create">ディレクトリにファイルを作成できませんでした</string>
+    <string name="kako_eim_err_write">書き込み用にファイルを開けませんでした</string>
+    <string name="kako_eim_err_read">読み込み用にファイルを開けませんでした</string>
+
+    <!-- Extensions on Mozilla's own sites — the restrictedDomains fence, opened by default. -->
+    <string name="preferences_kako_ignore_restricted_domains">制限されたサイトで拡張機能を実行する</string>
+    <string name="preferences_kako_ignore_restricted_domains_summary">addons.mozilla.org、support.mozilla.org、アカウントと同期のサーバーでも、他のサイトと同じように拡張機能が動作するようにします。</string>
+</resources>

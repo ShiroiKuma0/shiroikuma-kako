@@ -380,10 +380,18 @@ class KakoAutomationDataService : Service() {
     private fun notification(importing: Boolean): Notification {
         val manager = getSystemService(NotificationManager::class.java)
         manager?.createNotificationChannel(
-            NotificationChannel(CHANNEL, CHANNEL_LABEL, NotificationManager.IMPORTANCE_LOW),
+            NotificationChannel(
+                CHANNEL,
+                getString(R.string.kako_automation_channel),
+                NotificationManager.IMPORTANCE_LOW,
+            ),
         )
         return NotificationCompat.Builder(this, CHANNEL)
-            .setContentTitle(if (importing) "データを戻しています" else "データを書き出しています")
+            .setContentTitle(
+                getString(
+                    if (importing) R.string.kako_automation_restoring else R.string.kako_automation_exporting,
+                ),
+            )
             .setSmallIcon(R.drawable.ic_status_logo)
             .setOngoing(true)
             .build()
@@ -406,7 +414,6 @@ class KakoAutomationDataService : Service() {
 
     companion object {
         private const val CHANNEL = "kako_automation_data"
-        private const val CHANNEL_LABEL = "自動化データ"
         private const val NOTIFICATION_ID = 9714
         private const val EXTRA_JOB = "job"
         private const val EXTRA_IMPORTING = "importing"

@@ -26,6 +26,7 @@ import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.customtabs.ExternalAppBrowserActivity
+import org.mozilla.fenix.kako.KakoPalette
 import org.mozilla.fenix.kako.KakoTheme
 
 abstract class ThemeManager {
@@ -49,6 +50,11 @@ abstract class ThemeManager {
     fun applyStatusBarTheme(activity: Activity) = applyStatusBarTheme(activity.window, activity)
 
     private fun applyStatusBarTheme(window: Window, context: Context) {
+        // Fork: under the 白い熊 火狐 theme the system bars take their own colour roles.
+        if (KakoTheme.isEnabled(context)) {
+            KakoPalette.paintWindow(window, context)
+            return
+        }
         when (currentTheme) {
             BrowsingMode.Normal -> {
                 when (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) {
@@ -73,11 +79,13 @@ abstract class ThemeManager {
 
     fun setActivityTheme(activity: Activity) {
         activity.setTheme(currentThemeResource)
-        // Fork: classic (XML) screens cannot read the dynamic KakoTheme slots, so they
-        // get the static seeded black/yellow overlay; Compose surfaces are themed
-        // dynamically in FirefoxTheme.
+        // Fork: the overlay points every colour attribute of the classic (XML) screens at a
+        // colour role, which KakoPalette feeds at run time; the window ground is painted here
+        // because the overlay can only give it the role's default.
         if (KakoTheme.isEnabled(activity)) {
+            KakoPalette.apply(activity)
             activity.theme.applyStyle(R.style.KakoThemeOverlay, true)
+            KakoPalette.paintWindowGround(activity)
         }
     }
 

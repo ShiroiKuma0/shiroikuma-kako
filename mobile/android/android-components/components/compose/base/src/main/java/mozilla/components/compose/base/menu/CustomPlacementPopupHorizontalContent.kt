@@ -12,6 +12,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.theme.AcornForkOverrides
 
 /**
  * [LazyRow] wrapper over [content] configuring it to be shown inside of [CustomPlacementPopup].
@@ -20,7 +21,7 @@ import androidx.compose.ui.unit.dp
  */
 @Composable
 inline fun CustomPlacementPopup.CustomPlacementPopupHorizontalContent(crossinline content: LazyListScope.() -> Unit) {
-    LazyRow(modifier = Modifier.background(MaterialTheme.colorScheme.surfaceBright).height(48.dp)) {
+    LazyRow(modifier = Modifier.background(AcornForkOverrides.menus?.ground ?: MaterialTheme.colorScheme.surfaceBright).height(48.dp)) {
         content()
     }
 }

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+
+<!-- 白い熊 火狐 UI: the tag keys the fork's view styling keeps on views. -->
+<resources>
+    <!-- What a button was before it became a pill (KakoPills). -->
+    <item name="kako_pill_stock" type="id" />
+    <!-- How a button is painted now (KakoPills). -->
+    <item name="kako_pill_painted" type="id" />
+    <!-- On a button, or on a dialog's decor view: this action deletes. -->
+    <item name="kako_pill_delete" type="id" />
+    <!-- The role-coloured icon a label carries (KakoRowIcons). -->
+    <item name="kako_label_icon" type="id" />
+    <!-- A dialog panel that is already watched for size changes (KakoDialogs). -->
+    <item name="kako_dialog_watched" type="id" />
+</resources>

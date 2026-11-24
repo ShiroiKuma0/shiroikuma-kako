@@ -13,6 +13,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -26,6 +27,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
@@ -49,18 +51,22 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.IconButton
+import mozilla.components.compose.base.fork.ForkMenuPillRow
+import mozilla.components.compose.base.fork.ForkMenuToggleRow
 import mozilla.components.compose.base.modifier.thenConditional
+import mozilla.components.compose.base.theme.ForkIconRole
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.MenuDialogTestTag.WEB_EXTENSION_ITEM
 import org.mozilla.fenix.compose.list.IconListItem
 import org.mozilla.fenix.compose.list.TextListItem
-import org.mozilla.fenix.kako.kakoMenuCard
+import org.mozilla.fenix.kako.kakoMenuStyle
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.DURATION_MS_MAIN_MENU_ITEM
 
@@ -89,6 +95,10 @@ private val MENU_ITEM_HEIGHT_WITH_DESC = 56.dp
  * @param collectionItemInfo [CollectionItemInfo] to be applied to the MenuItem.
  * @param onAfterIconClick Invoked when the user clicks on the icon. An [IconButton] will be displayed if this is
  *   provided. Otherwise, an [Icon] will be displayed.
+ * @param iconRole Fork: what the row does, which colours its icon in the 白い熊 火狐 UI.
+ * @param opens Fork: whether the row opens a screen, a dialog or a picker, which gives it a ›.
+ * @param forkChecked Fork: set for a row that switches something on and off; the 白い熊 火狐 UI
+ *   draws it as a plain row with the outlined switch showing this state.
  * @param afterContent Optional Composable for adding UI to the end of the list item.
  */
 @Composable
@@ -110,6 +120,9 @@ internal fun MenuItem(
     afterIconDescription: String? = null,
     collectionItemInfo: CollectionItemInfo? = null,
     onAfterIconClick: (() -> Unit)? = null,
+    iconRole: ForkIconRole = ForkIconRole.VIEW,
+    opens: Boolean = false,
+    forkChecked: Boolean? = null,
     afterContent: (@Composable () -> Unit)? = null,
 ) {
     val labelTextColor = getLabelTextColor(state = state)
@@ -125,6 +138,51 @@ internal fun MenuItem(
 
     if (stateDescription.isNotEmpty()) {
         contentDescription = "$contentDescription $stateDescription"
+    }
+
+    // Fork: the 白い熊 火狐 UI draws the row as a full-width outlined pill with a role-coloured
+    // icon, a row that switches something as a plain row with the outlined switch, and a row
+    // that only tells something without a frame.
+    val fork = kakoMenuStyle()
+    if (fork != null && forkChecked != null) {
+        ForkMenuToggleRow(
+            label = label,
+            checked = forkChecked,
+            onCheckedChange = { onClick?.invoke() },
+            style = fork,
+            modifier = modifier,
+            icon = beforeIconPainter,
+            role = iconRole,
+            enabled = enabled,
+            supportingText = description,
+        )
+        return
+    }
+    if (fork != null) {
+        ForkMenuPillRow(
+            label = label,
+            onClick = onClick,
+            style = fork,
+            modifier =
+                modifier.forkRowSemantics(
+                    description = contentDescription,
+                    isButton = onClick != null || !enabled,
+                    enabled = enabled,
+                    itemInfo = collectionItemInfo,
+                    click = onClick,
+                ),
+            icon = beforeIconPainter,
+            role = iconRole,
+            opens = opens,
+            destructive = state == MenuItemState.WARNING,
+            enabled = enabled,
+            supportingText = description,
+            iconTint = if (state == MenuItemState.CRITICAL) Color.Unspecified else null,
+            trailing = afterContent ?: forkAfterIcon(afterIconPainter, afterIconDescription, onAfterIconClick),
+            highlighted = isBeforeIconHighlighted,
+            framed = onClick != null || !enabled,
+        )
+        return
     }
 
     IconListItem(
@@ -150,7 +208,8 @@ internal fun MenuItem(
                     }
                 }
                 .wrapContentSize()
-                .kakoMenuCard(shape = MaterialTheme.shapes.extraSmall),
+                .clip(shape = MaterialTheme.shapes.extraSmall)
+                .background(color = MaterialTheme.colorScheme.surfaceBright),
         labelModifier = labelModifier,
         colors =
             ListItemDefaults.colors(
@@ -202,6 +261,20 @@ internal fun MenuTextItem(
     enabled: Boolean = true,
     onClick: (() -> Unit)? = null,
 ) {
+    // Fork: a text row that can be pressed is a pill; one that cannot stays a plain line.
+    val fork = kakoMenuStyle()
+    if (fork != null && onClick != null) {
+        ForkMenuPillRow(
+            label = label,
+            onClick = onClick,
+            style = fork,
+            modifier = modifier,
+            enabled = enabled,
+            supportingText = description,
+            trailing = forkAfterIcon(iconPainter, null, null),
+        )
+        return
+    }
     TextListItem(
         label = label,
         maxLabelLines = 2,
@@ -216,7 +289,10 @@ internal fun MenuTextItem(
             },
         modifier =
             modifier
-                .kakoMenuCard(shape = MaterialTheme.shapes.extraSmall),
+                .clip(shape = MaterialTheme.shapes.extraSmall)
+                .thenConditional(Modifier.background(color = MaterialTheme.colorScheme.surfaceBright)) {
+                    fork == null
+                },
         iconPainter = iconPainter,
         onClick = onClick,
     )
@@ -247,6 +323,39 @@ internal fun WebExtensionMenuItem(
     onLongClick: (() -> Unit)? = null,
     onSettingsClick: (() -> Unit)? = null,
 ) {
+    // Fork: an extension's row is a pill like every other; its own icon is a picture and keeps
+    // its colours.
+    val fork = kakoMenuStyle()
+    if (fork != null) {
+        ForkMenuPillRow(
+            label = label,
+            onClick = onClick,
+            style = fork,
+            modifier =
+                Modifier.testTag(WEB_EXTENSION_ITEM)
+                    .forkRowSemantics(
+                        description = label,
+                        isButton = onClick != null,
+                        enabled = enabled == true,
+                        itemInfo =
+                            CollectionItemInfo(
+                                rowIndex = index,
+                                rowSpan = 1,
+                                columnIndex = 0,
+                                columnSpan = 1,
+                            ),
+                        click = onClick,
+                        longClick = onLongClick,
+                        asResourceId = true,
+                    ),
+            icon = iconPainter,
+            enabled = enabled == true,
+            iconTint = iconTint.takeIf { it == Color.Unspecified },
+            trailing = { ForkWebExtensionTrailing(badgeText = badgeText, onSettingsClick = onSettingsClick) },
+            onLongClick = onLongClick,
+        )
+        return
+    }
     IconListItem(
         label = label,
         enabled = enabled == true,
@@ -275,7 +384,8 @@ internal fun WebExtensionMenuItem(
                     testTagsAsResourceId = true
                 }
                 .wrapContentSize()
-                .kakoMenuCard(shape = MaterialTheme.shapes.extraSmall),
+                .clip(shape = MaterialTheme.shapes.extraSmall)
+                .background(color = MaterialTheme.colorScheme.surfaceBright),
         afterListAction = {
             Row(
                 modifier = Modifier.padding(start = 16.dp),
@@ -323,6 +433,22 @@ internal fun MenuBadgeItem(
             MenuItemState.DISABLED
         }
 
+    // Fork: a row with an on/off badge is a toggle: a plain row with the outlined switch.
+    val fork = kakoMenuStyle()
+    if (fork != null) {
+        ForkMenuToggleRow(
+            label = label,
+            checked = checked,
+            onCheckedChange = { onClick() },
+            style = fork,
+            modifier = modifier.semantics { stateDescription = badgeText },
+            enabled = enabled,
+            iconColumn = false,
+            supportingText = description,
+        )
+        return
+    }
+
     Row(
         modifier =
             modifier
@@ -338,7 +464,8 @@ internal fun MenuBadgeItem(
                 }
                 .thenConditional(Modifier.semantics { disabled() }) { !enabled }
                 .semantics { disabled() }
-                .kakoMenuCard(shape = MaterialTheme.shapes.extraSmall)
+                .clip(shape = MaterialTheme.shapes.extraSmall)
+                .background(color = MaterialTheme.colorScheme.surfaceBright)
                 .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -372,6 +499,23 @@ internal fun Badge(
     modifier: Modifier = Modifier,
     state: MenuItemState = MenuItemState.ENABLED,
 ) {
+    // Fork: a badge is outlined, never filled, and small enough to sit inside a pill.
+    val fork = kakoMenuStyle()
+    if (fork != null) {
+        Text(
+            text = badgeText,
+            modifier =
+                modifier
+                    .clip(CircleShape)
+                    .border(FORK_BADGE_FRAME, fork.rowFrame, CircleShape)
+                    .padding(horizontal = 10.dp, vertical = 2.dp),
+            color = fork.label,
+            overflow = TextOverflow.Ellipsis,
+            style = FirefoxTheme.typography.headline8,
+            maxLines = 1,
+        )
+        return
+    }
     Column(
         modifier =
             modifier
@@ -489,6 +633,107 @@ private fun getBadgeColor(state: MenuItemState): Color {
     return when (state) {
         MenuItemState.ACTIVE -> MaterialTheme.colorScheme.tertiaryContainer
         else -> MaterialTheme.colorScheme.surfaceContainerHigh
+    }
+}
+
+/** Fork: the frame width of a badge inside a menu row. */
+private val FORK_BADGE_FRAME = 1.dp
+
+/**
+ * Fork: the semantics of a menu row drawn as a pill -- what upstream sets on the list item it
+ * draws instead: one node that reads [description] and carries the row's own actions.
+ */
+private fun Modifier.forkRowSemantics(
+    description: String,
+    isButton: Boolean,
+    enabled: Boolean,
+    itemInfo: CollectionItemInfo?,
+    click: (() -> Unit)?,
+    longClick: (() -> Unit)? = null,
+    asResourceId: Boolean = false,
+): Modifier = clearAndSetSemantics {
+    if (isButton) {
+        role = Role.Button
+    }
+    contentDescription = description
+    if (itemInfo != null) {
+        collectionItemInfo = itemInfo
+    }
+    if (!enabled) {
+        disabled()
+    }
+    if (click != null && enabled) {
+        onClick {
+            click()
+            true
+        }
+    }
+    if (longClick != null && enabled) {
+        onLongClick {
+            longClick()
+            true
+        }
+    }
+    if (asResourceId) {
+        testTagsAsResourceId = true
+    }
+}
+
+/** Fork: the content at the right end of a pill row for upstream's after-icon, or null without one. */
+private fun forkAfterIcon(
+    painter: Painter?,
+    description: String?,
+    onClick: (() -> Unit)?,
+): (@Composable () -> Unit)? {
+    if (painter == null) {
+        return null
+    }
+    val content: @Composable () -> Unit = { ForkAfterIcon(painter, description, onClick) }
+    return content
+}
+
+/** Fork: the icon at the right end of a pill row: a glyph, and a glyph button when it can be pressed. */
+@Composable
+private fun ForkAfterIcon(
+    painter: Painter,
+    description: String?,
+    onClick: (() -> Unit)?,
+) {
+    val ink = LocalContentColor.current
+    if (onClick == null) {
+        Icon(painter = painter, contentDescription = description, modifier = Modifier.size(24.dp), tint = ink)
+        return
+    }
+    IconButton(
+        onClick = onClick,
+        contentDescription = description,
+        modifier = Modifier.size(32.dp),
+    ) {
+        Icon(painter = painter, contentDescription = null, tint = ink)
+    }
+}
+
+/** Fork: what an extension's row shows at its right end: the extension's badge and its settings glyph. */
+@Composable
+private fun ForkWebExtensionTrailing(
+    badgeText: String?,
+    onSettingsClick: (() -> Unit)?,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+    ) {
+        if (!badgeText.isNullOrEmpty()) {
+            Badge(badgeText = badgeText)
+        }
+
+        if (onSettingsClick != null) {
+            ForkAfterIcon(
+                painter = painterResource(iconsR.drawable.mozac_ic_settings_24),
+                description = null,
+                onClick = onSettingsClick,
+            )
+        }
     }
 }
 

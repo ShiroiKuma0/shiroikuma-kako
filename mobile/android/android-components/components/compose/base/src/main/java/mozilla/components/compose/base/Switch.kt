@@ -19,6 +19,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import mozilla.components.compose.base.fork.ForkSwitch
+import mozilla.components.compose.base.theme.AcornForkOverrides
 import mozilla.components.compose.base.theme.AcornTheme
 
 /**
@@ -39,6 +41,18 @@ fun Switch(
     enabled: Boolean = true,
     colors: SwitchColors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.tertiary),
 ) {
+    // Fork: the 白い熊 火狐 UI draws every switch as an outline with a solid dot, never filled.
+    val fork = AcornForkOverrides.switches
+    if (fork != null) {
+        ForkSwitch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            style = fork,
+            modifier = modifier,
+            enabled = enabled,
+        )
+        return
+    }
     M3Switch(
         checked = checked,
         onCheckedChange = onCheckedChange,

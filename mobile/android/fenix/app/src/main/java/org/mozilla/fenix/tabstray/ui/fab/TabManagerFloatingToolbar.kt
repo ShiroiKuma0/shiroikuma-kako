@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButtonDefaults as M3FloatingActionButtonDefaults
@@ -44,6 +43,7 @@ import mozilla.components.compose.base.button.FloatingActionButton
 import mozilla.components.compose.base.button.FloatingActionButtonDefaults
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.button.TextButton
+import mozilla.components.compose.base.fork.AlertDialog
 import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.modifier.animateRotation

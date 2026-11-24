@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textview.MaterialTextView
 import mozilla.components.browser.state.state.SessionState
+import mozilla.components.support.ktx.android.view.ForkViewStyle
 
 private const val EXPANDED_TITLE_MAX_LINES = 15
 private const val KEY_TITLE = "title"
@@ -94,6 +95,8 @@ class ContextMenuFragment : DialogFragment() {
         view.findViewById<RecyclerView>(R.id.recyclerView).apply {
             layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
             adapter = ContextMenuAdapter(this@ContextMenuFragment, inflater)
+            // Fork: the dividers between the groups of rows.
+            ForkViewStyle.hook?.menuList(this, itemIds)
         }
 
         additionalNote?.let { value ->
@@ -155,6 +158,8 @@ internal class ContextMenuAdapter(
         holder.labelView.text = label
 
         holder.itemView.setOnClickListener { fragment.onItemSelected(position) }
+        // Fork: each action row is a full-width pill with its icon.
+        ForkViewStyle.hook?.menuRow(holder.labelView, fragment.itemIds[position])
     }
 }
 

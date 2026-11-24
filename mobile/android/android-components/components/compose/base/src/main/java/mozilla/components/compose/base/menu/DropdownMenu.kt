@@ -4,6 +4,8 @@
 
 package mozilla.components.compose.base.menu
 
+import android.content.res.Resources
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -41,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -52,11 +55,20 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.Dropdown2
 import mozilla.components.compose.base.button.FilledButton
+import mozilla.components.compose.base.fork.ForkMenuDivider
+import mozilla.components.compose.base.fork.ForkMenuHeader
+import mozilla.components.compose.base.fork.ForkMenuPillRow
+import mozilla.components.compose.base.fork.ForkMenuToggleRow
+import mozilla.components.compose.base.fork.forkMenuIconForName
 import mozilla.components.compose.base.menu.MenuItem.FixedItem.Level
 import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.text.value
+import mozilla.components.compose.base.theme.AcornForkOverrides
 import mozilla.components.compose.base.theme.AcornTheme
+import mozilla.components.compose.base.theme.ForkIconRole
+import mozilla.components.compose.base.theme.ForkMenuStyle
+import mozilla.components.compose.base.theme.forkIconRoleForName
 import mozilla.components.ui.icons.R as iconsR
 
 private val MenuItemHeight = 48.dp
@@ -86,19 +98,26 @@ fun DropdownMenu(
     scrollState: ScrollState = rememberScrollState(),
     onDismissRequest: () -> Unit,
 ) {
+    // Fork: the 白い熊 火狐 UI gives the menu its own ground and a frame.
+    val fork = AcornForkOverrides.menus
     MaterialDropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
         modifier = modifier.widthIn(MenuMinWidth, MenuMaxWidth),
         offset = offset,
         scrollState = scrollState,
-        containerColor = MaterialTheme.colorScheme.surfaceBright,
+        containerColor = fork?.ground ?: MaterialTheme.colorScheme.surfaceBright,
         shape = MaterialTheme.shapes.large,
+        border = fork?.let { BorderStroke(ForkMenuFrameWidth, it.rowFrame) },
     ) {
         Spacer(modifier = Modifier.height(height = AcornTheme.layout.space.static100))
 
         headerText?.let { header ->
-            HeaderMenuItemContent(text = header)
+            if (fork != null) {
+                ForkMenuHeader(text = header.value, style = fork)
+            } else {
+                HeaderMenuItemContent(text = header)
+            }
         }
 
         DropdownMenuContent(
@@ -146,12 +165,16 @@ fun ExposedDropdownMenuBoxScope.AnchoredDropdownMenu(
     scrollState: ScrollState = rememberScrollState(),
     onDismissRequest: () -> Unit,
 ) {
+    // Fork: see DropdownMenu above.
+    val fork = AcornForkOverrides.menus
     ExposedDropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismissRequest,
         modifier = modifier,
         scrollState = scrollState,
         shape = MaterialTheme.shapes.extraLarge,
+        containerColor = fork?.ground ?: MenuDefaults.containerColor,
+        border = fork?.let { BorderStroke(ForkMenuFrameWidth, it.rowFrame) },
     ) {
         Spacer(modifier = Modifier.height(height = AcornTheme.layout.space.static100))
         DropdownMenuContent(
@@ -212,6 +235,13 @@ private fun DropdownMenuContent(
     menuItems: List<MenuItem>,
     onDismissRequest: () -> Unit,
 ) {
+    // Fork: the 白い熊 火狐 UI draws action rows as full-width pills and checkable rows as toggle
+    // rows. A list of mutually exclusive choices (a sort order, a language) stays as it is.
+    val fork = AcornForkOverrides.menus
+    if (fork != null && !menuItems.isForkChoiceList()) {
+        ForkDropdownMenuContent(menuItems = menuItems, style = fork, onDismissRequest = onDismissRequest)
+        return
+    }
     menuItems.forEach {
         when (it) {
             is MenuItem.FixedItem -> {
@@ -372,6 +402,107 @@ private fun MenuItemText(
                 color = supportingTextColor,
                 style = AcornTheme.typography.body2,
             )
+        }
+    }
+}
+
+/** Fork: the width of the frame around a menu. */
+private val ForkMenuFrameWidth = 1.25.dp
+
+/**
+ * Fork: whether these items are a list of mutually exclusive choices: more than one row, every
+ * row checkable and at most one of them checked.
+ */
+private fun List<MenuItem>.isForkChoiceList(): Boolean {
+    val rows = filterIsInstance<MenuItem.FixedItem>()
+    return rows.size > 1 &&
+        rows.all { it is MenuItem.CheckableItem } &&
+        rows.count { (it as MenuItem.CheckableItem).isChecked } <= 1
+}
+
+/** Fork: the entry name of resource [id], or an empty string when it has none. */
+private fun Resources.forkEntryName(id: Int): String = runCatching { getResourceEntryName(id) }.getOrDefault("")
+
+/** Fork: the words that tell what [item] does: its test tag and the name of its label resource. */
+private fun forkItemName(item: MenuItem.FixedItem, resources: Resources): String {
+    val text = item.text
+    val label = if (text is Text.Resource) resources.forkEntryName(text.value) else ""
+    return "${item.testTag} $label"
+}
+
+@Composable
+private fun ForkDropdownMenuContent(
+    menuItems: List<MenuItem>,
+    style: ForkMenuStyle,
+    onDismissRequest: () -> Unit,
+) {
+    val resources = LocalContext.current.resources
+    // The icon of each row: its own, or one told from its name. One row with an icon gives
+    // every row of the menu the icon column, so the labels share one left edge.
+    val icons =
+        menuItems.map { item ->
+            when (item) {
+                is MenuItem.IconItem -> item.drawableRes
+                is MenuItem.FixedItem -> forkMenuIconForName(forkItemName(item, resources))
+                else -> null
+            }
+        }
+    val iconColumn = icons.any { it != null }
+
+    menuItems.forEachIndexed { index, item ->
+        when (item) {
+            is MenuItem.FixedItem -> {
+                val label = item.text.value
+                val name = forkItemName(item, resources)
+                val iconRes = icons[index]
+                val iconRole =
+                    iconRes
+                        ?.let { forkIconRoleForName(resources.forkEntryName(it)) }
+                        ?.takeIf { item is MenuItem.IconItem && it != ForkIconRole.VIEW }
+                        ?: forkIconRoleForName(name)
+                val press = {
+                    onDismissRequest()
+                    item.onClick()
+                }
+
+                if (item is MenuItem.CheckableItem) {
+                    ForkMenuToggleRow(
+                        label = label,
+                        checked = item.isChecked,
+                        onCheckedChange = { press() },
+                        style = style,
+                        modifier = Modifier.testTag(item.testTag),
+                        icon = iconRes?.let { painterResource(it) },
+                        role = iconRole,
+                        enabled = item.enabled,
+                        iconColumn = iconColumn,
+                    )
+                } else {
+                    ForkMenuPillRow(
+                        label = label,
+                        onClick = press,
+                        style = style,
+                        modifier = Modifier.testTag(item.testTag),
+                        icon = iconRes?.let { painterResource(it) },
+                        role = iconRole,
+                        opens = label.endsWith("…") || label.endsWith("..."),
+                        destructive = item.level == Level.Critical,
+                        enabled = item.enabled,
+                        supportingText = item.supportingText?.value,
+                        iconColumn = iconColumn,
+                    )
+                }
+            }
+
+            is MenuItem.CustomMenuItem ->
+                FlexibleDropdownMenuItem(
+                    onClick = {},
+                    content = {
+                        item.content()
+                    },
+                )
+
+            is MenuItem.Divider -> ForkMenuDivider(style = style)
         }
     }
 }

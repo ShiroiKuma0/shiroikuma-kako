@@ -16,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.theme.AcornForkOverrides
 
 /**
  * [Column] wrapper over [content] configuring it to be shown inside of [CustomPlacementPopup].
@@ -26,7 +27,7 @@ import androidx.compose.ui.unit.dp
 inline fun CustomPlacementPopup.CustomPlacementPopupVerticalContent(content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier =
-            Modifier.background(MaterialTheme.colorScheme.surfaceBright)
+            Modifier.background(AcornForkOverrides.menus?.ground ?: MaterialTheme.colorScheme.surfaceBright)
                 .requiredWidthIn(min = 250.dp)
                 .width(IntrinsicSize.Max)
                 .verticalScroll(rememberScrollState())

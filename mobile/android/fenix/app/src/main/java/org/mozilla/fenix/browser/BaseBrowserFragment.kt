@@ -224,6 +224,7 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.ext.secure
 import org.mozilla.fenix.ext.tabClosedUndoMessage
+import org.mozilla.fenix.kako.KakoTheme
 import org.mozilla.fenix.kako.showKako
 import org.mozilla.fenix.messaging.FenixMessageSurfaceId
 import org.mozilla.fenix.messaging.MessagingFeature
@@ -749,11 +750,13 @@ abstract class BaseBrowserFragment :
                     DownloadsFeature.PromptsStyling(
                         gravity = Gravity.BOTTOM,
                         shouldWidthMatchParent = true,
+                        // Fork: no fill under the 白い熊 火狐 UI — the button is an outlined pill.
                         positiveButtonBackgroundColor =
-                            ThemeManager.resolveAttribute(
-                                materialR.attr.colorTertiary,
-                                context,
-                            ),
+                            if (KakoTheme.isEnabled(context)) {
+                                null
+                            } else {
+                                ThemeManager.resolveAttribute(materialR.attr.colorTertiary, context)
+                            },
                         positiveButtonTextColor =
                             ThemeManager.resolveAttribute(
                                 materialR.attr.colorOnTertiary,

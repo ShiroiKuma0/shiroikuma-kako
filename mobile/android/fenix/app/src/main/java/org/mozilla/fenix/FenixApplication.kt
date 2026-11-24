@@ -191,6 +191,9 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             org.mozilla.fenix.kako.KakoTheme.migratePureYellow(this)
             org.mozilla.fenix.kako.KakoFonts.refresh(this)
             org.mozilla.fenix.kako.KakoTheme.refreshChromeOverrides(this)
+            // Fork: lay the colour roles over the colour resources upstream's XML names, for
+            // this application and for every activity before it is created.
+            org.mozilla.fenix.kako.KakoPalette.install(this)
             // Fork: listen for the browser-action menus extensions register before
             // anything can start the engine -- a publish sent while nothing is
             // listening is dropped, not queued, and would leave a button's extra

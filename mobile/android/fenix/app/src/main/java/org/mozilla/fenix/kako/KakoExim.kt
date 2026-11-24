@@ -114,8 +114,8 @@ object KakoExim {
     /** The pre-convention name (`shiroikuma-kako-<version>-export_<stamp>.zip`) stays recognised. */
     const val LEGACY_EXPORT_PREFIX = "shiroikuma-kako-"
 
-    /** Warning red used by the exim status lines (Kōjiki convention). */
-    const val WARN_COLOR = 0xFFFF5252.toInt()
+    /** The colour of the exim status lines that warn — a role, like every other colour. */
+    fun warnColor(context: Context): Int = KakoTheme.color(context, KakoSlot.TEXT_ERROR)
 
     // Device-local prefs carrying the chosen export directory — deliberately its
     // own file so it is itself never part of an export.
@@ -663,8 +663,7 @@ object KakoExim {
 
         // Caches backing the fork prefs/fonts were swapped underneath; refresh so
         // the running app shows as much of the import as it can before a restart.
-        KakoTheme.refreshChromeOverrides(context)
-        KakoTheme.revision.intValue++
+        KakoTheme.changed(context)
         KakoFonts.refresh(context)
 
         return lines.joinToString("\n")

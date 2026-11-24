@@ -42,6 +42,7 @@ import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
 import kotlin.math.max
 import kotlin.math.min
+import mozilla.components.compose.base.theme.AcornForkOverrides
 
 private const val ELEVATION = 6
 
@@ -202,6 +203,7 @@ private fun CustomPlacementPopupContent(
         this.transformOrigin = transformOrigin
     }
 
+    val forkMenus = AcornForkOverrides.menus
     Card(
         shape = MaterialTheme.shapes.small,
         modifier = Modifier.graphicsLayer { graphicsLayerAnim() },
@@ -218,7 +220,11 @@ private fun CustomPlacementPopupContent(
         // This is the one popup every Compose toolbar menu is built from (the
         // long-press extension menu, the tab counter, the search selector, the
         // page-origin menu), so they all get the same edge from this one line.
-        border = BorderStroke(BORDER_WIDTH.dp, MaterialTheme.colorScheme.onSurface),
+        //
+        // With the fork theme on, ground and frame are the menu roles.
+        border = BorderStroke(BORDER_WIDTH.dp, forkMenus?.rowFrame ?: MaterialTheme.colorScheme.onSurface),
+        colors =
+            forkMenus?.let { CardDefaults.cardColors(containerColor = it.ground) } ?: CardDefaults.cardColors(),
     ) {
         CustomPlacementPopup.content()
     }
