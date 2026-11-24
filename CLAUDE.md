@@ -64,6 +64,10 @@ artifact — an engine (C++/Rust/Gecko) patch would force a full multi-hour
 compile, so avoid it; none planned. The desktop product has no such constraint:
 it is a full compile from source either way.
 
+**Toolchain floor (160):** NDK r30 at `~/.mozbuild/android-ndk-r30` and cmdline-tools 23.0,
+installed with `./mach python python/mozboot/mozboot/android.py --ndk-only --no-interactive`
+and `… --artifact-mode --no-interactive`; `mozconfig-android-src` names that NDK path.
+
 **Android builds from source, and application-services with it (2026-09-06).**
 `tools/kako/mozconfig-android-src` is the Android build: Gecko compiles from source
 (~16 min) so that `--enable-appservices-in-tree` works, which is what lets Glean be
@@ -71,43 +75,32 @@ removed from application-services at source and takes the APK to **zero detected
 trackers**. `tools/kako/mozconfig` is the old artifact build — faster, but one
 tracker, because prebuilt app-services AARs carry Glean.
 
-**The megazord must not link mozglue — but staging Mozilla's is no longer how that
-is achieved** (156.0.1+001, 2026-09-26). The hazard is real and unchanged: Gecko links
-its allocator into every shared library it builds, so a `libmegazord.so` with
-`libmozglue.so` in its `NEEDED` list frees JNA's bionic allocations through
-mozjemalloc and segfaults in `arena_dalloc` (`mozjemalloc.cpp`) the moment
-`places.sqlite` is opened. That is what force-closed 155.0.1+008, +011 and +014.
+**The megazord links mozglue again from 160 on, and that is correct** (160.0.1+001,
+2026-11-24). The history, because the check has flipped twice:
 
-What changed is where the packaged library comes from. `./mach build` now produces a
-**self-contained** megazord at `objdir-kako-src/dist/geckoview/appservices/lib/arm64-v8a/`
-— `NEEDED` is NSS plus liblog/libm/libdl/libc, no mozglue — and gradle packages *that*.
-The Gecko-built `dist/bin/libmegazord.so` (161 MB unstripped) is not what ships.
+- 155: a `libmegazord.so` with `libmozglue.so` in its `NEEDED` list freed a bionic
+  allocation through mozjemalloc and segfaulted in `arena_dalloc` (`mozjemalloc.cpp`) the
+  moment `places.sqlite` was opened. That force-closed 155.0.1+008, +011 and +014.
+- 156–157: upstream stopped linking mozglue into the megazord, and the rule here was
+  "`NEEDED` must NOT list `libmozglue.so`".
+- 160: upstream bug 2035575 removed the root cause — the vendored application-services no
+  longer calls `std::fs::canonicalize` on Android, which was the call that handed Rust a
+  bionic allocation to free — and linked mozglue back in. `check_binary` now **requires**
+  the dependency and rejects imports of bionic functions that allocate outside mozjemalloc.
+  So on a 160+ base `readelf -d` listing `libmozglue.so` is the expected result, and the
+  build's own guard is what watches the hazard.
 
-`tools/kako/stage-megazord.sh` is therefore **retired** (deleted; recoverable from git
-history). It wrote Mozilla's published AAR to `dist/geckoview/lib/arm64-v8a/`, a path
-gradle does not read and which no longer survives the gradle run — so it was a silent
-no-op on the 156.0 and 156.0.1 builds. Worse, had it landed it would have *caused* a
-failure: the cached AAR is `full-megazord-155.0`, and upstream renamed four UniFFI
-interfaces between 155.0.1 and 156.0.1 (`autofill`, `logins`, `tabs`,
-`webext-storage` — `set_last_sync` → `reset_last_sync`, `apply()` → `apply(i64)`,
-`prepare_for_sync` → `set_clients`). UniFFI verifies a checksum symbol per method at
-binding load, so a 155.0 library under 156.0.1 bindings means logins, autofill, synced
-tabs and extension storage all fail on first use.
-
-**Check the packaged library instead of running a script.** Both properties, on the
-built APK — no mozglue, and symbols matching the in-tree source:
+`tools/kako/stage-megazord.sh` stays retired. What is still worth checking on the built
+APK is that the library is the in-tree one, not a stale published AAR — UniFFI verifies a
+checksum symbol per method at binding load, so a mismatched library means logins, autofill,
+synced tabs and extension storage all fail on first use:
 
 ```bash
 APK=~/tmp/shiroikuma-kako_<ver>_arm64-v8a.apk
 unzip -p "$APK" lib/arm64-v8a/libmegazord.so > /tmp/mz.so
-readelf -d /tmp/mz.so | grep NEEDED          # must NOT list libmozglue.so
 nm -D --defined-only /tmp/mz.so | grep -c uniffi_logins_checksum_method_loginsbridgedengine_reset_last_sync
-                                             # must be 1 on a 156+ base, i.e. the
-                                             # in-tree build, not a stale published AAR
+                                             # must be 1 on a 156+ base
 ```
-
-If a future upstream change puts mozglue back into the packaged megazord, the fix is
-to stage a published AAR **of the matching version** — never an older one.
 
 **Verify by launching, never by scanning.** 155.0.1+006 and +008 scanned clean and
 force-closed. A pid seconds after `monkey` is not proof either — check that no crash
@@ -228,12 +221,38 @@ ear/muzzle/cheek/tail contours stay visible). Master SVGs:
 `tools/kako/icon/icon-final.svg` (+ `-round`). Previews mirrored at
 `~/tmp/shiroikuma-kako-icon-preview{,-round}.png`.
 
-## 白い熊 UI default palette
+## 白い熊 UI — colour roles, the MIXED way (160.0.1+002, 2026-11-24)
 
-The 白い熊 火狐 UI (KakoTheme slots + `kako_theme.xml` overlay) seeds and resets to black
-`#000000` + **pure yellow `#FFFF00`** (`KAKO_PALETTE_BLACK` / `KAKO_PALETTE_YELLOW` in
-`fenix/kako/KakoTheme.kt`; the alpha-variant resources in `kako_theme.xml` share the same base).
-Never use material yellow `#FFEB3B` for fork UI defaults.
+The black-yellow skill is applied in full to the Android app; 白い熊's decisions of
+2026-11-24 were the MIXED colour way, full-width pills in the main menu too, and the
+desktop product as a second step.
+
+- **The role table is generated.** Edit the table in `tools/kako/gen_roles.py` and run it;
+  never edit `fenix/kako/KakoRoleTable.kt`, `res/values/kako_roles.xml` or the two
+  `kako_role_strings.xml` by hand. A role needs a consumer in the same change — a swatch
+  that colours nothing is a defect.
+- **The two primaries are written once**, `KAKO_PALETTE_BLACK` / `KAKO_PALETTE_YELLOW` in
+  `fenix/kako/KakoTheme.kt`: black `#000000` and **pure yellow `#FFFF00`**, never material
+  yellow `#FFEB3B`.
+- **Upstream's XML names a role, never a value.** `KakoThemeOverlay` holds no colour; it
+  points at `@color/kako_role_…`, and `KakoPalette` lays the stored values over those with
+  a `ResourcesLoader` (Android 11+). The role resources live in the default `values/` only —
+  a qualified copy beats the loader. Upstream colour names with a `values-night` copy cannot
+  be fed; the overlay covers them.
+- **Widgets go through one hook each**: compose-base `Button.kt` / `TextButton.kt` /
+  `Switch.kt` / `menu/DropdownMenu.kt` draw the primitives of `compose/base/fork/ForkWidgets.kt`
+  when `AcornForkOverrides` holds a style; Views pass `KakoViewInflater` (the overlay's
+  `viewInflaterClass`). A new upstream file that imports Material's `AlertDialog`, `Switch`
+  or a Material button directly bypasses them: after an adoption,
+  `git grep -l 'import androidx.compose.material3.\(AlertDialog\|TextButton\|Switch\)$' -- mobile/android/fenix/app/src/main 'mobile/android/android-components/components/*/*/src/main'`
+  must list only compose-base itself.
+- **Never replace a `MaterialButton`'s background.** A `MaterialButtonToggleGroup` (the time
+  picker's AM/PM pair) reads the shape off it and throws `IllegalStateException`. The pill is
+  made through the button's own stroke, tint and corner radius.
+- **Strings.** `res/values/kako_strings.xml` is English, `res/values-ja/kako_strings.xml`
+  Japanese; both are written from one table by `.scratch/gen_kako_strings.py` (kept out of
+  the tree, the XML is the source if it is lost). Every key not marked untranslatable must
+  exist in both.
 
 ## What the app-data backup covers (and the trap in it)
 

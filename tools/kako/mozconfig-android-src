@@ -6,16 +6,9 @@
 # That is what takes the APK to zero detected trackers. A full build is ~16 minutes
 # on this machine.
 #
-# MEGAZORD: no extra step is needed any more, but verify the result (2026-09-26).
-# This build produces a self-contained libmegazord.so at
-# dist/geckoview/appservices/lib/arm64-v8a/ -- NEEDED is NSS plus liblog/libm/libdl/
-# libc -- and gradle packages that one. A megazord linking libmozglue.so would free
-# JNA's bionic allocations through mozjemalloc and segfault in arena_dalloc the moment
-# places.sqlite is opened, which is what force-closed 155.0.1+008, +011 and +014.
-# tools/kako/stage-megazord.sh used to substitute Mozilla's published AAR; it is
-# retired, because gradle never read the path it wrote and the cached AAR is now a
-# version behind the in-tree UniFFI bindings. Check the built APK instead -- see the
-# megazord section of CLAUDE.md for the two commands.
+# MEGAZORD: from 160 on libmegazord.so links libmozglue.so again, by upstream's design
+# (bug 2035575 removed the call that made a Rust free reach a bionic allocation, and
+# check_binary now requires the dependency). See the megazord section of CLAUDE.md.
 #
 ac_add_options --enable-project=mobile/android
 
