@@ -37,7 +37,7 @@ ac_add_options --disable-bootstrap
 # /usr/lib/llvm-20 and fails), and without --rtlib it asks for -lgcc, which NDK
 # r23+ dropped. The NDK clang is proven good here -- geckoview_example built with
 # it runs correctly on device.
-NDK_BIN=/home/shiroikuma/.mozbuild/android-sdk-linux/ndk/29.0.14206865/toolchains/llvm/prebuilt/linux-x86_64/bin
+NDK_BIN=/home/shiroikuma/.mozbuild/android-ndk-r30/toolchains/llvm/prebuilt/linux-x86_64/bin
 export CC="$NDK_BIN/clang"
 export CXX="$NDK_BIN/clang++"
 export HOST_CC=clang-20
@@ -56,5 +56,5 @@ ac_add_options --enable-appservices-in-tree
 # exactly sysroot=/usr for the wasm32-wasi target.
 ac_add_options --with-wasi-sysroot=/usr
 ac_add_options --with-android-sdk=/home/shiroikuma/.mozbuild/android-sdk-linux
-ac_add_options --with-android-ndk=/home/shiroikuma/.mozbuild/android-sdk-linux/ndk/29.0.14206865
+ac_add_options --with-android-ndk=/home/shiroikuma/.mozbuild/android-ndk-r30
 mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/objdir-kako-src

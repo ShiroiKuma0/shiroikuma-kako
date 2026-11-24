@@ -5,7 +5,6 @@
 package org.mozilla.fenix.browser.reloadcover
 
 import android.os.SystemClock
-import org.mozilla.fenix.GleanMetrics.TabReloadCover
 
 /**
  * Caller-facing exit reasons for [TabReloadCoverTelemetry.onExit]. Each maps to one of the finer-grained `hide_reason`
@@ -46,16 +45,9 @@ interface TabReloadCoverRecorder {
 /** Default [TabReloadCoverRecorder] that dispatches to the generated Glean metrics. */
 class GleanTabReloadCoverRecorder : TabReloadCoverRecorder {
     override fun recordShown() {
-        TabReloadCover.shown.add()
     }
 
     override fun recordExited(hideReason: String, visibleDurationMs: Int) {
-        TabReloadCover.exited.record(
-            TabReloadCover.ExitedExtra(
-                hideReason = hideReason,
-                visibleDurationMs = visibleDurationMs,
-            )
-        )
     }
 }
 

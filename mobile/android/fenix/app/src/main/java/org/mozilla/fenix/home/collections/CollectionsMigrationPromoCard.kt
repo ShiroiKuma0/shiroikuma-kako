@@ -16,7 +16,6 @@ import mozilla.components.compose.base.LinkTextState
 import mozilla.components.compose.base.PromoCard
 import mozilla.components.compose.base.PromoCardColors
 import mozilla.components.compose.base.modifier.onShown
-import org.mozilla.fenix.GleanMetrics.CollectionsMigration
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 
@@ -43,9 +42,6 @@ fun CollectionsMigrationPromoCard(
             modifier.onShown(
                 threshold = 0.5f,
                 onVisible = {
-                    CollectionsMigration.promoImpression.record(
-                        CollectionsMigration.PromoImpressionExtra(source = source.telemetryName)
-                    )
                 },
             ),
         title = stringResource(R.string.collections_migration_homepage_banner_title),

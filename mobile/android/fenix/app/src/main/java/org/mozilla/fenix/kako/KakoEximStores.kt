@@ -5,6 +5,8 @@
 package org.mozilla.fenix.kako
 
 import android.content.Context
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.concept.engine.permission.SitePermissions
@@ -76,7 +78,7 @@ internal object KakoEximStores {
 
     suspend fun exportSitePermissions(context: Context): ByteArray {
         val array = JSONArray()
-        OnDiskSitePermissionsStorage(context).all().forEach { permissions ->
+        OnDiskSitePermissionsStorage(context, CoroutineScope(Dispatchers.IO)).all().forEach { permissions ->
             array.put(
                 JSONObject().apply {
                     put("origin", permissions.origin)
@@ -101,7 +103,7 @@ internal object KakoEximStores {
 
     suspend fun importSitePermissions(context: Context, bytes: ByteArray): Int {
         val array = JSONObject(String(bytes)).optJSONArray("sitePermissions") ?: return 0
-        val storage = OnDiskSitePermissionsStorage(context)
+        val storage = OnDiskSitePermissionsStorage(context, CoroutineScope(Dispatchers.IO))
         val present = runCatching { storage.all().map { it.origin }.toSet() }.getOrDefault(emptySet())
         var applied = 0
         for (index in 0 until array.length()) {

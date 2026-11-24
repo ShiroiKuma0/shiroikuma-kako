@@ -20,8 +20,6 @@ import mozilla.components.support.base.Component
 import mozilla.components.support.base.facts.Fact
 import mozilla.components.support.base.facts.FactProcessor
 import mozilla.components.support.base.log.logger.Logger
-import mozilla.telemetry.glean.private.TimingDistributionMetricType
-import org.mozilla.fenix.GleanMetrics.ListenToPage
 
 /**
  * [Middleware] that records profiler markers for how long the listen to page feature takes to respond to the user.
@@ -70,11 +68,8 @@ class ListenPerformanceMiddleware(
             is ListenAction.Session.ListenRequested -> {
                 seekOrVoiceChangePending = false
                 cancelAll(action)
-                start(
-                    markerName = TIME_TO_FIRST_AUDIO,
-                    onEnd = { durationMs -> ListenToPage.timeToFirstAudio.accumulateSamples(listOf(durationMs)) },
-                )
-                startPhase(EXTRACTION, ListenToPage.extractionDuration)
+                start(markerName = TIME_TO_FIRST_AUDIO)
+                startPhase(EXTRACTION)
             }
 
             is ListenAction.Session.StopRequested -> {
@@ -131,21 +126,13 @@ class ListenPerformanceMiddleware(
 
     /** Starts the preparation, which runs from the article being ready until its opening starts to be synthesized. */
     private fun startPreparation() {
-        startPhase(PREPARATION, ListenToPage.preparationDuration)
+        startPhase(PREPARATION)
     }
 
     private fun startChunkGap(cause: ChunkGapCause) {
         if (seekOrVoiceChangePending) return
 
-        val started =
-            start(
-                markerName = CHUNK_GAP,
-                text = "cause=${cause.name.lowercase()}",
-                onEnd = { durationMs -> ListenToPage.chunkGapDuration.accumulateSamples(listOf(durationMs)) },
-            )
-        if (started && cause == ChunkGapCause.Waiting) {
-            ListenToPage.audioRanOut.add()
-        }
+        start(markerName = CHUNK_GAP, text = "cause=${cause.name.lowercase()}")
     }
 
     private fun onPlaying() {
@@ -168,13 +155,7 @@ class ListenPerformanceMiddleware(
         val isSeek = action !is ListenAction.Voices.VoiceSelected
         if (isSeek && (phase == PlaybackPhase.Playing || phase == PlaybackPhase.Buffering)) {
             seekRemade = false
-            start(
-                markerName = SEEK_LATENCY,
-                onEnd = { durationMs ->
-                    val metric = if (seekRemade) ListenToPage.seekLatency else ListenToPage.seekLatencyQueued
-                    metric.accumulateSamples(listOf(durationMs))
-                },
-            )
+            start(markerName = SEEK_LATENCY)
         }
     }
 
@@ -198,14 +179,11 @@ class ListenPerformanceMiddleware(
         return true
     }
 
-    /** Starts a phase of time to first audio, which records its duration into [metric] and the phase sum. */
-    private fun startPhase(markerName: String, metric: TimingDistributionMetricType) {
+    /** Starts a phase of time to first audio, which records its duration into the phase sum. */
+    private fun startPhase(markerName: String) {
         start(
             markerName,
-            onEnd = { durationMs ->
-                metric.accumulateSamples(listOf(durationMs))
-                phaseDurationsMs = phaseDurationsMs + (markerName to durationMs)
-            },
+            onEnd = { durationMs -> phaseDurationsMs = phaseDurationsMs + (markerName to durationMs) },
         )
     }
 
@@ -280,7 +258,7 @@ class ListenPerformanceMiddleware(
         when (fact.item) {
             ListenToPageFacts.Items.OPENING_SYNTHESIS_STARTED ->
                 if (end(PREPARATION)) {
-                    startPhase(OPENING_SYNTHESIS, ListenToPage.openingSynthesisDuration)
+                    startPhase(OPENING_SYNTHESIS)
                 }
 
             ListenToPageFacts.Items.CHUNK_SYNTHESIZED -> fact.recordChunkSynthesized()
@@ -292,7 +270,7 @@ class ListenPerformanceMiddleware(
         val chunk =
             metadata?.get(ListenToPageFacts.MetadataKeys.CHUNK_SYNTHESIS) as? ListenToPageFacts.ChunkSynthesis ?: return
         if (chunk.index == 0 && end(OPENING_SYNTHESIS)) {
-            startPhase(PLAYBACK_START, ListenToPage.playbackStartDuration)
+            startPhase(PLAYBACK_START)
         }
 
         val text =
@@ -300,15 +278,6 @@ class ListenPerformanceMiddleware(
                 "megabytes=${chunk.fileKilobytes?.toMegabytes()}, engine=$engine"
 
         logger.debug("$CHUNK_SYNTHESIS took ${chunk.synthesisMs}ms ($text)")
-
-        // The opening is a single sentence and has its own measurement, so it is kept out of the other chunks' samples.
-        if (chunk.index != 0) {
-            ListenToPage.chunkSynthesisDuration.accumulateSamples(listOf(chunk.synthesisMs))
-        }
-        chunk.fileKilobytes?.let { kilobytes ->
-            val size = if (chunk.index == 0) ListenToPage.openingChunkAudioSize else ListenToPage.chunkAudioSize
-            size.accumulate(kilobytes)
-        }
 
         val endTime = profiler.getProfilerTime() ?: return
         scope.launch {
@@ -320,7 +289,6 @@ class ListenPerformanceMiddleware(
         val packageName = value ?: return
         engine = packageName
         logger.debug("Speech engine bound: $packageName")
-        ListenToPage.ttsEngine.set(packageName)
     }
 
     private enum class ChunkGapCause {

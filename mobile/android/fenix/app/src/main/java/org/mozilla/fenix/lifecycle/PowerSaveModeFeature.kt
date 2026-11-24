@@ -16,7 +16,6 @@ import mozilla.components.support.base.android.DefaultPowerManagerInfoProvider
 import mozilla.components.support.base.android.PowerManagerInfoProvider
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.utils.ext.registerReceiverCompat
-import org.mozilla.fenix.GleanMetrics.PowerSavingMode
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
@@ -111,8 +110,6 @@ class PowerSaveModeFeature(
         // The state of the first observation is already reported by
         // PowerSavingMode.activeAtStartup, so only transitions are recorded here.
         if (previous == null || previous == isPowerSaveMode) return
-
-        PowerSavingMode.changed.record(PowerSavingMode.ChangedExtra(enabled = isPowerSaveMode))
     }
 
     private fun updatePowerSavingModeState() {

@@ -27,8 +27,6 @@ import mozilla.components.feature.ipprotection.store.state.IPProtectionStatus
 import mozilla.components.feature.ipprotection.store.state.ipProtectionStatus
 import mozilla.components.feature.ipprotection.store.state.isEligible
 import mozilla.components.ui.icons.R as iconsR
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Vpn
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
@@ -69,7 +67,6 @@ class VpnMenuItemProvider(
         when (event) {
             MenuAction.IPProtectionToggle -> toggle(menu)
             MenuAction.Navigate.IPProtectionSettings -> {
-                Vpn.settingsPageTapped.record(Vpn.SettingsPageTappedExtra(entrypoint = "Menu"))
                 menu.navigate(settingsDirections())
             }
             else -> Unit
@@ -79,17 +76,14 @@ class VpnMenuItemProvider(
     private fun toggle(menu: MenuHost) {
         when (ipProtectionStore.state.ipProtectionStatus) {
             IPProtectionStatus.Disabled -> {
-                Vpn.menuTurnedOn.record()
                 ipProtectionStore.dispatch(IPProtectionAction.Toggle)
             }
 
             IPProtectionStatus.Enabled -> {
-                Vpn.menuTurnedOff.record()
                 ipProtectionStore.dispatch(IPProtectionAction.Toggle)
             }
 
             IPProtectionStatus.AuthRequired -> {
-                Vpn.menuTryItTapped.record(NoExtras())
                 menu.navigate(settingsDirections())
             }
 

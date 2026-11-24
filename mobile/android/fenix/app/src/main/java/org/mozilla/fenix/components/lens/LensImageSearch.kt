@@ -14,7 +14,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.support.base.log.logger.Logger
-import org.mozilla.fenix.GleanMetrics.GoogleLens
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.LensImageUploader
 import org.mozilla.fenix.components.appstate.AppAction.LensAction
@@ -45,13 +44,6 @@ internal suspend fun runLensUpload(
             logger.warn("Google Lens upload failed to read the image", e)
             null
         }
-    GoogleLens.searchCompleted.record(
-        GoogleLens.SearchCompletedExtra(
-            succeeded = uploadResult?.resultUrl != null,
-            httpStatusCode = uploadResult?.httpStatusCode,
-            source = source,
-        )
-    )
     return uploadResult
 }
 

@@ -11,7 +11,6 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import mozilla.components.support.utils.DateTimeProvider
 import mozilla.components.support.utils.DefaultDateTimeProvider
-import org.mozilla.fenix.GleanMetrics.TrackingProtection
 import org.mozilla.fenix.utils.Settings
 
 /**
@@ -66,7 +65,6 @@ class PrivacyReportNotificationScheduler(
         }
 
         val availability = privacyReportNotificationAvailability(notificationManager)
-        TrackingProtection.privacyReportNotificationAvailability.set(availability.telemetryId)
 
         if (availability == PrivacyReportNotificationAvailability.AVAILABLE) {
             // Users who never completed onboarding are not eligible for this feature.

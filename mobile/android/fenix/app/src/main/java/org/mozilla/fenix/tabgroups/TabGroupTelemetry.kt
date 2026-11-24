@@ -4,10 +4,7 @@
 
 package org.mozilla.fenix.tabgroups
 
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Metrics
-import org.mozilla.fenix.GleanMetrics.TabsTray
-import org.mozilla.fenix.components.metrics.MetricsUtils.TabGroupAccessPoint
+import org.mozilla.fenix.components.attribution.MetricsUtils.TabGroupAccessPoint
 import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.redux.state.TabGroupFormState
@@ -17,7 +14,7 @@ import org.mozilla.fenix.tabstray.redux.state.TabGroupFormState
  *
  * @param tabGroupAccessPoint - [TabGroupAccessPoint] where TabGroups feature was accessed
  */
-class TabGroupTelemetry(private val tabGroupAccessPoint: TabGroupAccessPoint) {
+class TabGroupTelemetry(@Suppress("UNUSED_PARAMETER") tabGroupAccessPoint: TabGroupAccessPoint) {
     /**
      * Context interface wrapper that allows different state objects to serve as the context for invoking TabGroup
      * telemetry actions.
@@ -37,11 +34,8 @@ class TabGroupTelemetry(private val tabGroupAccessPoint: TabGroupAccessPoint) {
         if (formState.inEditState) {
             val originalGroup = context.groups.find { it.id == formState.tabGroupId }
             if (originalGroup != null && originalGroup.title != formState.name) {
-                TabsTray.tabGroupNameChanged.record(NoExtras())
             }
         } else {
-            TabsTray.tabGroupCreated.record(NoExtras())
-            TabsTray.tabGroupNamed.record(NoExtras())
         }
     }
 
@@ -54,9 +48,7 @@ class TabGroupTelemetry(private val tabGroupAccessPoint: TabGroupAccessPoint) {
     fun recordThemeChanged(context: TabGroupTelemetryContext, theme: TabGroupTheme) {
         val formState = context.formState ?: return
         if (formState.inEditState) {
-            TabsTray.tabGroupColorChanged.record(TabsTray.TabGroupColorChangedExtra(theme.name))
         } else {
-            TabsTray.tabGroupColorAssigned.record(TabsTray.TabGroupColorAssignedExtra(theme.name))
         }
     }
 
@@ -66,27 +58,18 @@ class TabGroupTelemetry(private val tabGroupAccessPoint: TabGroupAccessPoint) {
      * @param tabCount: Number of tabs being added
      */
     fun recordTabAddedToGroup(tabCount: Int) {
-        TabsTray.tabAddedToGroup.record(TabsTray.TabAddedToGroupExtra(tabCount = tabCount))
     }
 
     /** Records a TabGroup creation from a menu. */
     fun recordCreatedFromMenu() {
-        val label =
-            when (tabGroupAccessPoint) {
-                TabGroupAccessPoint.TABS_TRAY -> CreationMode.TAB_MENU.telemetryId
-                TabGroupAccessPoint.BROWSER_MENU -> CreationMode.BROWSER_MENU.telemetryId
-            }
-        Metrics.tabGroupCreationMode[label].add()
     }
 
     /** Records a TabGroup creation from a Floating Action Button. */
     fun recordCreatedFromFab() {
-        Metrics.tabGroupCreationMode[CreationMode.FAB.telemetryId].add()
     }
 
     /** Records a TabGroup creation from a Drag and Drop action. */
     fun recordCreatedFromDragAndDrop() {
-        Metrics.tabGroupCreationMode[CreationMode.DRAG_AND_DROP.telemetryId].add()
     }
 
     /**

@@ -21,8 +21,6 @@ import mozilla.components.feature.readerview.ReaderViewFeature.ColorScheme
 import mozilla.components.lib.state.ext.flow
 import mozilla.components.lib.state.helpers.AbstractBinding
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.PowerSavingMode
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.PowerSavingModeAction
 import org.mozilla.fenix.components.appstate.AppState
@@ -115,6 +113,5 @@ class PowerSavingModeReaderViewBinding(
         forcedUrls[tab.id] = url
         readerModeController.showReaderView()
         appStore.dispatch(PowerSavingModeAction.ReaderViewForced(tab.id))
-        PowerSavingMode.readerViewForced.record(NoExtras())
     }
 }

@@ -15,7 +15,6 @@ import mozilla.components.browser.state.state.recover.RecoverableTab
 import mozilla.components.browser.state.state.recover.TabState
 import mozilla.components.concept.storage.BookmarkNode
 import mozilla.components.concept.storage.BookmarkNodeType
-import mozilla.components.concept.storage.CreditCardNumber
 import mozilla.components.concept.storage.LoginEntry
 import mozilla.components.concept.storage.NewCreditCardFields
 import mozilla.components.concept.storage.PageObservation
@@ -718,12 +717,11 @@ object KakoExim {
 
     private suspend fun exportCards(context: Context): ByteArray {
         val storage = context.components.core.autofillStorage
-        val crypto = storage.getCreditCardCrypto()
-        // The key is mutex-serialized — resolve it once for the whole batch.
-        val key = crypto.getOrGenerateKey()
         val array = JSONArray()
         storage.getAllCreditCards().forEach { card ->
-            val number = crypto.decrypt(key, card.encryptedCardNumber)?.number ?: return@forEach
+            // Since 160 the storage hands the number over already decrypted; a card it could
+            // not decrypt comes back scrubbed, with an empty number, and is left out.
+            val number = card.cardNumber.takeIf { it.isNotEmpty() } ?: return@forEach
             array.put(
                 JSONObject().apply {
                     put("billingName", card.billingName)
@@ -749,8 +747,7 @@ object KakoExim {
                 storage.addCreditCard(
                     NewCreditCardFields(
                         billingName = obj.optString("billingName"),
-                        plaintextCardNumber = CreditCardNumber.Plaintext(obj.optString("cardNumber")),
-                        cardNumberLast4 = obj.optString("cardNumberLast4"),
+                        cardNumber = obj.optString("cardNumber"),
                         expiryMonth = obj.optLong("expiryMonth"),
                         expiryYear = obj.optLong("expiryYear"),
                         cardType = obj.optString("cardType"),

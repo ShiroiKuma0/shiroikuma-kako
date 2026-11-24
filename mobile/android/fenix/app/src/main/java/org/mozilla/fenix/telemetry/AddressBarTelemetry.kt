@@ -4,9 +4,6 @@
 
 package org.mozilla.fenix.telemetry
 
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Toolbar
-import org.mozilla.fenix.GleanMetrics.ToolbarGoogleLensButton
 import org.mozilla.fenix.components.lens.CameraMode
 
 /**
@@ -17,13 +14,6 @@ import org.mozilla.fenix.components.lens.CameraMode
  */
 internal fun recordAddressBarButtonTapped(item: String, sourceTabId: String?) {
     val surface = if (sourceTabId == null) SURFACE_HOME else SURFACE_BROWSER
-    Toolbar.buttonTapped.record(
-        Toolbar.ButtonTappedExtra(
-            source = SOURCE_ADDRESS_BAR,
-            item = item,
-            surface = surface,
-        )
-    )
 }
 
 /**
@@ -37,6 +27,5 @@ internal fun recordLensButtonTapped(lensCameraLastMode: CameraMode, sourceTabId:
         recordAddressBarButtonTapped(ACTION_LENS_QR_CLICKED, sourceTabId)
     } else {
         recordAddressBarButtonTapped(ACTION_LENS_CLICKED, sourceTabId)
-        ToolbarGoogleLensButton.tapped.record(NoExtras())
     }
 }

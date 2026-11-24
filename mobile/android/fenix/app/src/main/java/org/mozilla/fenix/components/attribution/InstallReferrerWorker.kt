@@ -111,12 +111,6 @@ class InstallReferrerWorker(
 
             settings.isUserQuoraAttributed = InstallReferrerHandlingService.isQuoraAttribution(installReferrerResponse)
 
-            PlayStoreAttribution.pairingCampaign.set(
-                InstallReferrerHandlingService.isPairingCampaignAttribution(
-                    installReferrerResponse,
-                    FxNimbus.features.pairingSigninPrompt.value().campaignUtmContent,
-                )
-            )
 
             utmParams.recordInstallReferrer(settings)
         }

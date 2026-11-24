@@ -7,7 +7,6 @@ package org.mozilla.fenix.privacyreport
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import org.mozilla.fenix.GleanMetrics.TrackingProtection
 
 internal const val ACTION_PRIVACY_REPORT_NOTIFICATION_DISMISSED = "org.mozilla.fenix.privacyreport.DISMISSED"
 
@@ -22,7 +21,6 @@ class PrivacyReportNotificationReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == ACTION_PRIVACY_REPORT_NOTIFICATION_DISMISSED) {
-            TrackingProtection.privacyReportNotificationDismissed.record()
         }
     }
 }

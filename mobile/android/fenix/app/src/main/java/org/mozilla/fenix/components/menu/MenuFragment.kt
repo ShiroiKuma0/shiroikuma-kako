@@ -70,14 +70,11 @@ import mozilla.components.support.utils.ext.getWindowInsets
 import mozilla.components.support.utils.ext.isLandscape
 import mozilla.components.support.utils.ext.pixelSizeFor
 import mozilla.components.support.utils.ext.top
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.compose.CustomizeMenuPopup
 import org.mozilla.fenix.components.menu.compose.MenuDialogBottomSheet
 import org.mozilla.fenix.components.menu.compose.MenuHandleState
 import org.mozilla.fenix.components.menu.middleware.MenuMiddleware
-import org.mozilla.fenix.components.menu.middleware.MenuTelemetryMiddleware
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.isToolbarAtBottom
 import org.mozilla.fenix.ext.nav
@@ -103,7 +100,6 @@ class MenuFragment : BottomSheetDialogFragment() {
     private val ipProtectionSnackbarBinding = ViewBoundFeatureWrapper<IPProtectionSnackbarBinding>()
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        Events.toolbarMenuVisible.record(NoExtras())
 
         return object : BottomSheetDialog(requireContext(), theme) {
                 override fun onKeyDown(
@@ -397,7 +393,6 @@ class MenuFragment : BottomSheetDialogFragment() {
                             ),
                         scope = viewLifecycleOwner.lifecycle.coroutineScope,
                     ),
-                    MenuTelemetryMiddleware(accessPoint = args.accessPoint),
                 ),
         )
     }

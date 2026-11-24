@@ -71,12 +71,28 @@ class WebExtensionsMenuBinding(
                     )
                     ?.onClick()
             },
+            // Fork: a long-press opens the popup the extension's manifest declares. Offered only when
+            // the action has one, and resolved again when pressed, exactly as the tap above is.
             onLongClick =
-                action.onLongClick?.let { onLongClick ->
-                    {
-                        onDismiss()
-                        onLongClick()
-                    }
-                },
+                browserStore.state
+                    .findWebExtensionMenuAction(
+                        extensionId = extensionId,
+                        isPageAction = isPageAction,
+                        customTabId = customTabId,
+                    )
+                    ?.onLongClick
+                    ?.let {
+                        {
+                            onDismiss()
+                            browserStore.state
+                                .findWebExtensionMenuAction(
+                                    extensionId = extensionId,
+                                    isPageAction = isPageAction,
+                                    customTabId = customTabId,
+                                )
+                                ?.onLongClick
+                                ?.invoke()
+                        }
+                    },
         )
 }

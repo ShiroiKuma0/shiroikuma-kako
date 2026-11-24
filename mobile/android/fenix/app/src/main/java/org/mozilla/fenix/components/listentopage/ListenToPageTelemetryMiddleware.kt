@@ -10,8 +10,6 @@ import mozilla.components.feature.listentopage.PlaybackPhase
 import mozilla.components.feature.listentopage.PlaybackState
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
-import mozilla.telemetry.glean.private.NoExtras
-import org.mozilla.fenix.GleanMetrics.ListenToPage
 
 /** [Middleware] that records telemetry for the Listen to Page player. */
 internal class ListenToPageTelemetryMiddleware : Middleware<ListenState, ListenAction> {
@@ -38,7 +36,7 @@ internal class ListenToPageTelemetryMiddleware : Middleware<ListenState, ListenA
             is ListenAction.Playback -> handlePlayback(store, action)
             is ListenAction.Controls -> handleControls(store, action)
             is ListenAction.Voices -> handleVoices(store, action)
-            is ListenAction.Synthesis.SynthesisFailed -> ListenToPage.synthesisFailed.record(NoExtras())
+            is ListenAction.Synthesis.SynthesisFailed -> Unit
             else -> Unit
         }
     }
@@ -47,24 +45,22 @@ internal class ListenToPageTelemetryMiddleware : Middleware<ListenState, ListenA
         playbackStartedRecorded = false
         playbackEndedRecorded = false
         when (action) {
-            is ListenAction.Session.ListenRequested -> ListenToPage.requested.record(NoExtras())
+            is ListenAction.Session.ListenRequested -> Unit
             is ListenAction.Session.StopRequested -> {
                 val source =
                     when (action.source) {
                         ListenAction.Session.StopSource.CloseButton -> CLOSE_BUTTON
                         ListenAction.Session.StopSource.TabClosed -> TAB_CLOSED
                     }
-                ListenToPage.stopped.record(ListenToPage.StoppedExtra(source = source))
             }
         }
     }
 
     private fun handleContent(action: ListenAction.Content) {
         when (action) {
-            is ListenAction.Content.ContentReady ->
-                ListenToPage.contentReady.record(ListenToPage.ContentReadyExtra(language = action.languageTag))
+            is ListenAction.Content.ContentReady -> Unit
 
-            ListenAction.Content.ContentUnavailable -> ListenToPage.contentUnavailable.record(NoExtras())
+            ListenAction.Content.ContentUnavailable -> Unit
         }
     }
 
@@ -73,19 +69,16 @@ internal class ListenToPageTelemetryMiddleware : Middleware<ListenState, ListenA
             is ListenAction.Playback.PlaybackStarted ->
                 if (!playbackStartedRecorded) {
                     playbackStartedRecorded = true
-                    ListenToPage.playbackStarted.record(NoExtras())
                 }
 
             ListenAction.Playback.PlaybackEnded ->
                 if (!playbackEndedRecorded) {
                     playbackEndedRecorded = true
-                    ListenToPage.playbackEnded.record(NoExtras())
                 }
 
-            ListenAction.Playback.PlaybackFailed -> ListenToPage.playbackFailed.record(NoExtras())
+            ListenAction.Playback.PlaybackFailed -> Unit
             is ListenAction.Playback.SeekRequested -> {
                 val direction = if (action.fraction >= store.state.articleProgress.fraction) FORWARD else BACKWARD
-                ListenToPage.seekPerformed.record(ListenToPage.SeekPerformedExtra(direction = direction))
             }
 
             else -> Unit
@@ -96,21 +89,16 @@ internal class ListenToPageTelemetryMiddleware : Middleware<ListenState, ListenA
         when (action) {
             ListenAction.Controls.PlayPauseClicked ->
                 if (store.state.playbackState.isPlayingOrBuffering) {
-                    ListenToPage.pausePressed.record(NoExtras())
                 } else {
-                    ListenToPage.playPressed.record(NoExtras())
                 }
 
-            ListenAction.Controls.RewindClicked -> ListenToPage.skipBackPressed.record(NoExtras())
-            ListenAction.Controls.ForwardClicked -> ListenToPage.skipForwardPressed.record(NoExtras())
-            ListenAction.Controls.VoicesClicked -> ListenToPage.voiceListOpened.record(NoExtras())
-            ListenAction.Controls.VoicesDismissed -> ListenToPage.voiceListDismissed.record(NoExtras())
-            ListenAction.Controls.PlaybackSpeedClicked -> ListenToPage.speedListOpened.record(NoExtras())
-            ListenAction.Controls.PlaybackSpeedDismissed -> ListenToPage.speedListDismissed.record(NoExtras())
-            is ListenAction.Controls.PlaybackSpeedSelected ->
-                ListenToPage.speedSelected.record(
-                    ListenToPage.SpeedSelectedExtra(speed = action.playbackSpeed.multiplier.toString())
-                )
+            ListenAction.Controls.RewindClicked -> Unit
+            ListenAction.Controls.ForwardClicked -> Unit
+            ListenAction.Controls.VoicesClicked -> Unit
+            ListenAction.Controls.VoicesDismissed -> Unit
+            ListenAction.Controls.PlaybackSpeedClicked -> Unit
+            ListenAction.Controls.PlaybackSpeedDismissed -> Unit
+            is ListenAction.Controls.PlaybackSpeedSelected -> Unit
         }
     }
 
@@ -123,14 +111,10 @@ internal class ListenToPageTelemetryMiddleware : Middleware<ListenState, ListenA
                         ListenAction.Voices.VoiceSource.UserSelected -> USER_SELECTED
                         ListenAction.Voices.VoiceSource.Fallback -> FALLBACK
                     }
-                ListenToPage.voiceSelected.record(
-                    ListenToPage.VoiceSelectedExtra(isDefault = isDefault, source = source)
-                )
             }
 
             ListenAction.Voices.NoOfflineVoicesAvailable -> {
                 val language = store.state.languageTag.orEmpty()
-                ListenToPage.noOfflineVoice.record(ListenToPage.NoOfflineVoiceExtra(language = language))
             }
 
             is ListenAction.Voices.AvailableVoicesLoaded -> Unit

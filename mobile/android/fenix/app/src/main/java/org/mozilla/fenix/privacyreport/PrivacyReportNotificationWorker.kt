@@ -27,8 +27,6 @@ import mozilla.components.support.base.android.NotificationsDelegate
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.DateTimeProvider
 import mozilla.components.support.utils.DefaultDateTimeProvider
-import org.mozilla.fenix.GleanMetrics.Pings
-import org.mozilla.fenix.GleanMetrics.TrackingProtection
 import org.mozilla.fenix.utils.Settings
 
 private const val PRIVACY_REPORT_NOTIFICATION_WORK_NAME = "org.mozilla.fenix.privacyreport.work"
@@ -81,9 +79,6 @@ class PrivacyReportNotificationWorker(
             val notSentReason = notSentReason()
             if (notSentReason != null) {
                 logger.info("Not sending the privacy report notification. The reason is : $notSentReason")
-                TrackingProtection.privacyReportNotificationNotSent.record(
-                    TrackingProtection.PrivacyReportNotificationNotSentExtra(reason = notSentReason.telemetryId)
-                )
                 return Result.success()
             }
 
@@ -106,7 +101,6 @@ class PrivacyReportNotificationWorker(
                 showPrivacyReportNotification(applicationContext, notificationsDelegate, content)
             }
         } finally {
-            Pings.privacyReportNotification.submit(Pings.privacyReportNotificationReasonCodes.workerRun)
 
             if (!isStopped && settings.weeklyPrivacyNotificationFeatureFlagEnabled) {
                 // Reschedule based on the intended time (not actual execution time) to avoid drift from worker delays.
@@ -126,8 +120,6 @@ class PrivacyReportNotificationWorker(
      * is submitted show up as gaps in the submitted run counts.
      */
     private fun recordWorkerRun() {
-        TrackingProtection.privacyReportNotificationWorkerRunCount.add()
-        TrackingProtection.privacyReportNotificationWorkerRan.record()
     }
 
     /**
@@ -336,14 +328,10 @@ class PrivacyReportNotificationWorker(
                         " the coroutine was cancelled."
                 )
             }
-
-            TrackingProtection.privacyReportNotificationWorkerScheduled.set(false)
         }
 
         /** Report that the worker is scheduled. */
         private fun recordWorkerScheduled(nowMillis: Long) {
-            TrackingProtection.privacyReportNotificationScheduledAt.set(Date(nowMillis))
-            TrackingProtection.privacyReportNotificationWorkerScheduled.set(true)
         }
     }
 }

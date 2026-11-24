@@ -76,9 +76,6 @@
 
         <!-- Fenix design system attributes -->
         <item name="layer2">@color/kako_black</item>
-        <item name="layer3">@color/kako_black</item>
-        <item name="textOnColorPrimary">@color/kako_black</item>
-        <item name="iconOnColor">@color/kako_black</item>
     </style>
 
     <!-- Filled XML buttons under the kako theme: black fill, yellow text/border. -->

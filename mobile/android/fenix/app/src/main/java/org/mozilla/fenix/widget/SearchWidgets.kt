@@ -8,7 +8,6 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
-import org.mozilla.fenix.GleanMetrics.Metrics
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.widget.glance.CompactSearchBarWidgetReceiver
@@ -33,7 +32,6 @@ object SearchWidgets {
         val installed = providers.any { appWidgetManager.getAppWidgetIds(ComponentName(context, it)).isNotEmpty() }
         if (settings.searchWidgetInstalled != installed) {
             settings.searchWidgetInstalled = installed
-            Metrics.searchWidgetInstalled.set(installed)
         }
     }
 }

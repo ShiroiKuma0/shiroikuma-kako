@@ -113,11 +113,9 @@ open class Nimbus(
         }
 
         override fun recordRolloutsOptOut() {
-            NimbusEvents.rolloutsOptOut.record()
         }
 
         override fun recordStudiesOptOut() {
-            NimbusEvents.studiesOptOut.record()
         }
     }
 

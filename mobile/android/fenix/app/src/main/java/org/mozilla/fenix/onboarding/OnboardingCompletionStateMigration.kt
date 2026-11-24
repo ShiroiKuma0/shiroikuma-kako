@@ -8,7 +8,6 @@ import androidx.annotation.MainThread
 import java.time.LocalDate
 import java.time.ZoneOffset
 import mozilla.components.support.base.log.logger.Logger
-import org.mozilla.fenix.GleanMetrics.Onboarding
 import org.mozilla.fenix.utils.Settings
 
 private const val UNSET_TIMESTAMP = -1L
@@ -126,8 +125,6 @@ private fun Settings.backfillOnboardingCompletionState(reason: MigrationReason, 
 
     migrateOnboardingCompletedTimestamp(timestamp)
     markAllContinuousOnboardingStagesComplete(timestamp)
-
-    Onboarding.completionStateMigrationCompleted.record()
 }
 
 /** Records the user's onboarding completion state before the migration overwrites it. */
@@ -136,14 +133,6 @@ private fun Settings.recordMigrationStarted(reason: MigrationReason) {
     val progressPredatesCutoff = completedStageTimestamps.any { (_, timestamp) ->
         timestamp < CONTINUOUS_ONBOARDING_RELEASE_CUTOFF_MILLIS
     }
-
-    Onboarding.completionStateMigrationStarted.record(
-        Onboarding.CompletionStateMigrationStartedExtra(
-            migrationReason = reason.telemetryId,
-            lastCompletedStage = completedStageTimestamps.lastOrNull()?.first,
-            progressPredatesCutoff = progressPredatesCutoff,
-        )
-    )
 }
 
 /** Returns completed stages, as their day number, and their timestamps in day order. */

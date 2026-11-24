@@ -10,7 +10,6 @@ import mozilla.components.feature.listentopage.PlaybackPhase
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
 import mozilla.components.support.base.log.logger.Logger
-import org.mozilla.fenix.GleanMetrics.ListenToPage
 
 /**
  * [Middleware] that records how hot the device runs while an article is read. Sessions on devices whose thermal status
@@ -129,9 +128,7 @@ class ListenThermalMiddleware(private val monitor: ThermalStatusMonitor) : Middl
         if (ended !is Session.Reading) return
 
         if (!ended.isPaused) monitor.stopObserving()
-        ListenToPage.sessionMaxThermalStatus[ended.maxStatus.label].add()
         if (ended.throttlingEntries > 0) {
-            ListenToPage.thermalThrottlingEntered.add(ended.throttlingEntries)
         }
         logger.debug("Thermal max was ${ended.maxStatus.label}, throttling entered ${ended.throttlingEntries} times")
     }

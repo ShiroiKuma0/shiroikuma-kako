@@ -319,13 +319,7 @@ class CustomizationFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFrag
         if (!isTabStripEnabled) return
 
         val topPreference = requirePreference<RadioButtonPreference>(R.string.pref_key_tab_bar_top)
-        topPreference.onClickListener {
-            ToolbarSettings.changedPosition.record(ToolbarSettings.ChangedPositionExtra(Position.TOP.name))
-        }
         val bottomPreference = requirePreference<RadioButtonPreference>(R.string.pref_key_tab_bar_bottom)
-        bottomPreference.onClickListener {
-            ToolbarSettings.changedPosition.record(ToolbarSettings.ChangedPositionExtra(Position.BOTTOM.name))
-        }
 
         val tabStripPosition = settings.tabStripPosition
         topPreference.setCheckedWithoutClickListener(tabStripPosition == ToolbarPosition.TOP)

@@ -24,6 +24,7 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.TwoStatePreference
+import com.google.android.material.R as materialR
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.launch
@@ -41,6 +42,7 @@ import mozilla.components.service.fxa.sync.SyncReason
 import mozilla.components.service.fxa.sync.SyncStatusObserver
 import mozilla.components.service.fxa.sync.getLastSynced
 import mozilla.components.service.fxa.sync.setLastSynced
+import mozilla.components.support.ktx.android.content.getColorFromAttr
 import mozilla.components.support.utils.ext.pixelSizeFor
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 import org.mozilla.fenix.R
