@@ -41,6 +41,7 @@ DIRS += [
     "firefoxview",
     "genai",
     "ipprotection",
+    "kako",  # Fork: 白い熊 火狐 UI
     "messagepreview",
     "migration",
     "mozcachedohttp",

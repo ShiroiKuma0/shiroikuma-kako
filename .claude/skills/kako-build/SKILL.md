@@ -147,7 +147,8 @@ export MOZBUILD_STATE_PATH=$HOME/.mozbuild
 export MOZCONFIG=$PWD/tools/kako/mozconfig-desktop   # own objdir: objdir-kako-desktop
 
 ./mach build          # full compile against the DISTRO toolchain (clang-20)
-./mach package        # → objdir-kako-desktop/dist/kako-*.linux-x86_64.tar.xz
+./mach package-multi-locale --locales en-US ja   # English + Japanese → objdir-kako-desktop/dist/kako-*.linux-x86_64.tar.xz
+                      # (needs ~/.mozbuild/l10n-central; never follow it with a plain ./mach package)
 
 # Reuse the number the APK already burned; omit --version to take a fresh one.
 tools/kako/deb/build-deb.sh --version "$FULLVER"

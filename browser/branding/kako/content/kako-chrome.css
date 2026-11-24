@@ -14,13 +14,17 @@
  * box decoration is taken over by the canvas/widget, so the edge stays bare. A
  * fixed-position pseudo-element spans the viewport, paints above every toolbar,
  * and cannot be covered by a child's background.
+ *
+ * No colour is written here: the ring reads its two roles, declared by the
+ * sheet KakoTheme.sys.mjs generates. With the 白い熊 火狐 UI switch off those are
+ * not declared, the border is invalid, and no ring is drawn.
  */
 
 :root#main-window::after {
   content: "";
   position: fixed;
   inset: 0;
-  border: 2px solid #ffff00;
+  border: 2px solid var(--kako-window_ring);
   border-radius: 9px; /* trace the GTK CSD corner rounding */
   pointer-events: none; /* never eat a click meant for the tab strip */
   z-index: 2147483647;
@@ -33,7 +37,7 @@
  * chrome root -- :not([active]) matches always, which pinned the frame at the
  * dim colour in every state. */
 :root#main-window:-moz-window-inactive::after {
-  border-color: #404000;
+  border-color: var(--kako-window_ring_inactive);
 }
 
 /* Fullscreen has no window edge to trace and a ring there is just a distraction
@@ -60,7 +64,7 @@
  * filled in by PanelUI._onMainViewShow). Indented to the same start as the menu
  * items above it and dimmed, so it reads as a stamp rather than a command. */
 #appMenu-kako-version {
-  color: #ffff00;
+  color: var(--kako-menu_header);
   padding-block: 6px;
   padding-inline: 16px;
   opacity: 0.75;

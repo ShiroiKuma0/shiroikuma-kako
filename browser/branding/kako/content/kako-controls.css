@@ -1,0 +1,299 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* 白い熊 火狐 -- buttons and switches, in every chrome document and about: page.
+ *
+ * A USER sheet, registered by KakoTheme.sys.mjs beside kako-dialog.css; see
+ * that file for why (dialogs are documents of their own) and for the two traps
+ * (no @namespace; two token families). It holds no colour: every value is a
+ * role, var(--kako-…), declared by the sheet KakoTheme generates.
+ *
+ * Scoped with @-moz-document because a user sheet applies to EVERY document,
+ * web pages included.
+ */
+
+@-moz-document url-prefix("chrome://"), url-prefix("about:") {
+  /* --- Buttons: pills, never filled ---------------------------------------
+   *
+   * Every push button is an outlined pill with the ground showing through.
+   * The main action of a block -- the accepting button of a dialog, in-content's
+   * .primary, a moz-button of type primary -- is told apart by WEIGHT only: a
+   * 3px frame and a bold label, where every other button has 1.25px and a
+   * normal one. A deleting button lends the delete colour to frame and label.
+   * Nothing is ever filled: the solid yellow slab the accepting button used to
+   * be is gone, and so is the olive fill of the destructive one.
+   *
+   * moz-button paints a <span class="button-background"> inside its shadow root
+   * from the --button-* tokens. The colours are fed through those tokens; the
+   * frame's width, the weight and the radius are set on the span itself, which
+   * a user sheet reaches (user rules apply inside shadow trees), because
+   * --button-border is ONE shorthand token declared on the root, where it
+   * cannot know which button it will be used by.
+   *
+   * Plain buttons are a different matter: in a chrome document nothing points
+   * those tokens at them, and they came out as grey system slabs with white
+   * text -- `appearance: auto`. They are painted here by hand, and `button`
+   * without a namespace deliberately matches the XUL and the HTML element
+   * alike, since dialogs use one and in-content pages the other.
+   *
+   * Excluded: #main-button/#chevron-button, which are moz-button's own inner
+   * <button> wrapping the span above -- styling those would draw a second pill
+   * around every design-system button -- and .text-link, a button that is meant
+   * to look like a link. Glyph-only buttons (moz-button's ghost and icon types,
+   * toolbar buttons) stay glyphs.
+   *
+   * A pill reads four local properties, so that a context can restyle the
+   * buttons inside it without naming them -- a menu row in kako-menus.css does:
+   *   --kako-pill-width, --kako-pill-weight, --kako-pill-frame, --kako-pill-ink
+   * ---------------------------------------------------------------------- */
+
+  :root {
+    --kako-pill-hover: color-mix(in srgb, var(--kako-button_ripple) 55%, transparent);
+
+    --button-border-radius: 999px !important;
+    --button-opacity-disabled: 0.38 !important;
+
+    --button-background-color: var(--kako-button_background) !important;
+    --button-background-color-hover: var(--kako-pill-hover) !important;
+    --button-background-color-active: var(--kako-button_ripple) !important;
+    --button-background-color-selected: var(--kako-button_ripple) !important;
+    --button-background-color-disabled: var(--kako-button_background) !important;
+    --button-text-color: var(--kako-button_text) !important;
+    --button-text-color-hover: var(--kako-button_text) !important;
+    --button-text-color-active: var(--kako-button_text) !important;
+    --button-text-color-selected: var(--kako-button_text) !important;
+    --button-text-color-disabled: var(--kako-button_text) !important;
+    --button-border-color: var(--kako-button_border) !important;
+    --button-border-color-hover: var(--kako-button_border) !important;
+    --button-border-color-active: var(--kako-button_border) !important;
+    --button-border-color-selected: var(--kako-button_border) !important;
+    --button-border-color-disabled: var(--kako-button_border) !important;
+
+    /* The main button: the same ground as every other one. */
+    --button-background-color-primary: var(--kako-button_background) !important;
+    --button-background-color-primary-hover: var(--kako-pill-hover) !important;
+    --button-background-color-primary-active: var(--kako-button_ripple) !important;
+    --button-background-color-primary-selected: var(--kako-button_ripple) !important;
+    --button-background-color-primary-disabled: var(--kako-button_background) !important;
+    --button-text-color-primary: var(--kako-button_main_text) !important;
+    --button-text-color-primary-hover: var(--kako-button_main_text) !important;
+    --button-text-color-primary-active: var(--kako-button_main_text) !important;
+    --button-text-color-primary-selected: var(--kako-button_main_text) !important;
+    --button-text-color-primary-disabled: var(--kako-button_main_text) !important;
+    --button-border-color-primary: var(--kako-button_main_border) !important;
+    --button-border-color-primary-hover: var(--kako-button_main_border) !important;
+    --button-border-color-primary-active: var(--kako-button_main_border) !important;
+    --button-border-color-primary-selected: var(--kako-button_main_border) !important;
+    --button-border-color-primary-disabled: var(--kako-button_main_border) !important;
+
+    /* The deleting button: its colour on frame and label, the ground untouched. */
+    --button-background-color-destructive: var(--kako-button_background) !important;
+    --button-background-color-destructive-hover: color-mix(in srgb, var(--kako-button_delete) 18%, transparent) !important;
+    --button-background-color-destructive-active: color-mix(in srgb, var(--kako-button_delete) 30%, transparent) !important;
+    --button-background-color-destructive-selected: color-mix(in srgb, var(--kako-button_delete) 30%, transparent) !important;
+    --button-background-color-destructive-disabled: var(--kako-button_background) !important;
+    --button-text-color-destructive: var(--kako-button_delete) !important;
+    --button-text-color-destructive-hover: var(--kako-button_delete) !important;
+    --button-text-color-destructive-active: var(--kako-button_delete) !important;
+    --button-text-color-destructive-selected: var(--kako-button_delete) !important;
+    --button-text-color-destructive-disabled: var(--kako-button_delete) !important;
+    --button-border-color-destructive: var(--kako-button_delete) !important;
+    --button-border-color-destructive-hover: var(--kako-button_delete) !important;
+    --button-border-color-destructive-active: var(--kako-button_delete) !important;
+    --button-border-color-destructive-selected: var(--kako-button_delete) !important;
+    --button-border-color-destructive-disabled: var(--kako-button_delete) !important;
+
+    /* Glyph buttons: no frame, the icon in its own role. */
+    --button-background-color-ghost: transparent !important;
+    --button-background-color-ghost-hover: var(--kako-pill-hover) !important;
+    --button-background-color-ghost-active: var(--kako-button_ripple) !important;
+    --button-text-color-ghost: var(--kako-icon_button) !important;
+    --button-text-color-ghost-hover: var(--kako-icon_button) !important;
+    --button-text-color-ghost-active: var(--kako-icon_button) !important;
+    --button-border-color-ghost: transparent !important;
+  }
+
+  /* moz-button's visible box. Its type sits on the span itself. */
+  .button-background:not([type~="ghost"], [type~="icon"], [type~="toolbar"], [type~="menuitem"], [type~="muted"]) {
+    border-width: 1.25px !important;
+    border-style: solid !important;
+    border-radius: 999px !important;
+    font-weight: normal !important;
+  }
+
+  .button-background[type="primary"] {
+    border-width: 3px !important;
+    font-weight: bold !important;
+  }
+
+  /* --- The address bar is not a button -------------------------------------
+   *
+   * --button-border-radius above is not read by buttons alone. The urlbar
+   * derives its own two radii from it:
+   *
+   *   --urlbar-border-radius: var(--button-border-radius)                  (urlbar.tokens.css)
+   *   --urlbarview-border-radius: calc(var(--button-border-radius) + 2px)  (urlbarview.tokens.css)
+   *
+   * At 999px that passes unnoticed while the bar is one line -- it reads as a
+   * pill, like everything else. Click it and the results list drops out of the
+   * SAME box: .urlbar-background is `inset: 0` over the whole open bar and
+   * paints both the ring and the fill, so at ~400px tall the radius clamps to
+   * half the height and the bar becomes an oval, with the page showing through
+   * where the fill is clipped away at the corners.
+   *
+   * Both are pinned back to the design system's medium radius -- the value
+   * upstream computes them from -- so the open bar is a rounded rectangle
+   * filled to its edges. This is deliberately NOT a pill: the field rule in
+   * kako-dialog.css already excludes the address bar by naming its input types,
+   * so the toolbar was never meant to take the pill grammar in the first place.
+   * ---------------------------------------------------------------------- */
+
+  :root {
+    --urlbar-border-radius: var(--border-radius-medium) !important;
+    --urlbarview-border-radius: calc(var(--border-radius-medium) + 2px) !important;
+  }
+
+  button:not(.text-link, .toggle-button, [id="main-button"], [id="chevron-button"]) {
+    appearance: none !important;
+    border: var(--kako-pill-width, 1.25px) solid var(--kako-pill-frame, var(--kako-button_border)) !important;
+    border-radius: 999px !important;
+    background-color: var(--kako-button_background) !important;
+    color: var(--kako-pill-ink, var(--kako-button_text)) !important;
+    font-weight: var(--kako-pill-weight, normal) !important;
+  }
+
+  button:not(.text-link, .toggle-button, [id="main-button"], [id="chevron-button"]):not([disabled]):hover {
+    background-color: var(--kako-pill-hover) !important;
+  }
+
+  button:not(.text-link, .toggle-button, [id="main-button"], [id="chevron-button"]):not([disabled]):hover:active {
+    background-color: var(--kako-button_ripple) !important;
+  }
+
+  button:not(.text-link, .toggle-button, [id="main-button"], [id="chevron-button"])[disabled] {
+    opacity: 0.38 !important;
+  }
+
+  /* The accepting button of a dialog, and in-content's primary class: the main
+   * pill. Also while disabled -- weight is what says which button it is. */
+  button:is(.primary, [default="true"], [dlgtype="accept"]):not(.text-link, .toggle-button, [id="main-button"], [id="chevron-button"]) {
+    --kako-pill-width: 3px;
+    --kako-pill-weight: bold;
+    --kako-pill-frame: var(--kako-button_main_border);
+    --kako-pill-ink: var(--kako-button_main_text);
+  }
+
+  /* A deleting button. After the main rule, so that a dialog whose accepting
+   * button deletes gets a thick pill in the delete colour. */
+  button:is(.danger, .danger-button, .destructive, [type="destructive"]):not(.text-link, .toggle-button, [id="main-button"], [id="chevron-button"]) {
+    --kako-pill-frame: var(--kako-button_delete);
+    --kako-pill-ink: var(--kako-button_delete);
+  }
+
+  /* The buttons of a dialog's own button bar touch each other. */
+  button.dialog-button {
+    margin-inline: 4px !important;
+  }
+
+  /* --- Switches: an outlined pill with a solid dot -------------------------
+   *
+   * One shape for both states: a 52 x 28 track drawn as a 2px outline with the
+   * ground showing through, and a solid dot 46% of the track's height inside
+   * it, the same gap from the frame all round. On, the dot is at the right and
+   * both are in the on colours; off, it is at the left and both are in the off
+   * colours -- an opaque darker yellow by default, never a faded one, so that a
+   * switch that is off is not mistaken for a disabled one. Nothing is filled,
+   * not even when on: the filled track with a dark dot this file used to draw
+   * for the pressed state is gone.
+   *
+   * .toggle-button is moz-toggle's <button> inside its shadow root, and the
+   * class in-content pages give a checkbox that is drawn as a switch; the class
+   * selector matches both, so the properties are set on the element itself and
+   * the --toggle-* tokens only keep the host's layout in step.
+   * ---------------------------------------------------------------------- */
+
+  moz-toggle {
+    --toggle-width: 52px !important;
+    --toggle-height: 28px !important;
+  }
+
+  .toggle-button,
+  input[type="checkbox"].toggle-button,
+  input[type="checkbox"].toggle-button:checked {
+    appearance: none !important;
+    box-sizing: border-box !important;
+    width: 52px !important;
+    min-width: 52px !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    padding: 0 !important;
+    border: 2px solid var(--kako-switch_off) !important;
+    border-radius: 999px !important;
+    background-color: transparent !important;
+    background-image: none !important;
+  }
+
+  .toggle-button::before {
+    content: "" !important;
+    display: block !important;
+    width: 13px !important;
+    height: 13px !important;
+    /* (28 - 2 * 2 - 13) / 2: the same gap above, below and at the near end. */
+    margin: 5.5px !important;
+    border-radius: 50% !important;
+    background-color: var(--kako-switch_off_dot) !important;
+    translate: 0 !important;
+    transition: translate 180ms ease-out !important;
+  }
+
+  .toggle-button[aria-pressed="true"],
+  input[type="checkbox"].toggle-button:checked {
+    border-color: var(--kako-switch_on) !important;
+  }
+
+  .toggle-button[aria-pressed="true"]::before,
+  input[type="checkbox"].toggle-button:checked::before {
+    background-color: var(--kako-switch_on_dot) !important;
+    /* 52 - 2 * 2 - 13 - 2 * 5.5: to the same gap at the far end. */
+    translate: 24px !important;
+  }
+
+  .toggle-button[aria-pressed="true"]:-moz-locale-dir(rtl)::before,
+  .toggle-button[aria-pressed="true"]:dir(rtl)::before,
+  input[type="checkbox"].toggle-button:checked:dir(rtl)::before {
+    translate: -24px !important;
+  }
+
+  .toggle-button:disabled {
+    opacity: 0.38 !important;
+  }
+
+  /* --- The way to 白い熊 火狐 UI at the top of Settings -----------------------
+   *
+   * A pill that hugs its label, with a › because it opens a page, and its
+   * explanation beneath it in the note colour.
+   * ---------------------------------------------------------------------- */
+
+  #kako-ui-link-row {
+    margin-block: 4px 12px;
+  }
+
+  #kako-ui-link {
+    margin: 0 !important;
+    padding: 6px 14px !important;
+    min-height: 0 !important;
+  }
+
+  #kako-ui-link::after {
+    content: "\203A";
+    margin-inline-start: 8px;
+  }
+
+  #kako-ui-link-desc {
+    margin-block-start: 3px;
+    padding-inline-start: 14px;
+    color: var(--kako-note);
+    font-size: 0.87em;
+  }
+}

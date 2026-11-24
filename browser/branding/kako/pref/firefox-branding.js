@@ -106,4 +106,18 @@ pref("kako.extensions.ignoreRestrictedDomains", true);
 //
 // STAMPED BY tools/kako/bump-build.sh on every build, from gradle.properties.
 // Do not edit by hand -- the next bump overwrites it.
-pref("kako.version.full", "160.0.1+002");
+pref("kako.version.full", "160.0.1+003");
+
+// 白い熊 火狐 UI on the desktop (browser/components/kako/KakoTheme.sys.mjs).
+// On, the colour roles are carried into every chrome document; off, the
+// browser looks the way its theme draws it. A role's own colour is stored as
+// kako.ui.color.<role> ("#RRGGBB" or "#RRGGBBAA") and has no default here: an
+// unset role shows the default the role table derives for it. The UI page's
+// arrangement is kako.ui.sectionOrder and kako.ui.sectionsOpen.
+pref("kako.ui.enabled", true);
+
+// Fork: follow the system's language. The package carries English and Japanese
+// (./mach package-multi-locale --locales en-US ja); an empty value means "use
+// the operating system's locales", where an unset pref on a repackaged build
+// would mean the default locale, en-US.
+pref("intl.locale.requested", "");

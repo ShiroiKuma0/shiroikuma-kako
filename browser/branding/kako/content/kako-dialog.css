@@ -29,80 +29,88 @@
  * over the stylesheets these documents ship with.
  */
 
-:root {
-  /* --- design-system tokens (the ones dialogs actually use) --- */
-  --background-color-canvas: #000000 !important;
-  --background-color-box: #000000 !important;
-  --background-color-box-info: #000000 !important;
-  --background-color-list-item-hover: #333300 !important;
+/* Scoped like everything below. These two blocks used to apply to EVERY
+ * document, web pages included: a site that named one of its own custom
+ * properties --text-color or --border-color had it overridden, and every
+ * <dialog> element on the web was painted in the dialog colours. Now that the
+ * values are var(--kako-…), which only the fork's documents declare, an
+ * unscoped rule would not even paint -- it would blank the site's value. */
+@-moz-document url-prefix("chrome://"), url-prefix("about:") {
+  :root {
+    /* --- design-system tokens (the ones dialogs actually use) --- */
+    --background-color-canvas: var(--kako-background) !important;
+    --background-color-box: var(--kako-card_background) !important;
+    --background-color-box-info: var(--kako-card_background) !important;
+    --background-color-list-item-hover: var(--kako-list_hover) !important;
 
-  --text-color: #FFFF00 !important;
-  --text-color-deemphasized: #FFFF00 !important;
+    --text-color: var(--kako-text) !important;
+    --text-color-deemphasized: var(--kako-text_secondary) !important;
 
-  /* Icons drawn with -moz-context-properties read this one -- the magnifier
-   * inside a search field, for instance, which was left near-white. */
-  --icon-color: #FFFF00 !important;
+    /* Icons drawn with -moz-context-properties read this one -- the magnifier
+     * inside a search field, for instance, which was left near-white. */
+    --icon-color: var(--kako-icon_button) !important;
 
-  --border-color: #FFFF00 !important;
-  --border-color-deemphasized: #FFFF00 !important;
-  --border-color-interactive: #FFFF00 !important;
-  --border-color-interactive-hover: #FFFF00 !important;
+    --border-color: var(--kako-border) !important;
+    --border-color-deemphasized: var(--kako-list_divider) !important;
+    --border-color-interactive: var(--kako-field_frame) !important;
+    --border-color-interactive-hover: var(--kako-field_frame_focused) !important;
 
-  --button-background-color: #000000 !important;
-  --button-background-color-hover: #333300 !important;
-  --button-background-color-active: #4D4D00 !important;
-  --button-background-color-ghost: transparent !important;
-  --button-background-color-primary: #FFFF00 !important;
-  --button-background-color-primary-hover: #CCCC00 !important;
-  --button-background-color-primary-active: #999900 !important;
-  --button-text-color: #FFFF00 !important;
-  --button-text-color-ghost: #FFFF00 !important;
-  --button-text-color-primary: #000000 !important;
-  --button-border-color: #FFFF00 !important;
+    --link-color: var(--kako-text_link) !important;
+    --link-color-hover: color-mix(in srgb, var(--kako-text_link) 80%, var(--kako-background)) !important;
+    --link-color-active: color-mix(in srgb, var(--kako-text_link) 60%, var(--kako-background)) !important;
 
-  --link-color: #FFFF00 !important;
-  --link-color-hover: #CCCC00 !important;
-  --link-color-active: #999900 !important;
+    --color-accent-primary: var(--kako-accent) !important;
+    --color-accent-primary-hover: color-mix(in srgb, var(--kako-accent) 80%, var(--kako-background)) !important;
+    --color-accent-primary-active: color-mix(in srgb, var(--kako-accent) 60%, var(--kako-background)) !important;
+    /* The chosen row of an open dropdown list (in-content styles a selected
+     * menulist menuitem with these two). Matches the theme's popup_highlight. */
+    --color-accent-primary-selected: var(--kako-list_selected) !important;
+    --text-color-accent-primary-selected: var(--kako-list_selected_text) !important;
+    --focus-outline-color: var(--kako-focus_outline) !important;
 
-  --color-accent-primary: #FFFF00 !important;
-  --color-accent-primary-hover: #CCCC00 !important;
-  --color-accent-primary-active: #999900 !important;
-  /* The chosen row of an open dropdown list (in-content styles a selected
-   * menulist menuitem with these two). Matches the theme's popup_highlight. */
-  --color-accent-primary-selected: #333300 !important;
-  --text-color-accent-primary-selected: #FFFF00 !important;
-  --focus-outline-color: #FFFF00 !important;
+    --text-color-disabled: var(--kako-text_disabled) !important;
+    --text-color-error: var(--kako-text_error) !important;
+    --card-border-color: var(--kako-card_border) !important;
+    --border-color-selected: var(--kako-accent) !important;
+    /* The shade behind a tab dialog and a window-modal one. */
+    --background-color-overlay: var(--kako-scrim) !important;
 
-  /* --- older in-content family, still used by some surfaces --- */
-  --in-content-page-background: #000000 !important;
-  --in-content-page-color: #FFFF00 !important;
-  --in-content-box-background: #000000 !important;
-  --in-content-box-border-color: #FFFF00 !important;
-  --in-content-text-color: #FFFF00 !important;
-  --in-content-deemphasized-text: #FFFF00 !important;
-  --dialog-background-color: #000000 !important;
-  --box-background-color: #000000 !important;
-}
+    /* --- older in-content family, still used by some surfaces --- */
+    --in-content-page-background: var(--kako-background) !important;
+    --in-content-page-color: var(--kako-text) !important;
+    --in-content-box-background: var(--kako-card_background) !important;
+    --in-content-box-border-color: var(--kako-card_border) !important;
+    --in-content-text-color: var(--kako-text) !important;
+    --in-content-deemphasized-text: var(--kako-text_secondary) !important;
+    --dialog-background-color: var(--kako-dialog_background) !important;
+    --box-background-color: var(--kako-card_background) !important;
+  }
 
-/* No @namespace above, so these match XUL elements too. */
-dialog,
-window,
-.dialogBox,
-#commonDialog {
-  background-color: #000000 !important;
-  color: #FFFF00 !important;
-}
+  /* No @namespace above, so these match XUL elements too. */
+  dialog,
+  window,
+  .dialogBox,
+  #commonDialog {
+    background-color: var(--kako-dialog_background) !important;
+    color: var(--kako-dialog_text) !important;
+  }
 
-.dialogBox,
-#commonDialog {
-  border: 1px solid #FFFF00 !important;
-}
+  .dialogBox,
+  #commonDialog {
+    border: 1px solid var(--kako-dialog_border) !important;
+  }
 
-#commonDialog #infoTitle,
-#commonDialog #infoBody,
-#commonDialog description,
-#commonDialog label {
-  color: #FFFF00 !important;
+  #commonDialog #infoBody,
+  #commonDialog description,
+  #commonDialog label {
+    color: var(--kako-dialog_text) !important;
+  }
+
+  #commonDialog #infoTitle,
+  dialog .titleText,
+  .dialogTitle {
+    color: var(--kako-dialog_title) !important;
+  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -154,11 +162,11 @@ window,
 
 @-moz-document url-prefix("chrome://"), url-prefix("about:") {
   :root {
-    --kako-undecided-stroke: rgba(255, 255, 0, 0.45);
-    --kako-undecided-fill: rgba(255, 255, 0, 0.06);
-    --kako-decided-stroke: #FFFF00;
-    --kako-decided-fill: rgba(255, 255, 0, 0.12);
-    --kako-hover-fill: rgba(255, 255, 0, 0.16);
+    --kako-undecided-stroke: var(--kako-check_off);
+    --kako-undecided-fill: color-mix(in srgb, var(--kako-check_on) 6%, transparent);
+    --kako-decided-stroke: var(--kako-check_on);
+    --kako-decided-fill: color-mix(in srgb, var(--kako-check_on) 12%, transparent);
+    --kako-hover-fill: color-mix(in srgb, var(--kako-check_on) 16%, transparent);
   }
 
   /* The row: control and label enclosed in one pill. */
@@ -173,7 +181,7 @@ window,
     border: 1px solid var(--kako-undecided-stroke) !important;
     border-radius: 999px !important;
     background-color: var(--kako-undecided-fill) !important;
-    color: #FFFF00 !important;
+    color: var(--kako-text) !important;
   }
 
   checkbox:hover,
@@ -232,22 +240,29 @@ window,
     background-size: 11px 9px !important;
   }
 
-  /* Ticked: solid yellow, black checkmark. The glyph is moz-checkbox-icon.svg
-   * inlined as a data: URI with the stroke already black, rather than the
-   * chrome:// file plus -moz-context-properties, so it cannot depend on which
-   * package a given chrome document may load. */
+  /* Ticked: solid, with the tick in the tick's own role. The glyph is the
+   * chrome icon painted through context-fill -- it used to be an inlined data:
+   * URI with a fixed stroke, and a data: URI cannot name a colour role.
+   * chrome://global/skin is reachable from every document this sheet is
+   * scoped to. */
   .checkbox-check[checked],
   input[type="checkbox"]:checked {
     border-color: var(--kako-decided-stroke) !important;
     background-color: var(--kako-decided-stroke) !important;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M9.5 1 4 7.5l-3-3" stroke="%23000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>') !important;
+    background-image: url("chrome://global/skin/icons/check.svg") !important;
+    background-size: 12px 12px !important;
+    -moz-context-properties: fill !important;
+    fill: var(--kako-check_mark) !important;
   }
 
   /* Partially ticked (a "select all" over a half-chosen list): a dash. */
   input[type="checkbox"]:indeterminate {
     border-color: var(--kako-decided-stroke) !important;
     background-color: var(--kako-decided-stroke) !important;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1.5 4.5h8" stroke="%23000000" stroke-width="2" stroke-linecap="round"/></svg>') !important;
+    background-image: url("chrome://global/skin/icons/minus.svg") !important;
+    background-size: 12px 12px !important;
+    -moz-context-properties: fill !important;
+    fill: var(--kako-check_mark) !important;
   }
 
   /* A radio is round, and its chosen state is the same solid yellow with a
@@ -255,6 +270,15 @@ window,
   .radio-check,
   input[type="radio"] {
     border-radius: 50% !important;
+  }
+
+  radio,
+  moz-radio {
+    --kako-undecided-stroke: var(--kako-radio_off);
+    --kako-decided-stroke: var(--kako-radio_on);
+    --kako-undecided-fill: color-mix(in srgb, var(--kako-radio_on) 6%, transparent);
+    --kako-decided-fill: color-mix(in srgb, var(--kako-radio_on) 12%, transparent);
+    --kako-hover-fill: color-mix(in srgb, var(--kako-radio_on) 16%, transparent);
   }
 
   /* The XUL radio's box has no inline margin of its own (radio.css sets only
@@ -268,7 +292,7 @@ window,
   input[type="radio"]:checked {
     border-color: var(--kako-decided-stroke) !important;
     background-color: var(--kako-decided-stroke) !important;
-    background-image: radial-gradient(circle at 50%, #000000 3.5px, transparent 3.5px) !important;
+    background-image: radial-gradient(circle at 50%, var(--kako-check_mark) 3.5px, transparent 3.5px) !important;
   }
 
   /* --- Dropdowns and text fields ------------------------------------------
@@ -304,31 +328,31 @@ window,
   select,
   menulist,
   moz-select {
-    --select-background-color: #000000 !important;
-    --select-background-color-hover: var(--kako-hover-fill) !important;
-    --select-border: 1px solid var(--kako-undecided-stroke) !important;
-    --select-border-color-hover: var(--kako-decided-stroke) !important;
+    --select-background-color: var(--kako-field_ground) !important;
+    --select-background-color-hover: color-mix(in srgb, var(--kako-field_frame_focused) 16%, transparent) !important;
+    --select-border: 1px solid var(--kako-field_frame) !important;
+    --select-border-color-hover: var(--kako-field_frame_focused) !important;
     --select-border-radius: 999px !important;
-    --select-text-color: #FFFF00 !important;
-    --select-text-color-hover: #FFFF00 !important;
-    --select-icon-fill: #FFFF00 !important;
+    --select-text-color: var(--kako-field_text) !important;
+    --select-text-color-hover: var(--kako-field_text) !important;
+    --select-icon-fill: var(--kako-field_text) !important;
   }
 
   select:not([size], [multiple]),
   menulist {
-    border: 1px solid var(--kako-undecided-stroke) !important;
+    border: 1px solid var(--kako-field_frame) !important;
     border-radius: 999px !important;
-    background-color: #000000 !important;
-    color: #FFFF00 !important;
+    background-color: var(--kako-field_ground) !important;
+    color: var(--kako-field_text) !important;
   }
 
   select:not([size], [multiple]):enabled:hover,
   select:not([size], [multiple]):focus,
   menulist:not([disabled]):hover,
   menulist[open="true"] {
-    border-color: var(--kako-decided-stroke) !important;
-    background-color: var(--kako-hover-fill) !important;
-    color: #FFFF00 !important;
+    border-color: var(--kako-field_frame_focused) !important;
+    background-color: color-mix(in srgb, var(--kako-field_frame_focused) 16%, transparent) !important;
+    color: var(--kako-field_text) !important;
   }
 
   input:is([type="text"], [type="search"], [type="url"], [type="email"], [type="tel"], [type="password"], [type="number"]),
@@ -340,11 +364,11 @@ window,
      * and friends) came out grey. Selects deliberately keep their appearance --
      * their chevron comes with it. */
     appearance: none !important;
-    border: 1px solid var(--kako-undecided-stroke) !important;
+    border: 1px solid var(--kako-field_frame) !important;
     border-radius: 999px !important;
-    background-color: #000000 !important;
-    color: #FFFF00 !important;
-    caret-color: #FFFF00 !important;
+    background-color: var(--kako-field_ground) !important;
+    color: var(--kako-field_text) !important;
+    caret-color: var(--kako-text_cursor) !important;
   }
 
   textarea {
@@ -353,152 +377,23 @@ window,
 
   input:is([type="text"], [type="search"], [type="url"], [type="email"], [type="tel"], [type="password"], [type="number"]):focus,
   textarea:focus {
-    border-color: var(--kako-decided-stroke) !important;
+    border-color: var(--kako-field_frame_focused) !important;
   }
 
   input::placeholder,
   textarea::placeholder {
-    color: rgba(255, 255, 0, 0.5) !important;
+    color: var(--kako-field_hint) !important;
   }
 
   /* Selected text, everywhere in the chrome and on about: pages -- not just in
    * the fields above, which is where this rule started. */
   ::selection {
-    background-color: #FFFF00 !important;
-    color: #000000 !important;
+    background-color: var(--kako-text_selection) !important;
+    color: var(--kako-text_selection_text) !important;
   }
 
-  /* --- Buttons -------------------------------------------------------------
-   *
-   * Pill, dim ring at rest, full yellow under the pointer -- and the button
-   * that commits stays solid yellow with black text, which is to a dialog what
-   * a ticked box is to a row.
-   *
-   * moz-button paints a <span class="button-background"> inside its shadow root
-   * from the --button-* tokens, so tokens are the whole story there. Plain
-   * buttons are a different matter: in a chrome document nothing points those
-   * tokens at them, and they came out as grey system slabs with white text --
-   * `appearance: auto` again. They are painted here by hand, and `button`
-   * without a namespace deliberately matches the XUL and the HTML element
-   * alike, since dialogs use one and in-content pages the other.
-   *
-   * Excluded: #main-button/#chevron-button, which are moz-button's own inner
-   * <button> wrapping the span above -- styling those would draw a second pill
-   * around every design-system button -- and .text-link, a button that is meant
-   * to look like a link.
-   *
-   * Destructive buttons were the one genuinely off-palette case: upstream fills
-   * them red (--color-red-60/30) to mark the weight of "Remove". With a single
-   * accent colour there is no second hue to say "danger", so the weight is kept
-   * and the hue dropped: a dark olive fill (the palette's own button-active
-   * tone) inside a full-yellow ring. Heavier than a resting button, plainly not
-   * the solid-yellow one that commits.
-   * ---------------------------------------------------------------------- */
+  /* Buttons, the address bar's radius and toggles: kako-controls.css. */
 
-  :root {
-    --button-border-radius: 999px !important;
-    --button-border-color: var(--kako-undecided-stroke) !important;
-    --button-border-color-hover: var(--kako-decided-stroke) !important;
-    --button-border-color-active: var(--kako-decided-stroke) !important;
-    --button-border-color-ghost: var(--kako-undecided-stroke) !important;
-    --button-border-color-primary: var(--kako-decided-stroke) !important;
-
-    --button-background-color-destructive: #4D4D00 !important;
-    --button-background-color-destructive-hover: #666600 !important;
-    --button-background-color-destructive-active: #808000 !important;
-    --button-background-color-destructive-disabled: #4D4D00 !important;
-    --button-border-color-destructive: var(--kako-decided-stroke) !important;
-    --button-border-color-destructive-hover: var(--kako-decided-stroke) !important;
-    --button-border-color-destructive-active: var(--kako-decided-stroke) !important;
-    --button-text-color-destructive: #FFFF00 !important;
-    --button-text-color-destructive-hover: #FFFF00 !important;
-    --button-text-color-destructive-active: #FFFF00 !important;
-  }
-
-  /* --- The address bar is not a button -------------------------------------
-   *
-   * --button-border-radius above is not read by buttons alone. The urlbar
-   * derives its own two radii from it:
-   *
-   *   --urlbar-border-radius: var(--button-border-radius)                  (urlbar.tokens.css)
-   *   --urlbarview-border-radius: calc(var(--button-border-radius) + 2px)  (urlbarview.tokens.css)
-   *
-   * At 999px that passes unnoticed while the bar is one line -- it reads as a
-   * pill, like everything else. Click it and the results list drops out of the
-   * SAME box: .urlbar-background is `inset: 0` over the whole open bar and
-   * paints both the yellow ring and the black fill, so at ~400px tall the
-   * radius clamps to half the height and the bar becomes an oval, with the page
-   * showing through where the fill is clipped away at the corners.
-   *
-   * Both are pinned back to the design system's medium radius -- the value
-   * upstream computes them from -- so the open bar is a rounded rectangle
-   * filled black to its edges. This is deliberately NOT a pill: the input rule
-   * further up already excludes the address bar by naming its input types, so
-   * the toolbar was never meant to take the pill grammar in the first place.
-   * ---------------------------------------------------------------------- */
-
-  :root {
-    --urlbar-border-radius: var(--border-radius-medium) !important;
-    --urlbarview-border-radius: calc(var(--border-radius-medium) + 2px) !important;
-  }
-
-  button:not(.text-link, .toggle-button, [id="main-button"], [id="chevron-button"]) {
-    appearance: none !important;
-    border: 1px solid var(--kako-undecided-stroke) !important;
-    border-radius: 999px !important;
-    background-color: #000000 !important;
-    color: #FFFF00 !important;
-  }
-
-  button:not(.text-link, .toggle-button, [id="main-button"], [id="chevron-button"]):not([disabled]):hover {
-    border-color: var(--kako-decided-stroke) !important;
-    background-color: #333300 !important;
-  }
-
-  button:not(.text-link, .toggle-button, [id="main-button"], [id="chevron-button"]):not([disabled]):hover:active {
-    background-color: #4D4D00 !important;
-  }
-
-  button:not(.text-link, .toggle-button, [id="main-button"], [id="chevron-button"])[disabled] {
-    opacity: 0.55 !important;
-  }
-
-  /* The accepting button of a dialog, and in-content's primary class. */
-  button:is(.primary, [default="true"], [dlgtype="accept"]):not([disabled], .text-link, .toggle-button, [id="main-button"], [id="chevron-button"]) {
-    background-color: #FFFF00 !important;
-    border-color: #FFFF00 !important;
-    color: #000000 !important;
-  }
-
-  button:is(.primary, [default="true"], [dlgtype="accept"]):not([disabled], .text-link, .toggle-button, [id="main-button"], [id="chevron-button"]):hover {
-    background-color: #CCCC00 !important;
-  }
-
-  /* --- Toggles -------------------------------------------------------------
-   *
-   * These were already black and yellow -- what they lacked was the same
-   * distinction every other control now makes, so an unpressed toggle wears the
-   * dim ring and dim dot, and brightens to full yellow when pressed or under
-   * the pointer. Pressed keeps the filled track with a black dot: solid yellow
-   * with a black mark, the ticked-checkbox reading once more.
-   * ---------------------------------------------------------------------- */
-
-  moz-toggle {
-    --toggle-background-color: #000000 !important;
-    --toggle-background-color-hover: var(--kako-hover-fill) !important;
-    --toggle-background-color-active: #4D4D00 !important;
-    --toggle-border-color: var(--kako-undecided-stroke) !important;
-    --toggle-dot-background-color: var(--kako-undecided-stroke) !important;
-    --toggle-background-color-pressed: #FFFF00 !important;
-    --toggle-background-color-pressed-hover: #CCCC00 !important;
-    --toggle-background-color-pressed-active: #999900 !important;
-    --toggle-dot-background-color-on-pressed: #000000 !important;
-  }
-
-  moz-toggle:hover {
-    --toggle-border-color: var(--kako-decided-stroke) !important;
-    --toggle-dot-background-color: var(--kako-decided-stroke) !important;
-  }
 
   /* --- Scrollbars ----------------------------------------------------------
    *
@@ -509,7 +404,7 @@ window,
    * ---------------------------------------------------------------------- */
 
   :root {
-    scrollbar-color: rgba(255, 255, 0, 0.55) #000000 !important;
+    scrollbar-color: var(--kako-scrollbar_thumb) var(--kako-scrollbar_track) !important;
   }
 
   /* --- Sliders and progress ------------------------------------------------
@@ -529,13 +424,13 @@ window,
   }
 
   input[type="range"]::-moz-range-track {
-    background-color: rgba(255, 255, 0, 0.25) !important;
+    background-color: var(--kako-slider_inactive) !important;
     height: 4px !important;
     border-radius: 999px !important;
   }
 
   input[type="range"]::-moz-range-progress {
-    background-color: #FFFF00 !important;
+    background-color: var(--kako-slider_active) !important;
     height: 4px !important;
     border-radius: 999px !important;
   }
@@ -543,9 +438,9 @@ window,
   input[type="range"]::-moz-range-thumb {
     width: 14px !important;
     height: 14px !important;
-    border: 2px solid #000000 !important;
+    border: 2px solid var(--kako-background) !important;
     border-radius: 50% !important;
-    background-color: #FFFF00 !important;
+    background-color: var(--kako-slider_active) !important;
   }
 
   progress {
@@ -553,12 +448,12 @@ window,
     height: 8px !important;
     border: none !important;
     border-radius: 999px !important;
-    background-color: rgba(255, 255, 0, 0.25) !important;
+    background-color: var(--kako-slider_inactive) !important;
   }
 
   progress::-moz-progress-bar {
     border-radius: 999px !important;
-    background-color: #FFFF00 !important;
+    background-color: var(--kako-progress) !important;
   }
 
   /* --- Badges and promo cards ----------------------------------------------
@@ -576,21 +471,21 @@ window,
 
   moz-badge {
     --badge-border-radius: 999px !important;
-    --badge-border-color: var(--kako-undecided-stroke) !important;
-    --badge-text-color: #FFFF00 !important;
-    --badge-background-color-filled: #FFFF00 !important;
-    --badge-border-color-filled: #FFFF00 !important;
-    --badge-text-color-filled: #000000 !important;
+    --badge-border-color: var(--kako-badge_frame) !important;
+    --badge-text-color: var(--kako-badge_text) !important;
+    --badge-background-color-filled: var(--kako-badge_filled) !important;
+    --badge-border-color-filled: var(--kako-badge_filled) !important;
+    --badge-text-color-filled: var(--kako-badge_filled_text) !important;
   }
 
   /* Only the vibrant tokens are touched. Setting the base ones would win over
    * the :host([type="vibrant"]) rule that maps these into them, flattening the
    * two variants into one -- and the default card needs no help anyway. */
   moz-promo {
-    --promo-background-color-vibrant: var(--kako-decided-fill) !important;
-    --promo-border-color-vibrant: #FFFF00 !important;
-    --promo-message-text-color-vibrant: #FFFF00 !important;
-    --promo-heading-text-color-vibrant: #FFFF00 !important;
+    --promo-background-color-vibrant: color-mix(in srgb, var(--kako-accent) 12%, transparent) !important;
+    --promo-border-color-vibrant: var(--kako-accent) !important;
+    --promo-message-text-color-vibrant: var(--kako-text) !important;
+    --promo-heading-text-color-vibrant: var(--kako-text) !important;
   }
 
   /* --- Tooltips ------------------------------------------------------------
@@ -604,9 +499,9 @@ window,
 
   tooltip {
     appearance: none !important;
-    background-color: #000000 !important;
-    color: #FFFF00 !important;
-    border: 1px solid #FFFF00 !important;
+    background-color: var(--kako-tooltip_background) !important;
+    color: var(--kako-tooltip_text) !important;
+    border: 1px solid var(--kako-tooltip_border) !important;
     border-radius: 8px !important;
   }
 }
@@ -637,17 +532,48 @@ window,
 @-moz-document url-prefix("chrome://"), url-prefix("about:") {
   moz-message-bar,
   notification-message {
-    --message-bar-background-color: #000000 !important;
-    --message-bar-background-color-critical: #000000 !important;
-    --message-bar-background-color-success: #000000 !important;
-    --message-bar-background-color-warning: #000000 !important;
-    --message-bar-icon-background-color: #000000 !important;
-    --message-bar-icon-background-color-critical: #000000 !important;
-    --message-bar-icon-background-color-success: #000000 !important;
-    --message-bar-icon-background-color-warning: #000000 !important;
-    --message-bar-border-color: #FFFF00 !important;
+    --message-bar-background-color: var(--kako-toast_background) !important;
+    --message-bar-background-color-critical: var(--kako-toast_background) !important;
+    --message-bar-background-color-success: var(--kako-toast_background) !important;
+    --message-bar-background-color-warning: var(--kako-toast_background) !important;
+    --message-bar-icon-background-color: var(--kako-toast_background) !important;
+    --message-bar-icon-background-color-critical: var(--kako-toast_background) !important;
+    --message-bar-icon-background-color-success: var(--kako-toast_background) !important;
+    --message-bar-icon-background-color-warning: var(--kako-toast_background) !important;
+    --message-bar-border-color: var(--kako-toast_border) !important;
     --message-bar-border-width: 1px !important;
-    --message-bar-text-color: #FFFF00 !important;
-    --message-bar-icon-color: #FFFF00 !important;
+    --message-bar-text-color: var(--kako-toast_text) !important;
+    --message-bar-icon-color: var(--kako-toast_text) !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Headings, lists and trees: each from a role of its own, so that a heading or
+ * a chosen row can be set apart from ordinary text on the UI page.
+ * ------------------------------------------------------------------------ */
+
+@-moz-document url-prefix("chrome://"), url-prefix("about:") {
+  :is(h1, h2, h3) {
+    color: var(--kako-text_heading) !important;
+  }
+
+  richlistbox,
+  tree,
+  listbox {
+    color: var(--kako-list_text) !important;
+  }
+
+  richlistbox > richlistitem[selected] {
+    background-color: var(--kako-list_selected) !important;
+    color: var(--kako-list_selected_text) !important;
+  }
+
+  treechildren::-moz-tree-row(selected) {
+    background-color: var(--kako-list_selected) !important;
+  }
+
+  treechildren::-moz-tree-cell-text(selected),
+  treechildren::-moz-tree-image(selected) {
+    color: var(--kako-list_selected_text) !important;
   }
 }

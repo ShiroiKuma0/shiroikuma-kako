@@ -78,7 +78,7 @@ FULLVER=$(tools/kako/bump-build.sh)        # e.g. 154.0+001 — burn the number 
 
 # --- Desktop -------------------------------------------------------------
 export MOZCONFIG=$PWD/tools/kako/mozconfig-desktop
-./mach build && ./mach package
+./mach build && ./mach package-multi-locale --locales en-US ja
 tools/kako/deb/build-deb.sh --version "$FULLVER"   # --version REUSES the number
 ```
 

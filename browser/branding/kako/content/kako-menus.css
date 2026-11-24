@@ -1,0 +1,225 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* 白い熊 火狐 -- menus: context menus, the menu bar's popups, bookmark menus,
+ * the application menu and every panel subview, and panel-list.
+ *
+ * A USER sheet, registered by KakoTheme.sys.mjs. No colour is written here:
+ * every value is a role, var(--kako-…).
+ *
+ * The rule: a row that DOES something is an outlined pill as wide as the menu,
+ * so that it cannot be taken for a line of text. A row that opens a submenu
+ * keeps its ›. A row that is ticked or chosen (a checkbox or radio item) stays
+ * a plain row with its mark -- it is a state, not an action. Group dividers are
+ * a clear 1px line in the darker accent. A disabled row is the same pill at
+ * 38%, and a row that deletes lends the delete colour to frame, label and icon.
+ *
+ * Dropdown lists (menulist > menupopup, which is also what a web page's
+ * <select> opens) are lists of pure choices and stay plain rows.
+ *
+ * Icons: a row shows the icon it already has, coloured by what the row does
+ * where its id says so. Rows that have no icon upstream do not get one here.
+ *
+ * A row reads three local properties, set afresh on every row so that a
+ * submenu never inherits its parent row's colours:
+ *   --kako-row-frame, --kako-row-ink, --kako-row-icon
+ */
+
+@-moz-document url-prefix("chrome://"), url-prefix("about:") {
+  /* --- The surfaces ------------------------------------------------------ */
+
+  menupopup {
+    --panel-background-color: var(--kako-menu_background) !important;
+    --panel-text-color: var(--kako-menu_label) !important;
+    --panel-border-color: var(--kako-menu_border) !important;
+    --panel-separator-color: var(--kako-menu_divider) !important;
+  }
+
+  panel {
+    --panel-background-color: var(--kako-panel_background) !important;
+    --panel-text-color: var(--kako-panel_text) !important;
+    --panel-border-color: var(--kako-panel_border) !important;
+    --panel-separator-color: var(--kako-menu_divider) !important;
+  }
+
+  panel-list {
+    --panel-list-background-color: var(--kako-menu_background) !important;
+    --panel-list-border-color: var(--kako-menu_border) !important;
+    color: var(--kako-menu_label) !important;
+  }
+
+  /* --- XUL menus ----------------------------------------------------------- */
+
+  menupopup > :is(menuitem, menu),
+  toolbarbutton.subviewbutton,
+  .widget-overflow-list > toolbarbutton.toolbarbutton-1 {
+    --kako-row-frame: var(--kako-menu_row_frame);
+    --kako-row-ink: var(--kako-menu_label);
+    --kako-row-icon: var(--kako-menu_icon_view);
+  }
+
+  /* What the row does, read off its id: the icon's colour says it before the
+   * label does. */
+  :is(menuitem, menu, toolbarbutton.subviewbutton):is([id*="reload" i], [id*="refresh" i], [id*="sync" i], [id*="restore" i], [id*="undo" i]) {
+    --kako-row-icon: var(--kako-menu_icon_connect);
+  }
+
+  :is(menuitem, menu, toolbarbutton.subviewbutton):is([id*="translat" i], [id*="edit" i], [id*="rename" i], [id*="email" i], [id*="note" i]) {
+    --kako-row-icon: var(--kako-menu_icon_message);
+  }
+
+  :is(menuitem, menu, toolbarbutton.subviewbutton):is([id*="password" i], [id*="login" i], [id*="fxa" i], [id*="account" i], [id*="profile" i]) {
+    --kako-row-icon: var(--kako-menu_icon_contact);
+  }
+
+  :is(menuitem, menu, toolbarbutton.subviewbutton):is([id*="copy" i], [id*="share" i], [id*="save" i], [id*="send" i], [id*="export" i], [id*="print" i], [id*="download" i]) {
+    --kako-row-icon: var(--kako-menu_icon_share);
+  }
+
+  :is(menuitem, menu, toolbarbutton.subviewbutton):is([id*="private" i], [id*="block" i], [id*="mute" i], [id*="lock" i]) {
+    --kako-row-icon: var(--kako-menu_icon_block);
+  }
+
+  :is(menuitem, menu, toolbarbutton.subviewbutton):is([id*="delete" i], [id*="remove" i], [id*="forget" i], [id*="uninstall" i]) {
+    --kako-row-frame: var(--kako-menu_delete);
+    --kako-row-ink: var(--kako-menu_delete);
+    --kako-row-icon: var(--kako-menu_delete);
+  }
+
+  /* Every row of a menu has the same box, so that labels share one edge: the
+   * frame of a row that is only a state is there too, and not drawn. */
+  menupopup:not(menulist > menupopup) > :is(menuitem, menu) {
+    border: 1.25px solid transparent !important;
+    border-radius: 999px !important;
+    margin: 3px 8px !important;
+    padding-inline: 14px !important;
+    color: var(--kako-row-ink) !important;
+    fill: var(--kako-row-icon) !important;
+  }
+
+  /* The action rows: the pill. */
+  menupopup:not(menulist > menupopup) > :is(menuitem:not([type="checkbox"], [type="radio"]), menu) {
+    border-color: var(--kako-row-frame) !important;
+  }
+
+  /* A ticked or chosen row: its mark in the mark's own role. */
+  menupopup:not(menulist > menupopup) > menuitem:is([type="checkbox"], [type="radio"]) {
+    fill: var(--kako-check_on) !important;
+  }
+
+  menupopup > :is(menuitem, menu)[_moz-menuactive]:not([disabled="true"]) {
+    background-color: var(--kako-menu_highlight) !important;
+    color: var(--kako-row-ink) !important;
+  }
+
+  menupopup > :is(menuitem, menu)[disabled="true"] {
+    opacity: 0.38 !important;
+    background-color: transparent !important;
+  }
+
+  /* The › of a row that opens a submenu: in the row's own colour, at full
+   * strength. */
+  menupopup > menu::after {
+    fill: var(--kako-row-ink) !important;
+    fill-opacity: 1 !important;
+  }
+
+  /* A dropdown's rows are choices: plain, in the menu's colours. */
+  menulist > menupopup > :is(menuitem, menu) {
+    color: var(--kako-menu_label) !important;
+  }
+
+  menulist > menupopup > :is(menuitem, menu)[_moz-menuactive]:not([disabled="true"]) {
+    background-color: var(--kako-menu_highlight) !important;
+  }
+
+  /* The header line a menu opens with. */
+  menucaption,
+  .subview-subheader,
+  .panel-header > h1 {
+    color: var(--kako-menu_header) !important;
+  }
+
+  /* Group dividers: inset so that their ends meet the pills' edges. */
+  menupopup:not(menulist > menupopup) > menuseparator {
+    padding-inline: 8px !important;
+  }
+
+  menuseparator::before {
+    border-top: 1px solid var(--kako-menu_divider) !important;
+  }
+
+  panelview toolbarseparator,
+  panel-list > hr {
+    border-top: 1px solid var(--kako-menu_divider) !important;
+    border-bottom: none !important;
+    margin-inline: 8px !important;
+    opacity: 1 !important;
+  }
+
+  /* --- The application menu and panel subviews ----------------------------
+   *
+   * A subview button is the panel's menu row. Left alone: the back arrow of a
+   * subview's header (a glyph), the zoom and edit controls (glyph groups), and
+   * the rows that carry a tick.
+   * ---------------------------------------------------------------------- */
+
+  toolbarbutton.subviewbutton:not(.subviewbutton-back, [type="checkbox"], [type="radio"], [checked], .toolbaritem-combined-buttons > *),
+  .widget-overflow-list > toolbarbutton.toolbarbutton-1 {
+    border: 1.25px solid var(--kako-row-frame) !important;
+    border-radius: 999px !important;
+    margin: 3px 8px !important;
+    color: var(--kako-row-ink) !important;
+  }
+
+  toolbarbutton.subviewbutton:not(.subviewbutton-back, .toolbaritem-combined-buttons > *) > .toolbarbutton-icon {
+    fill: var(--kako-row-icon) !important;
+  }
+
+  toolbarbutton.subviewbutton:not([disabled="true"]):is(:hover, [open]),
+  .widget-overflow-list > toolbarbutton.toolbarbutton-1:not([disabled="true"]):hover {
+    background-color: var(--kako-menu_highlight) !important;
+  }
+
+  toolbarbutton.subviewbutton[disabled="true"] {
+    opacity: 0.38 !important;
+  }
+
+  toolbarbutton.subviewbutton-nav::after {
+    fill: var(--kako-row-ink) !important;
+    fill-opacity: 1 !important;
+  }
+
+  toolbarbutton.subviewbutton[shortcut]::after {
+    color: var(--kako-menu_header) !important;
+  }
+
+  /* --- panel-list -----------------------------------------------------------
+   *
+   * A panel-item draws a <button> inside its shadow root, which the pill rule
+   * of kako-controls.css already reaches. Here it is handed the menu's colours
+   * through that rule's local properties, which inherit into the shadow tree.
+   * ---------------------------------------------------------------------- */
+
+  panel-item {
+    --kako-pill-width: 1.25px;
+    --kako-pill-weight: normal;
+    --kako-pill-frame: var(--kako-menu_row_frame);
+    --kako-pill-ink: var(--kako-menu_label);
+    --panel-item-fill: var(--kako-menu_icon_view) !important;
+    margin: 3px 8px !important;
+  }
+
+  /* A ticked panel-item is a state, not an action. */
+  panel-item[type="checkbox"] {
+    --kako-pill-frame: transparent;
+    --panel-item-fill: var(--kako-check_on) !important;
+  }
+
+  panel-item:is([action*="remove" i], [action*="delete" i], [action*="uninstall" i], [data-l10n-id*="remove" i], [data-l10n-id*="delete" i], [id*="remove" i], [id*="delete" i]) {
+    --kako-pill-frame: var(--kako-menu_delete);
+    --kako-pill-ink: var(--kako-menu_delete);
+    --panel-item-fill: var(--kako-menu_delete) !important;
+  }
+}

@@ -23,4 +23,11 @@ browser.jar:
   content/branding/kako-chrome.css
   content/branding/kako-folder-add.svg
   content/branding/kako-dialog.css
+  content/branding/kako-controls.css
+  content/branding/kako-menus.css
+  content/branding/kako-browser.css
   content/branding/kako-newtab-user.css
+# The fork's own strings, English and Japanese, served to the L10nRegistry from
+# here by KakoTheme.sys.mjs whether or not a language pack is installed.
+  content/branding/l10n/en-US/kako.ftl             (../l10n/en-US/kako.ftl)
+  content/branding/l10n/ja/kako.ftl                (../l10n/ja/kako.ftl)

@@ -1,0 +1,380 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* 白い熊 火狐 UI -- the page of the fork's colour roles.
+ *
+ * No colour is written here. Every value is a role, var(--kako-…); kako-ui.mjs
+ * declares them on this document's root from the role table, so the page stays
+ * in the theme's colours -- and usable -- while the master switch is off and
+ * the browser-wide sheets are unregistered.
+ *
+ * The page draws its own pills and its own switch for the same reason. While
+ * the switch is on, the browser-wide rules of kako-controls.css apply here
+ * too; both read the same local properties (--kako-pill-…), so they agree.
+ */
+
+:root {
+  background-color: var(--kako-background);
+  color: var(--kako-text);
+  font: message-box;
+  font-size: 15px;
+  scrollbar-color: var(--kako-scrollbar_thumb) var(--kako-scrollbar_track);
+}
+
+body {
+  margin: 0;
+}
+
+::selection {
+  background-color: var(--kako-text_selection);
+  color: var(--kako-text_selection_text);
+}
+
+:focus-visible {
+  outline: 2px solid var(--kako-focus_outline);
+  outline-offset: 2px;
+}
+
+#page {
+  max-width: 760px;
+  margin-inline: auto;
+  padding: 16px 20px 64px;
+}
+
+#title {
+  margin: 0 0 10px;
+  font-size: 1.5em;
+  font-weight: bold;
+  color: var(--kako-text_heading);
+}
+
+/* --- Icons: sized by the label beside them, never under 18px ------------- */
+
+.icon {
+  flex: none;
+  width: max(1.25em, 18px);
+  height: max(1.25em, 18px);
+  -moz-context-properties: fill, stroke;
+  /* The colour is set per icon, from a role, by kako-ui.mjs. */
+  fill: currentColor;
+  stroke: currentColor;
+  pointer-events: none;
+}
+
+/* --- Pills: outlined, never filled ---------------------------------------- */
+
+.pill {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  width: fit-content;
+  margin: 3px 0;
+  padding: 7px 14px;
+  border: var(--kako-pill-width, 1.25px) solid var(--kako-pill-frame, var(--kako-button_border));
+  border-radius: 999px;
+  background-color: var(--kako-button_background);
+  color: var(--kako-pill-ink, var(--kako-button_text));
+  font: inherit;
+  font-weight: var(--kako-pill-weight, normal);
+  cursor: pointer;
+}
+
+.pill:not(:disabled):hover {
+  background-color: color-mix(in srgb, var(--kako-button_ripple) 55%, transparent);
+}
+
+.pill:not(:disabled):hover:active {
+  background-color: var(--kako-button_ripple);
+}
+
+.pill:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.pill.main {
+  --kako-pill-width: 3px;
+  --kako-pill-weight: bold;
+  --kako-pill-frame: var(--kako-button_main_border);
+  --kako-pill-ink: var(--kako-button_main_text);
+}
+
+.pill.destructive {
+  --kako-pill-frame: var(--kako-button_delete);
+  --kako-pill-ink: var(--kako-button_delete);
+}
+
+/* The › of a pill that opens something, at its right end. */
+.pill.opens::after {
+  content: "\203A";
+  margin-inline-start: 0.2em;
+}
+
+/* --- Action rows: a pill that hugs its label, the explanation beneath ------ */
+
+.action-row {
+  padding-block: 2px;
+}
+
+.explanation {
+  margin: 1px 0 0;
+  /* In line with the label inside the pill above: its frame, padding, icon and gap. */
+  padding-inline-start: calc(14px + max(1.25em, 18px) + 0.6em);
+  color: var(--kako-note);
+  font-size: 0.87em;
+}
+
+/* --- The chip index ------------------------------------------------------- */
+
+#index {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-block: 10px 14px;
+}
+
+.chip {
+  --kako-pill-frame: var(--kako-chip_frame);
+  --kako-pill-ink: var(--kako-chip_text);
+  margin: 0;
+  padding: 3px 10px;
+  gap: 0.45em;
+  font-size: 0.87em;
+  cursor: grab;
+  user-select: none;
+}
+
+.chip > .icon {
+  width: 1.25em;
+  height: 1.25em;
+}
+
+.chip.dragging {
+  opacity: 0.38;
+}
+
+/* --- Sections: a folding accordion ---------------------------------------- */
+
+.section {
+  border-top: 1px solid var(--kako-page_divider);
+  scroll-margin-top: 8px;
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  padding-block: 8px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 1.1em;
+  font-weight: bold;
+  color: var(--kako-page_heading);
+}
+
+.heading > .label {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.heading > .fold {
+  margin-inline-start: auto;
+  padding-inline: 6px;
+}
+
+.rows {
+  padding-block: 0 8px;
+}
+
+.rows[hidden] {
+  display: none;
+}
+
+.subheading {
+  margin: 8px 0 2px;
+  font-weight: bold;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  color: var(--kako-page_heading);
+}
+
+.note {
+  margin: 2px 0 6px;
+  color: var(--kako-note);
+  font-size: 0.87em;
+}
+
+/* --- Control rows: plain, only as tall as their content --------------------- */
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  min-height: 0;
+  padding-block: 2px;
+}
+
+.row > .label {
+  flex: 1;
+  min-width: 0;
+}
+
+/* The mark of a role that has a value of its own. */
+.row > .changed {
+  flex: none;
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 50%;
+  background-color: var(--kako-accent);
+}
+
+.row > .changed[hidden] {
+  display: none;
+}
+
+/* A row with an explanation: bold label, the description in the note colour,
+ * and a thin rule down the whole item's left edge. */
+.explained {
+  margin-block: 2px 6px;
+  padding-inline-start: 10px;
+  border-inline-start: 2px solid var(--kako-page_rule);
+}
+
+.explained > .row > .label {
+  font-weight: bold;
+}
+
+.explained > .description {
+  margin: 0;
+  padding-inline-start: calc(max(1.25em, 18px) + 0.6em);
+  color: var(--kako-note);
+  font-size: 0.87em;
+}
+
+/* --- The swatch, the value and the reset of a role ------------------------- */
+
+.hex {
+  appearance: none;
+  box-sizing: border-box;
+  width: 9.5ch;
+  padding: 2px 8px;
+  border: 1px solid var(--kako-field_frame);
+  border-radius: 999px;
+  background-color: var(--kako-field_ground);
+  color: var(--kako-field_text);
+  caret-color: var(--kako-text_cursor);
+  font: inherit;
+  font-family: monospace;
+  font-size: 0.87em;
+}
+
+.hex:focus {
+  border-color: var(--kako-field_frame_focused);
+}
+
+.swatch {
+  appearance: none;
+  box-sizing: border-box;
+  flex: none;
+  width: 44px;
+  height: 28px;
+  padding: 2px;
+  border: 1.25px solid var(--kako-border);
+  border-radius: 8px;
+  background-color: transparent;
+  cursor: pointer;
+}
+
+.swatch::-moz-color-swatch {
+  border: none;
+  border-radius: 5px;
+}
+
+.reset {
+  flex: none;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+}
+
+.reset > .icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* --- The switch: an outlined pill with a solid dot -------------------------- */
+
+.toggle-button {
+  appearance: none;
+  box-sizing: border-box;
+  flex: none;
+  width: 52px;
+  height: 28px;
+  padding: 0;
+  border: 2px solid var(--kako-switch_off);
+  border-radius: 999px;
+  background-color: transparent;
+  cursor: pointer;
+}
+
+.toggle-button::before {
+  content: "";
+  display: block;
+  width: 13px;
+  height: 13px;
+  margin: 5.5px;
+  border-radius: 50%;
+  background-color: var(--kako-switch_off_dot);
+  transition: translate 180ms ease-out;
+}
+
+.toggle-button[aria-pressed="true"] {
+  border-color: var(--kako-switch_on);
+}
+
+.toggle-button[aria-pressed="true"]::before {
+  background-color: var(--kako-switch_on_dot);
+  translate: 24px;
+}
+
+.toggle-button[aria-pressed="true"]:dir(rtl)::before {
+  translate: -24px;
+}
+
+/* --- The confirmation, in the page ----------------------------------------- */
+
+#confirm {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--kako-scrim);
+}
+
+#confirm[hidden] {
+  display: none;
+}
+
+#confirm-box {
+  max-width: min(420px, calc(100vw - 48px));
+  padding: 18px 20px 14px;
+  border: 1px solid var(--kako-dialog_border);
+  border-radius: 12px;
+  background-color: var(--kako-dialog_background);
+  color: var(--kako-dialog_text);
+}
+
+#confirm-text {
+  margin: 0 0 14px;
+}
+
+#confirm-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

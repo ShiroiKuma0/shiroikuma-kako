@@ -526,6 +526,17 @@ const PanelUI = {
       case "appMenu-settings-button":
         openPreferences();
         break;
+      // Fork: 白い熊 火狐 UI.
+      case "appMenu-kako-ui-button":
+        switchToTabHavingURI(
+          "chrome://browser/content/kako/kako-ui.html",
+          true,
+          {
+            triggeringPrincipal:
+              Services.scriptSecurityManager.getSystemPrincipal(),
+          }
+        );
+        break;
       case "appMenu-more-button2":
         this.showMoreToolsPanel(target);
         break;

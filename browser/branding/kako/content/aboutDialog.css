@@ -4,13 +4,13 @@
 
 @media not ((prefers-contrast) and (prefers-color-scheme: light)) {
   #aboutDialogContainer {
-    background-color: #130829;
-    color: #fff;
+    background-color: var(--kako-dialog_background);
+    color: var(--kako-dialog_text);
     color-scheme: dark;
   }
 
   #bottomBox {
-    background-color: hsla(235, 43%, 10%, 0.5);
+    background-color: var(--kako-dialog_background);
   }
 }
 
@@ -28,6 +28,6 @@
    this dialog worth checking. Both #version labels are declared in
    aboutDialog.xhtml (MOZ_UPDATER on and off); only one is ever compiled in. */
 #version {
-  color: #ffff00;
+  color: var(--kako-accent);
   font-weight: bold;
 }

@@ -427,32 +427,22 @@ BrowserGlue.prototype = {
   // runs on startup, before the first command line handler is invoked
   // (i.e. before the first window is opened)
   _beforeUIStartup: function BG__beforeUIStartup() {
-    // Fork: 白い熊 火狐 -- register the dialog/in-content palette globally.
+    // Fork: 白い熊 火狐 -- the UI colours, for every chrome document at once.
     //
     // Chrome dialogs are their own documents (the default browser prompt is
-    // chrome://global/content/commonDialog.xhtml in a tab dialog), so the
-    // stylesheet linked from browser.xhtml cannot reach them. A USER_SHEET
-    // applies to every chrome document at once. Registered here rather than in
-    // a window hook so dialogs opened before the first browser window are
-    // styled too.
+    // chrome://global/content/commonDialog.xhtml in a tab dialog), so a
+    // stylesheet linked from browser.xhtml cannot reach them. KakoTheme
+    // registers USER sheets, which apply to every chrome document: one
+    // generated from the colour roles, and the static ones that name them.
+    // Done here rather than in a window hook so dialogs opened before the
+    // first browser window are styled too. It also registers the fork's own
+    // strings (kako.ftl, English and Japanese).
     try {
-      const sss = Cc["@mozilla.org/content/style-sheet-service;1"].getService(
-        Ci.nsIStyleSheetService
-      );
-      for (const sheet of [
-        "chrome://branding/content/kako-dialog.css",
-        // New Tab. Also linked from the newtab package, but the link loses to
-        // the page's own rules; a user sheet outranks author !important and does
-        // not depend on which document about:newtab happens to load.
-        "chrome://branding/content/kako-newtab-user.css",
-      ]) {
-        const uri = Services.io.newURI(sheet);
-        if (!sss.sheetRegistered(uri, sss.USER_SHEET)) {
-          sss.loadAndRegisterSheet(uri, sss.USER_SHEET);
-        }
-      }
+      ChromeUtils.importESModule(
+        "moz-src:///browser/components/kako/KakoTheme.sys.mjs"
+      ).KakoTheme.init();
     } catch (e) {
-      console.error("kako: failed to register kako-dialog.css", e);
+      console.error("kako: failed to start the UI theme", e);
     }
 
     // Fork: apply the restricted-domains switch, and keep applying it whenever the

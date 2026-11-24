@@ -254,6 +254,30 @@ desktop product as a second step.
   the tree, the XML is the source if it is lost). Every key not marked untranslatable must
   exist in both.
 
+## Desktop: role table, UI page, Japanese (160.0.1+003, 2026-11-24)
+
+- **Roles are preferences.** `browser/components/kako/KakoTheme.sys.mjs` holds the role table
+  (the two primaries written once, there), stores overrides as `kako.ui.color.<role>`, and
+  writes one generated USER sheet declaring `--kako-<role>` on `:root`, scoped to
+  `chrome://`, `about:`, `resource://` and `moz-extension://` so web pages never see it. The
+  fork's stylesheets (`browser/branding/kako/content/kako-*.css`) name roles only.
+  `kako.ui.enabled` off unregisters all of it. The built-in theme manifest keeps the fixed
+  black/yellow as what the platform draws before any of this runs.
+- **The UI page** is `chrome://browser/content/kako/kako-ui.html`, opened from the app menu
+  and from the pill at the top of Settings. Order and fold state: `kako.ui.sectionOrder`,
+  `kako.ui.sectionsOpen`.
+- **The fork's desktop strings live in its own Fluent files**,
+  `browser/branding/kako/l10n/{en-US,ja}/kako.ftl`, with identical ids; nothing of the fork
+  is left in upstream's `.ftl` files. A document that uses them links `kako.ftl`.
+- **The package is multi-locale, English and Japanese.** The locale sources are a shallow
+  clone of `mozilla-l10n/firefox-l10n` at `~/.mozbuild/l10n-central` (mach clones it by
+  itself only on Nightly). The pipeline is `./mach build`, then
+  `./mach package-multi-locale --locales en-US ja`, then `tools/kako/deb/build-deb.sh`.
+  **Do not run a plain `./mach package` after it** — that repackages English only.
+  `intl.locale.requested` is set to the empty string in the branding prefs, which means
+  "follow the system's language".
+- Check after a build: `unzip -p <app>/omni.ja res/multilocale.txt` prints `ja,en-US`.
+
 ## What the app-data backup covers (and the trap in it)
 
 `KakoExim.Cat` is the whole contract — **seventeen** categories, archive format

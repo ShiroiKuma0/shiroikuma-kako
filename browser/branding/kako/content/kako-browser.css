@@ -1,0 +1,94 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* 白い熊 火狐 -- the browser window: frame, toolbars, tabs, address bar, panels
+ * and sidebar, fed from the colour roles.
+ *
+ * These surfaces are painted from the variables LightweightThemeConsumer
+ * derives from the active theme's manifest
+ * (toolkit/modules/LightweightThemeConsumer.sys.mjs and
+ * browser/themes/ThemeVariableMap.sys.mjs), and the built-in 白い熊 火狐 theme
+ * (browser/extensions/kako-theme) is a static manifest: it cannot read a
+ * preference. So the manifest stays as the black-and-yellow default -- it is
+ * what the platform paints before any of this is loaded -- and every variable
+ * it sets is set again here, from a role.
+ *
+ * The consumer writes them as inline style on the root; a USER sheet's
+ * !important outranks that. The sheet is registered by KakoTheme.sys.mjs and
+ * unregistered when the 白い熊 火狐 UI switch is off, which hands the window
+ * back to the theme. No colour is written here.
+ */
+
+@-moz-document url-prefix("chrome://"), url-prefix("about:") {
+  :root {
+    /* frame, frame_inactive, tab_background_text */
+    --lwt-accent-color: var(--kako-window_frame) !important;
+    --lwt-accent-color-inactive: var(--kako-window_frame_inactive) !important;
+    --lwt-text-color: var(--kako-tab_text_inactive) !important;
+
+    /* toolbar, toolbar_text, the three separators */
+    --toolbar-background-color: var(--kako-toolbar_fill) !important;
+    --toolbar-text-color: var(--kako-toolbar_label) !important;
+    --tabs-navbar-separator-color: var(--kako-toolbar_top_border) !important;
+    --chrome-content-separator-color: var(--kako-toolbar_top_border) !important;
+    --toolbarseparator-color: var(--kako-toolbar_separator) !important;
+
+    /* icons, icons_attention, button_background_hover / _active */
+    --toolbarbutton-icon-fill: var(--kako-toolbar_icon) !important;
+    --toolbarbutton-icon-fill-attention: var(--kako-accent) !important;
+    --toolbarbutton-background-color-hover: var(--kako-toolbar_button_hover) !important;
+    --toolbarbutton-background-color-active: var(--kako-toolbar_button_active) !important;
+
+    /* toolbar_field and its text, border and focus variants */
+    --toolbar-field-background-color: var(--kako-addressbar_fill) !important;
+    --toolbar-field-background-color-focus: var(--kako-addressbar_fill) !important;
+    --toolbar-field-text-color: var(--kako-toolbar_text) !important;
+    --toolbar-field-text-color-focus: var(--kako-toolbar_text) !important;
+    --toolbar-field-border-color: var(--kako-addressbar_border) !important;
+    --toolbar-field-border-color-focus: var(--kako-addressbar_border_focused) !important;
+    --lwt-toolbar-field-highlight: var(--kako-text_selection) !important;
+    --lwt-toolbar-field-highlight-text: var(--kako-text_selection_text) !important;
+
+    /* popup_highlight: the chosen row of the address bar's results */
+    --urlbarview-background-color-selected: var(--kako-urlbar_highlight) !important;
+    --urlbarview-text-color-selected: var(--kako-urlbar_highlight_text) !important;
+
+    /* tab_selected, tab_text, tab_line, tab_loading */
+    --tab-background-color-selected: var(--kako-tab_selected) !important;
+    --tab-text-color-selected: var(--kako-tab_text) !important;
+    --lwt-tab-line-color: var(--kako-tab_active_border) !important;
+    --tab-icon-fill-loading: var(--kako-tab_loading) !important;
+
+    /* popup, popup_text, popup_border: doorhangers and the application menu.
+     * A menupopup and a panel set their own in kako-menus.css. */
+    --panel-background-color: var(--kako-panel_background) !important;
+    --panel-text-color: var(--kako-panel_text) !important;
+    --panel-border-color: var(--kako-panel_border) !important;
+
+    /* sidebar, sidebar_text, sidebar_border */
+    --sidebar-background-color: var(--kako-sidebar_background) !important;
+    --sidebar-text-color: var(--kako-sidebar_text) !important;
+    --sidebar-border-color: var(--kako-sidebar_border) !important;
+
+    /* ntp_background, ntp_text, ntp_card_background */
+    --tabpanel-background-color: var(--kako-background) !important;
+    --newtab-background-color: var(--kako-newtab_background) !important;
+    --newtab-background-color-secondary: var(--kako-newtab_card_background) !important;
+    --newtab-text-primary-color: var(--kako-newtab_text) !important;
+  }
+
+  /* The hint in an empty address bar or search bar. */
+  #urlbar-input::placeholder,
+  .urlbar-input::placeholder,
+  .searchbar-textbox::placeholder {
+    color: var(--kako-toolbar_hint) !important;
+    opacity: 1 !important;
+  }
+
+  /* A tab's close button: a glyph, in its own role. */
+  .tab-close-button {
+    color: var(--kako-tab_close) !important;
+    fill: var(--kako-tab_close) !important;
+  }
+}

@@ -579,6 +579,18 @@ document.addEventListener("DOMContentLoaded", init_all, { once: true });
 function init_all() {
   Preferences.forceEnableInstantApply();
 
+  // Fork: the pill at the top of the page that opens 白い熊 火狐 UI.
+  document.getElementById("kako-ui-link")?.addEventListener("click", () => {
+    window.browsingContext.topChromeWindow.switchToTabHavingURI(
+      "chrome://browser/content/kako/kako-ui.html",
+      true,
+      {
+        triggeringPrincipal:
+          Services.scriptSecurityManager.getSystemPrincipal(),
+      }
+    );
+  });
+
   // Asks Preferences to queue an update of the attribute values of
   // the entire document.
   Preferences.queueUpdateOfAllElements();

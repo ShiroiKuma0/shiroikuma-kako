@@ -46,6 +46,8 @@
   <link rel="localization" href="browser/preferences/fonts.ftl"/>
   <link rel="localization" href="browser/preferences/moreFromMozilla.ftl"/>
   <link rel="localization" href="browser/preferences/preferences.ftl"/>
+  <!-- Fork: the fork's own strings; the source is registered by KakoTheme.sys.mjs. -->
+  <link rel="localization" href="kako.ftl"/>
   <link rel="localization" href="toolkit/branding/brandings.ftl"/>
   <link rel="localization" href="toolkit/firefoxlabs/features.ftl"/>
   <link rel="localization" href="toolkit/global/mozPageHeader.ftl"/>
@@ -251,6 +253,13 @@
             data-l10n-id="search-input-box2"
             data-l10n-attrs="placeholder"
           />
+        </html:div>
+        <!-- Fork: the way to 白い熊 火狐 UI, the page of the fork's colour roles.
+             A pill that hugs its label, its explanation beneath; wired up in
+             init_all() (preferences.js). -->
+        <html:div id="kako-ui-link-row">
+          <html:button id="kako-ui-link" data-l10n-id="kako-prefs-ui-link"></html:button>
+          <html:div id="kako-ui-link-desc" data-l10n-id="kako-prefs-ui-link-desc"></html:div>
         </html:div>
         <vbox id="mainPrefPane">
 #include searchResults.inc.xhtml

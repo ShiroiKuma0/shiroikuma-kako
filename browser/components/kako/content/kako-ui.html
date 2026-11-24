@@ -1,0 +1,58 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src chrome:; img-src chrome: data:; object-src 'none'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- 白い熊 火狐 UI: the page of the fork's colour roles. Its strings come
+         from kako.ftl through a localization and a registry of its own
+         (kako-ui.mjs, KakoTheme.pageRegistry), so that the page is Japanese
+         for a Japanese request whether or not a language pack is installed. -->
+    <title data-l10n-id="kako-ui-title"></title>
+    <link rel="icon" href="chrome://branding/content/icon32.png" />
+    <link rel="stylesheet" href="chrome://browser/content/kako/kako-ui.css" />
+  </head>
+  <body>
+    <main id="page">
+      <h1 id="title" data-l10n-id="kako-ui-title"></h1>
+
+      <!-- The settings link: the page's one thick pill, first under the title. -->
+      <div class="action-row" id="app-settings-row"></div>
+
+      <!-- The index: one chip for every section. -->
+      <nav id="index" data-l10n-id="kako-ui-index"></nav>
+
+      <div id="sections"></div>
+    </main>
+
+    <div id="confirm" hidden="">
+      <div
+        id="confirm-box"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="confirm-text"
+      >
+        <p id="confirm-text"></p>
+        <div id="confirm-buttons">
+          <button
+            id="confirm-cancel"
+            class="pill"
+            data-l10n-id="kako-ui-cancel"
+          ></button>
+          <button id="confirm-ok" class="pill main destructive"></button>
+        </div>
+      </div>
+    </div>
+
+    <script
+      type="module"
+      src="chrome://browser/content/kako/kako-ui.mjs"
+    ></script>
+  </body>
+</html>
