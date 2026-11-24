@@ -230,3 +230,9 @@ kako-role-badge-frame = バッジの枠
 kako-role-badge-text = バッジの文字
 kako-role-badge-filled = 塗りつぶしバッジの背景
 kako-role-badge-filled-text = 塗りつぶしバッジの文字
+
+## App language -- the first section of the UI page
+
+kako-section-language = アプリの言語
+kako-ui-language-row = 言語:
+kako-ui-language-system = システムの既定

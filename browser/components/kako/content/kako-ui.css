@@ -378,3 +378,110 @@ body {
   justify-content: flex-end;
   gap: 8px;
 }
+
+/* The language list. Rows are plain; only the current language sits in a pill. */
+
+#languages {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--kako-scrim);
+}
+
+#languages[hidden] {
+  display: none;
+}
+
+#languages-box {
+  width: min(460px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  padding: 18px 20px 14px;
+  border: 1px solid var(--kako-dialog_border);
+  border-radius: 12px;
+  background-color: var(--kako-dialog_background);
+  color: var(--kako-dialog_text);
+}
+
+#languages-title {
+  margin: 0 0 10px;
+  font-size: 1.15em;
+  color: var(--kako-dialog_title);
+}
+
+#languages-list {
+  overflow-y: auto;
+  /* The tag column stays at the right on every row, whatever the language's direction. */
+  direction: ltr;
+}
+
+.language {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 6px 12px;
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: none;
+  color: var(--kako-dialog_text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+/* A hairline between rows, inset to the text; none beside the current row's pill. */
+.language:not(.current) + .language:not(.current) {
+  background-image: linear-gradient(var(--kako-page_divider), var(--kako-page_divider));
+  background-size: calc(100% - 54px) 1px;
+  background-position: 42px 0;
+  background-repeat: no-repeat;
+}
+
+.language.current {
+  border-color: var(--kako-button_main_border);
+  font-weight: bold;
+}
+
+.language-mark {
+  flex: none;
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--kako-radio_off);
+  border-radius: 50%;
+}
+
+.language.current > .language-mark {
+  border-color: var(--kako-radio_on);
+  background: radial-gradient(circle, var(--kako-radio_on) 0 4px, transparent 4.5px);
+}
+
+.language-names {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.language-region {
+  font-size: 0.82em;
+  font-weight: normal;
+  color: var(--kako-note);
+}
+
+.language-tag {
+  font-family: monospace;
+  font-size: 0.82em;
+  font-weight: normal;
+  color: var(--kako-note);
+}
+
+#languages-buttons {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}

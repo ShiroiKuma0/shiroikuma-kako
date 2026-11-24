@@ -12,6 +12,9 @@
     <string name="kako_app_settings">アプリの設定</string>
     <string name="kako_app_settings_desc">検索、プライバシー、アドオンなど、Firefox 本体の設定です。</string>
     <string name="kako_section_maintenance">メンテナンス</string>
+    <string name="kako_section_language">アプリの言語</string>
+    <string name="kako_language_row">言語: %1$s</string>
+    <string name="kako_language_system">システムの既定</string>
     <string name="kako_master_switch">黒黄テーマを使う</string>
     <string name="kako_master_switch_desc">オフにすると Firefox 本来の外観になり、下の色は使われません。</string>
     <string name="kako_subgroup_colors">色</string>

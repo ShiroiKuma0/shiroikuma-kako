@@ -14,6 +14,9 @@
     <string name="kako_app_settings">App settings</string>
     <string name="kako_app_settings_desc">Search, privacy, add-ons and everything else Firefox itself offers.</string>
     <string name="kako_section_maintenance">Maintenance</string>
+    <string name="kako_section_language">App language</string>
+    <string name="kako_language_row">Language: %1$s</string>
+    <string name="kako_language_system">System default</string>
     <string name="kako_master_switch">Use the black-yellow theme</string>
     <string name="kako_master_switch_desc">Off, the app shows Firefox’s own look and the colours below are not used.</string>
     <string name="kako_subgroup_colors">Colours</string>

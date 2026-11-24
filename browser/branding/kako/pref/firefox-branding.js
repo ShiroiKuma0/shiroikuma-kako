@@ -106,7 +106,7 @@ pref("kako.extensions.ignoreRestrictedDomains", true);
 //
 // STAMPED BY tools/kako/bump-build.sh on every build, from gradle.properties.
 // Do not edit by hand -- the next bump overwrites it.
-pref("kako.version.full", "160.0.1+003");
+pref("kako.version.full", "160.0.1+004");
 
 // 白い熊 火狐 UI on the desktop (browser/components/kako/KakoTheme.sys.mjs).
 // On, the colour roles are carried into every chrome document; off, the

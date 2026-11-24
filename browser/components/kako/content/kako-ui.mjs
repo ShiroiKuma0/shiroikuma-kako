@@ -229,6 +229,9 @@ function masterRow() {
 // The rows of a section, built when it is first opened.
 function buildRows(key) {
   let rows = [];
+  if (key == "language") {
+    rows.push(languageRow());
+  }
   if (key == "foundation") {
     rows.push(masterRow());
     rows.push(el("p", { class: "note", l10n: "kako-ui-foundation-note" }));
@@ -273,6 +276,95 @@ function buildRows(key) {
     rows.push(roleRow(role));
   }
   return rows;
+}
+
+// ----- the app's language ---------------------------------------------------
+
+// A language's own name and region, each in that language.
+function languageNames(tag) {
+  let locale = new Intl.Locale(tag);
+  let name = new Intl.DisplayNames([tag], { type: "language" }).of(
+    locale.language
+  );
+  let region = locale.region
+    ? new Intl.DisplayNames([tag], { type: "region" }).of(locale.region)
+    : "";
+  return [name.charAt(0).toLocaleUpperCase(tag) + name.slice(1), region];
+}
+
+// The one row of the section: a pill that opens the list.
+function languageRow() {
+  let current = KakoTheme.language;
+  let value = el("span");
+  if (current) {
+    value.textContent = languageNames(current)[0];
+  } else {
+    value.setAttribute("data-l10n-id", "kako-ui-language-system");
+  }
+  let button = el(
+    "button",
+    { class: "pill main opens", type: "button" },
+    icon(ICONS + "defaultFavicon.svg", "menu_icon_message"),
+    el("span", { l10n: "kako-ui-language-row" }),
+    value
+  );
+  button.addEventListener("click", openLanguages);
+  return el("div", { class: "action-row" }, button);
+}
+
+/*
+ * The list: "System default" first, then every language the package carries,
+ * each in its own language, sorted by name. Rows are plain; only the current
+ * one sits in a pill. Choosing a row applies it at once.
+ */
+function openLanguages() {
+  let current = KakoTheme.language;
+  let list = $("languages-list");
+  list.replaceChildren();
+  let entries = KakoTheme.shippedLanguages
+    .map(tag => [tag, ...languageNames(tag)])
+    .sort((a, b) => a[1].localeCompare(b[1]));
+  for (let [tag, name, region] of [["", "", ""], ...entries]) {
+    let label = el("span", { class: "language-name" });
+    if (tag) {
+      label.textContent = name;
+    } else {
+      label.setAttribute("data-l10n-id", "kako-ui-language-system");
+    }
+    let names = el("span", { class: "language-names" }, label);
+    if (region) {
+      let line = el("span", { class: "language-region" });
+      line.textContent = region;
+      names.append(line);
+    }
+    let row = el(
+      "button",
+      {
+        class: "language" + (tag == current ? " current" : ""),
+        type: "button",
+        role: "radio",
+        "aria-checked": String(tag == current),
+      },
+      el("span", { class: "language-mark", "aria-hidden": "true" }),
+      names
+    );
+    if (tag) {
+      let code = el("span", { class: "language-tag" });
+      code.textContent = tag;
+      row.append(code);
+    }
+    row.addEventListener("click", () => {
+      $("languages").hidden = true;
+      if (tag != current) {
+        KakoTheme.language = tag;
+        // The page reads its strings once; show it again in the new language.
+        window.location.reload();
+      }
+    });
+    list.append(row);
+  }
+  $("languages").hidden = false;
+  $("languages-cancel").focus();
 }
 
 // ----- sections and their index ----------------------------------------------
@@ -484,6 +576,14 @@ function init() {
   arrange();
   initDrag();
 
+  $("languages-cancel").addEventListener("click", () => {
+    $("languages").hidden = true;
+  });
+  $("languages").addEventListener("click", event => {
+    if (event.target == $("languages")) {
+      $("languages").hidden = true;
+    }
+  });
   $("confirm-cancel").addEventListener("click", () => closeConfirm(false));
   $("confirm-ok").addEventListener("click", () => closeConfirm(true));
   $("confirm").addEventListener("click", event => {
@@ -494,6 +594,9 @@ function init() {
   document.addEventListener("keydown", event => {
     if (event.key == "Escape" && !$("confirm").hidden) {
       closeConfirm(false);
+    }
+    if (event.key == "Escape") {
+      $("languages").hidden = true;
     }
   });
 

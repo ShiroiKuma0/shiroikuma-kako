@@ -358,6 +358,7 @@ class KakoUiSettingsFragment : Fragment() {
     @Suppress("CyclomaticComplexMethod")
     private fun fillSection(section: KakoPageSection) {
         when (section) {
+            KakoPageSection.LANGUAGE -> fillLanguage()
             KakoPageSection.EXIM -> fillExim()
             KakoPageSection.FOUNDATION -> {
                 addMasterSwitch()
@@ -400,6 +401,22 @@ class KakoUiSettingsFragment : Fragment() {
         if (dimens.isEmpty()) return
         addSubgroupHeader(getString(R.string.kako_subgroup_widths))
         dimens.forEach { addDimenRow(it) }
+    }
+
+    // App language — one row; the list it opens applies the choice at once, for this app only.
+
+    private fun fillLanguage() {
+        val context = requireContext()
+        addActionRow(
+            label = getString(R.string.kako_language_row, KakoLanguage.currentLabel(context)),
+            description = null,
+            iconRes = iconsR.drawable.mozac_ic_globe_24,
+            role = ForkIconRole.MESSAGE,
+            main = true,
+            opens = true,
+        ) {
+            KakoLanguage.showPicker(requireActivity())
+        }
     }
 
     // Export / Import — the Kōjiki flow.

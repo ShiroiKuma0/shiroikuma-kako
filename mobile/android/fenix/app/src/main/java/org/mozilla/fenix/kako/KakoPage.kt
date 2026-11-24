@@ -42,7 +42,9 @@ import org.mozilla.fenix.R
  * [colour] is one of the seven section-icon roles and says what kind of thing the section is:
  * the base (yellow), controls (green), words (light blue), the frame (heavy blue), reaching out
  * (orange), warning (red), a brief flash (rose, one section at most). The order below is the
- * default order of the page; no two neighbours in it share a colour.
+ * default order of the page; no two neighbours in it share a colour. "App language" is first,
+ * so its chip is the first chip of the index — also in a stored order made before the section
+ * existed, where [KakoPageState.order] gives a section it does not know its default place.
  *
  * @property key The stable name the section is stored under in the order and fold lists.
  * @property roles The colour roles set in this section, or null for a section without any.
@@ -54,6 +56,7 @@ enum class KakoPageSection(
     val colour: KakoSlot,
     val roles: KakoSection?,
 ) {
+    LANGUAGE("language", R.string.kako_section_language, iconsR.drawable.mozac_ic_globe_24, KakoSlot.SECTION_WORDS, null),
     EXIM("exim", R.string.kako_eim_heading, iconsR.drawable.mozac_ic_share_android_24, KakoSlot.SECTION_REACH, null),
     FOUNDATION(
         "foundation",

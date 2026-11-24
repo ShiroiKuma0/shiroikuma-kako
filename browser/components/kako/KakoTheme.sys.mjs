@@ -61,6 +61,9 @@ const L10N_FILE = "kako.ftl";
  */
 const SECTIONS = Object.freeze(
   [
+    // "App language" is first, so its chip is the first chip of the index --
+    // also in an order stored before the section existed (see `order`).
+    ["language", "chrome://global/skin/icons/defaultFavicon.svg", "section_words"],
     ["foundation", "chrome://browser/skin/customize.svg", "section_base"],
     ["text", "chrome://browser/skin/characterEncoding.svg", "section_words"],
     [
@@ -563,6 +566,25 @@ export const KakoTheme = {
 
   resetOrder() {
     Services.prefs.clearUserPref(PREF_ORDER);
+  },
+
+  // ----- the app's language -----------------------------------------------
+
+  /*
+   * One stored value, the one Settings > Language writes too:
+   * intl.locale.requested. Empty means "follow the system's language".
+   */
+  get language() {
+    return Services.prefs.getStringPref("intl.locale.requested", "").split(",")[0].trim();
+  },
+
+  set language(tag) {
+    Services.prefs.setStringPref("intl.locale.requested", tag);
+  },
+
+  // The languages this package carries.
+  get shippedLanguages() {
+    return [...Services.locale.packagedLocales];
   },
 
   isOpen(key) {

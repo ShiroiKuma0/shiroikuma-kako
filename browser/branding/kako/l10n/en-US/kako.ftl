@@ -230,3 +230,9 @@ kako-role-badge-frame = Badge frame
 kako-role-badge-text = Badge label
 kako-role-badge-filled = Filled badge ground
 kako-role-badge-filled-text = Filled badge label
+
+## App language -- the first section of the UI page
+
+kako-section-language = App language
+kako-ui-language-row = Language:
+kako-ui-language-system = System default
